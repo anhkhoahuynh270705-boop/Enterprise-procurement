@@ -10,41 +10,41 @@
 
 ---
 
-## 1. Tổng quan hệ thống (Executive Overview)
+## 1. Executive Overview
 
-**Enterprise Procurement Management System (EPMS)** là giải pháp phần mềm cấp doanh nghiệp được thiết kế nhằm số hóa, chuẩn hóa và tự động hóa toàn bộ quy trình mua sắm nội bộ, kiểm soát ngân sách và quản trị quan hệ nhà cung cấp (SRM - Supplier Relationship Management).
+**Enterprise Procurement Management System (EPMS)** is an enterprise-grade platform designed to digitize, standardize, and automate corporate procurement workflows, budget validation, and Supplier Relationship Management (SRM).
 
-Hệ thống áp dụng mô hình kiểm soát kép **Maker - Checker (Người tạo - Người duyệt)** dựa trên công cụ quản lý quy trình doanh nghiệp **Camunda BPMN**, tích hợp xác thực tập trung **Keycloak Single Sign-On (SSO)** và kiến trúc hướng sự kiện thời gian thực **Apache Kafka**.
+The system enforces a dual-authorization **Maker - Checker** governance model powered by the **Camunda BPMN** workflow engine, centralized **Keycloak Single Sign-On (SSO)** authentication, and real-time asynchronous event streaming via **Apache Kafka**.
 
-### Giá trị mang lại cho doanh nghiệp:
-- **Minh bạch hóa & Kiểm soát chi phí:** Ngăn chặn chi tiêu vượt ngân sách với cơ chế tự động thẩm định ngân sách (Budget Check) trước khi phê duyệt.
-- **Tuân thủ quy trình kiểm soát nội bộ (Governance & Compliance):** Phân định rõ ràng trách nhiệm giữa người lập đề xuất (Maker) và cấp có thẩm quyền phê duyệt (Checker).
-- **Chuẩn hóa hồ sơ nhà cung cấp:** Đánh giá năng lực nhà cung cấp, lưu trữ tài liệu pháp lý và phân tích hồ sơ đề xuất (Proposals).
-- **Chứng từ & Báo cáo chuẩn doanh nghiệp:** Tự động kết xuất phiếu mua sắm, hồ sơ nhà cung cấp định dạng PDF/Excel độ nét cao phục vụ lưu trữ kế toán và kiểm toán.
+### Core Business Value:
+- **Cost Transparency & Control:** Prevents budget overruns through automated pre-approval budget validations (Budget Check).
+- **Governance & Regulatory Compliance:** Enforces segregation of duties between procurement initiators (Makers) and approval authorities (Checkers) with full audit trails.
+- **Comprehensive Supplier Management:** Streamlines vendor onboarding, capability scoring, legal document compliance, and proposal reviews.
+- **Enterprise-Grade Reporting:** Generates high-fidelity PDF procurement vouchers and Excel analytical reports for internal accounting and audit compliance.
 
 ---
 
-## 2. Kiến trúc kỹ thuật (Architecture & Tech Stack)
+## 2. System Architecture & Tech Stack
 
-Hệ thống được xây dựng theo mô hình kiến trúc phân lớp hiện đại (Layered & Event-Driven Architecture):
+The platform is designed around a modern layered, event-driven micro-service architecture:
 
 ```mermaid
 flowchart TB
-    subgraph ClientLayer [Tầng Giao Diện Người Dùng]
+    subgraph ClientLayer [Client Presentation Layer]
         AngularApp["Angular SPA / Angular Material\n(Port: 4200)"]
     end
 
-    subgraph SecurityGateway [Bảo Mật & Định Danh]
+    subgraph SecurityGateway [Identity & Access Management]
         Keycloak["Keycloak IAM / OAuth2 / OIDC\n(Enterprise Branded Theme)\n(Port: 8081)"]
     end
 
-    subgraph ApplicationLayer [Tầng Nghiệp Vụ - Backend]
+    subgraph ApplicationLayer [Core Business Services - Backend]
         SpringBoot["Spring Boot 3.3.6 REST API\n(Port: 8080)"]
         Camunda["Camunda 7 BPMN Workflow Engine"]
         Jasper["JasperReports & Apache POI\n(Export PDF / Excel)"]
     end
 
-    subgraph DataAndIntegration [Tầng Dữ Liệu & Tích Hợp]
+    subgraph DataAndIntegration [Data Persistence & Integration]
         Postgres[(PostgreSQL 5432\nshopping_db)]
         Kafka["Apache Kafka 4.3.1\nEvent Streaming (Port: 9092)"]
         MailHog["MailHog SMTP Service\n(Port: 1025 / UI: 8025)"]
@@ -60,199 +60,200 @@ flowchart TB
     SpringBoot -->|Async Email Notifications| MailHog
 ```
 
-### Công nghệ sử dụng:
+### Technology Matrix:
 
-| Thành phần | Công nghệ chính | Vai trò / Chi tiết |
+| Component | Core Technology | Role & Highlights |
 | :--- | :--- | :--- |
-| **Frontend** | Angular 22, TypeScript, SCSS | Single Page Application với Angular Material, Chart.js, OAuth2-OIDC |
+| **Frontend** | Angular 22, TypeScript, SCSS | Single Page Application with Angular Material, Chart.js, OAuth2-OIDC |
 | **Backend** | Java 21, Spring Boot 3.3.6 | RESTful APIs, Spring Security Resource Server, Actuator, MapStruct, Lombok |
-| **BPMN Workflow** | Camunda BPM 7 | Điều phối luồng duyệt Maker - Checker, kiểm tra ngân sách, gửi thông báo |
-| **Cơ sở dữ liệu** | PostgreSQL 15+ | Lưu trữ quan hệ ACID, HikariCP Connection Pool |
-| **Xác thực & Ủy quyền**| Keycloak 26.0.7 | Quản lý User/Role tập trung, JWT Token, giao diện đăng nhập tùy biến doanh nghiệp |
-| **Truyền thông điệp** | Apache Kafka 4.3.1 | Xử lý sự kiện mua sắm bất đồng bộ (Procurement Events), tích hợp Kafka UI |
-| **Báo cáo & Chứng từ** | JasperReports & Apache POI | Tự động sinh phiếu duyệt, biên bản bàn giao PDF và xuất báo cáo Excel |
-| **Email Mocking** | MailHog | Máy chủ kiểm thử gửi nhận email thông báo luồng duyệt |
-| **Hạ tầng hỗ trợ** | Docker & Docker Compose | Đóng gói và chạy môi trường dev một chạm cho Kafka, Keycloak, MailHog |
+| **Workflow Engine** | Camunda BPM 7 | Orchestrates Maker - Checker approval flows, budget verification, automated tasks |
+| **Database** | PostgreSQL 15+ | ACID relational persistence with HikariCP connection pooling |
+| **IAM & Security** | Keycloak 26.0.7 | Centralized OAuth2/OIDC provider, RBAC, customized corporate login theme |
+| **Event Streaming** | Apache Kafka 4.3.1 | Asynchronous procurement event publishing/consuming, monitored via Kafka UI |
+| **Reporting & Export** | JasperReports & Apache POI | Pixel-perfect PDF voucher generation and high-throughput Excel (.xlsx) processing |
+| **Email Mocking** | MailHog | SMTP email testing and notification inspection during development |
+| **Infrastructure** | Docker & Docker Compose | Containerized dev orchestration for Keycloak, Kafka, Kafka UI, and MailHog |
 
 ---
 
-## 3. Các phân hệ chức năng chính (Core Modules)
+## 3. Core Business Modules
 
-### 📌 1. Phân hệ Quản lý Mua sắm (Procurement Management)
-- Tạo yêu cầu mua sắm (Purchase Requisition/Order) với chi tiết danh mục hàng hóa, số lượng, đơn giá và nhà cung cấp.
-- Tự động tính toán tổng giá trị đơn hàng, thuế VAT và đối soát hạn mức ngân sách phòng ban.
-- Tra cứu lịch sử thay đổi trạng thái và mã định danh nghiệp vụ duy nhất.
+### 📌 1. Procurement & Purchase Requisitions
+- Create and manage purchase requests with itemized line items, quantities, pricing, and selected vendors.
+- Automatic calculation of subtotal, tax rates, and real-time department budget ceiling verification.
+- Searchable transaction history with audit metadata and immutable business tracking keys.
 
-### 📌 2. Luồng phê duyệt Maker - Checker (BPMN Workflow)
-- Tách bạch quyền hạn theo chuẩn quản trị rủi ro:
-  - **Maker (Nhân viên mua sắm):** Lập phiếu đề xuất mua sắm, bổ sung hồ sơ và gửi duyệt.
-  - **Checker (Trưởng bộ phận / Kế toán trưởng):** Tiếp nhận danh sách nhiệm vụ (Task List), xem xét thông tin, phê duyệt (Approve) hoặc từ chối (Reject) kèm lý do.
-- Tự động kích hoạt các Service Delegates của Camunda: `BudgetCheckDelegate`, `ApprovalNotificationDelegate`, `RejectionNotificationDelegate`.
+### 📌 2. Maker - Checker BPMN Approval Workflow
+- Enforces corporate segregation of duties:
+  - **Maker (Procurement Staff):** Submits purchase requests, uploads documentation, and initiates approval cycles.
+  - **Checker (Department Manager / Finance Director):** Receives actionable task notifications, reviews proposal details, and issues approval or rejection with mandatory remarks.
+- Automated Camunda Service Delegates: `BudgetCheckDelegate`, `ApprovalNotificationDelegate`, and `RejectionNotificationDelegate`.
 
-### 📌 3. Quản lý Nhà cung cấp (Supplier Relationship Management - SRM)
-- Quản lý danh bạ đối tác, thông tin pháp lý, mã số thuế, đánh giá độ tin cậy và phân loại nhà cung cấp.
-- Quản lý hồ sơ đề xuất (Supplier Proposals) và tài liệu đính kèm (hợp đồng, hồ sơ năng lực).
-- Hỗ trợ nhập liệu hàng loạt danh sách nhà cung cấp qua file Excel (Apache POI) với cơ chế kiểm tra lỗi từng dòng.
+### 📌 3. Supplier Relationship Management (SRM)
+- Vendor directory maintaining legal identities, tax codes, rating assessments, and supplier categorization.
+- Supplier proposal evaluation and document vault for contracts, licenses, and compliance certificates.
+- Bulk vendor import via Excel spreadsheets with row-by-row data validation and detailed error reporting.
 
-### 📌 4. Báo cáo & Xuất chứng từ (Reports & Analytics)
-- Dashboard phân tích tổng quan: Biểu đồ thống kê chi tiêu theo thời gian, tỷ lệ đơn hàng được duyệt/từ chối, chi phí theo nhà cung cấp (Chart.js).
-- Xuất phiếu mua sắm chính thức (Procurement Voucher) định dạng PDF chuẩn in ấn qua JasperReports.
-- Xuất báo cáo tổng hợp danh sách nhà cung cấp và lịch sử mua sắm ra file Excel (.xlsx).
+### 📌 4. Enterprise Analytics & Document Generation
+- Executive KPI dashboard displaying spending trends, approval/rejection metrics, and vendor share charts via Chart.js.
+- JasperReports-powered PDF procurement vouchers and supplier dossiers formatted for printing and accounting.
+- Comprehensive Excel reports for procurement auditing and financial reconciliation.
 
-### 📌 5. Bảo mật & Quản lý danh tính (Security & IAM)
-- Đăng nhập một lần (Single Sign-On) qua Keycloak OIDC.
-- Kiểm soát truy cập dựa trên vai trò (RBAC): `ADMIN`, `MAKER`, `CHECKER`, `VIEWER`.
-- Giao diện đăng nhập Keycloak được thiết kế độc quyền theo nhận diện thương hiệu doanh nghiệp (hỗ trợ đa ngôn ngữ Tiếng Việt / Tiếng Anh, video background).
+### 📌 5. Identity & Access Management (IAM)
+- Keycloak-backed Single Sign-On (SSO) with OpenID Connect (OIDC).
+- Role-Based Access Control (RBAC): `ADMIN`, `MAKER`, `CHECKER`, and `VIEWER`.
+- Fully branded enterprise login portal with video background and multi-language support (English / Vietnamese).
 
 ---
 
-## 4. Yêu cầu môi trường (Prerequisites)
+## 4. Prerequisites
 
-Trước khi bắt đầu cài đặt, đảm bảo máy chủ/máy phát triển đã cài đặt các công cụ sau:
+Ensure your development environment meets the following requirements:
 
-- **JDK 21** (hoặc OpenJDK 21) & **Maven 3.9+** (hoặc sử dụng wrapper `mvnw`)
+- **JDK 21** (or OpenJDK 21) & **Maven 3.9+** (or use the included `./mvnw`)
 - **Node.js 20.x+** & **npm 10.x+**
 - **Docker** & **Docker Compose v2+**
-- **PostgreSQL 15+** (chạy tại port mặc định `5432`, có database tên `shopping_db`)
+- **PostgreSQL 15+** (running on host port `5432` with database `shopping_db`)
 
 ---
 
-## 5. Hướng dẫn cài đặt & Khởi chạy nhanh (Quick Start)
+## 5. Quick Start Guide
 
-Thực hiện lần lượt 5 bước sau để triển khai toàn bộ hệ thống lên môi trường nội bộ:
+Follow these steps to deploy and run the system locally:
 
-### Bước 1: Clone mã nguồn
+### Step 1: Clone the Repository
 ```bash
 git clone https://github.com/your-organization/enterprise-procurement.git
 cd enterprise-procurement
 ```
 
-### Bước 2: Khởi tạo cơ sở dữ liệu PostgreSQL
-Đảm bảo bạn đã có một cơ sở dữ liệu PostgreSQL đang chạy ở port `5432`:
-- **Tên cơ sở dữ liệu:** `shopping_db`
-- **Schema Keycloak:** Tạo thêm schema `keycloak` trong database:
+### Step 2: Initialize PostgreSQL Database
+Ensure PostgreSQL is active on port `5432`:
+- Create the main database and the dedicated Keycloak schema:
   ```sql
   CREATE DATABASE shopping_db;
   \c shopping_db;
   CREATE SCHEMA IF NOT EXISTS keycloak;
   ```
 
-### Bước 3: Khởi chạy các dịch vụ phụ trợ qua Docker Compose
-Khởi động cụm dịch vụ Keycloak, Apache Kafka, Kafka UI và MailHog:
+### Step 3: Launch Infrastructure via Docker Compose
+Start Keycloak, Apache Kafka, Kafka UI, and MailHog:
 ```bash
 docker compose up -d
 ```
 > [!NOTE]
-> Lần đầu chạy, Keycloak có thể mất từ 1 - 2 phút để hoàn tất khởi tạo cấu trúc bảng trong schema `keycloak`.
+> On the initial launch, Keycloak may take 1–2 minutes to create database tables and initialize the `Shopping` realm.
 
-### Bước 4: Cấu hình biến môi trường
-Hệ thống sử dụng các file template mẫu để bảo mật thông tin nhạy cảm:
+### Step 4: Configure Environment Files
+Template files are provided to keep local credentials secure:
 
-1. **Cấu hình Backend:**
+1. **Backend Configuration:**
    ```bash
    cd Backend/src/main/resources
-   # Sao chép file cấu hình mẫu:
+   # Copy configuration template:
    cp application.properties.example application.properties
-   # Trên Windows PowerShell:
+   # On Windows PowerShell:
    # Copy-Item application.properties.example application.properties
    ```
-   *Mở file `application.properties` vừa tạo và cập nhật mật khẩu PostgreSQL (`spring.datasource.password`) hoặc Keycloak Secret tương ứng.*
+   *Edit `application.properties` to set your local PostgreSQL password (`spring.datasource.password`) and Keycloak secrets.*
 
-2. **Cấu hình Frontend:**
+2. **Frontend Configuration:**
    ```bash
    cd ../../../Frontend
-   # Sao chép file biến môi trường mẫu:
+   # Copy environment template:
    cp .env.example .env
-   # Trên Windows PowerShell:
+   # On Windows PowerShell:
    # Copy-Item .env.example .env
    ```
 
-### Bước 5: Chạy ứng dụng
+### Step 5: Start the Applications
 
-1. **Khởi chạy Backend (Spring Boot API):**
+1. **Start Backend (Spring Boot API):**
    ```bash
    cd Backend
    ./mvnw spring-boot:run
-   # Trên Windows:
+   # On Windows:
    # .\mvnw.cmd spring-boot:run
    ```
-   *Backend sẽ khởi động tại địa chỉ: `http://localhost:8080`.*
+   *The backend will be available at `http://localhost:8080`.*
 
-2. **Khởi chạy Frontend (Angular SPA):**
+2. **Start Frontend (Angular SPA):**
    ```bash
    cd ../Frontend
    npm install
    npm start
    ```
-   *Frontend sẽ khởi động tại địa chỉ: `http://localhost:4200`.*
+   *The frontend application will be available at `http://localhost:4200`.*
 
 ---
 
-## 6. Bảng tra cứu dịch vụ & Thông tin đăng nhập mặc định
+## 6. Services & Default Credentials Matrix
 
-| Dịch vụ | URL truy cập | Tài khoản / Mật khẩu mặc định | Mô tả |
+| Service | Access URL | Default Credentials | Description |
 | :--- | :--- | :--- | :--- |
-| **Giao diện người dùng (Frontend)** | [http://localhost:4200](http://localhost:4200) | Đăng nhập qua Keycloak SSO | Màn hình thao tác chính |
-| **Backend REST API** | [http://localhost:8080/api](http://localhost:8080/api) | — | Cổng giao tiếp API |
-| **Keycloak Admin Console** | [http://localhost:8081](http://localhost:8081) | `admin` / `admin` | Quản trị Realm `Shopping`, Client, Roles, Users |
-| **Kafka UI** | [http://localhost:8085](http://localhost:8085) | — | Giám sát Topics, Consumers, Messages Kafka |
-| **MailHog Web UI** | [http://localhost:8025](http://localhost:8025) | — | Hộp thư kiểm thử nhận thông báo email |
-| **MailHog SMTP Server** | `localhost:1025` | *(Không yêu cầu)* | Cổng gửi nhận mail nội bộ của Spring Boot |
+| **Frontend Portal** | [http://localhost:4200](http://localhost:4200) | Authenticate via Keycloak SSO | Main Web Application Interface |
+| **Backend REST API** | [http://localhost:8080/api](http://localhost:8080/api) | — | Core REST Services & Endpoints |
+| **Keycloak Admin Console** | [http://localhost:8081](http://localhost:8081) | `admin` / `admin` | Realm `Shopping`, Roles, Users & Clients |
+| **Kafka UI** | [http://localhost:8085](http://localhost:8085) | — | Kafka Topics, Consumers & Metrics |
+| **MailHog Web UI** | [http://localhost:8025](http://localhost:8025) | — | Local Email Inbox for Notifications |
+| **MailHog SMTP** | `localhost:1025` | *(None required)* | Outgoing Mail Server for Spring Boot |
 
 ---
 
-## 7. Cấu trúc thư mục dự án (Project Structure)
+## 7. Project Directory Structure
 
 ```text
 Enterprise/
-├── .gitignore                         # Gitignore cấp monorepo (chặn file rác, .env, properties)
-├── docker-compose.yml                 # Docker cấu hình Keycloak, Kafka, Kafka UI, MailHog
-├── README.md                          # Tài liệu hướng dẫn dự án doanh nghiệp
+├── .gitignore                         # Monorepo root ignore rules (OS, IDE, .env, properties)
+├── docker-compose.yml                 # Infrastructure services (Keycloak, Kafka, Kafka UI, MailHog)
+├── README.md                          # Enterprise project documentation
 │
-├── Backend/                           # Phân hệ Backend (Java Spring Boot)
-│   ├── .gitignore                     # Bỏ qua target/, file build, application.properties
-│   ├── pom.xml                        # Maven dependencies & plugins cấu hình dự án
+├── Backend/                           # Backend Application (Java Spring Boot)
+│   ├── .gitignore                     # Ignores build artifacts, target/, application.properties
+│   ├── pom.xml                        # Maven configuration & build specifications
 │   ├── src/main/java/com/example/shopping/
-│   │   ├── audit/                     # Ghi nhận lịch sử kiểm toán (Audit Trail)
-│   │   ├── auth/                      # Tiện ích liên quan tới phiên xác thực
-│   │   ├── company/                   # Quản lý tài liệu & thông tin công ty
-│   │   ├── config/                    # Các cấu hình hệ thống (Async, WebMvc, v.v.)
-│   │   ├── dashboard/                 # Thống kê số liệu, KPI mua sắm
-│   │   ├── integration/               # Tích hợp Kafka Producer/Consumer, Keycloak Client
-│   │   ├── procurement/               # Nghiệp vụ mua sắm & đơn đặt hàng
-│   │   ├── security/                  # Cấu hình Spring Security OAuth2 Resource Server
-│   │   ├── supplier/                  # Quản lý nhà cung cấp, đề xuất, nhập xuất báo cáo
-│   │   ├── user/                      # Nghiệp vụ tài khoản người dùng
-│   │   └── workflow/                  # Camunda BPMN integration, Controllers, Delegates
+│   │   ├── audit/                     # Audit trail logging & historical event records
+│   │   ├── auth/                      # Session management & auth utility services
+│   │   ├── company/                   # Corporate documentation & enterprise profile
+│   │   ├── config/                    # Global configurations (Async, Thread Pool, WebMvc)
+│   │   ├── dashboard/                 # Analytical report services & KPI aggregators
+│   │   ├── integration/               # Kafka producers/consumers & Keycloak integration
+│   │   ├── procurement/               # Procurement requests, calculations & orders
+│   │   ├── security/                  # Spring Security OAuth2 resource server config
+│   │   ├── supplier/                  # Supplier management, proposals, reports & exports
+│   │   ├── user/                      # User management & synchronization services
+│   │   └── workflow/                  # Camunda BPMN engine, delegates & task controllers
 │   └── src/main/resources/
-│       ├── application.properties.example # Cấu hình mẫu an toàn để chia sẻ
-│       ├── bpmn/                      # File định nghĩa quy trình Camunda (.bpmn)
-│       ├── db/migration/              # Kịch bản khởi tạo & cập nhật cơ sở dữ liệu SQL
-│       ├── reports/                   # Mẫu template báo cáo JasperReports (.jrxml)
-│       └── templates/mail/            # Mẫu email thông báo HTML Thymeleaf
+│       ├── application.properties.example # Shareable configuration template
+│       ├── bpmn/                      # BPMN 2.0 executable workflow definitions
+│       ├── db/migration/              # SQL schema migration scripts
+│       ├── reports/                   # JasperReports (.jrxml) print-ready templates
+│       └── templates/mail/            # HTML Thymeleaf email templates
 │
-├── Frontend/                          # Phân hệ Frontend (Angular 22)
-│   ├── .env.example                   # Biến môi trường mẫu
-│   ├── .gitignore                     # Bỏ qua node_modules/, dist/, .env
-│   ├── package.json                   # Thư viện npm và các lệnh thực thi
-│   ├── scripts/generate-env.mjs       # Script tự động trích xuất .env sang environment.ts
+├── Frontend/                          # Frontend Application (Angular 22)
+│   ├── .env.example                   # Environment configuration template
+│   ├── .gitignore                     # Ignores node_modules/, dist/, .env
+│   ├── package.json                   # NPM dependencies & build scripts
+│   ├── scripts/generate-env.mjs       # Build script generating environment.ts from .env
 │   └── src/app/
-│       ├── core/                      # Interceptors, Guards, dịch vụ cốt lõi
-│       ├── features/                  # Các màn hình nghiệp vụ
-│       │   ├── auth/                  # Màn hình đăng nhập & callback Keycloak
-│       │   ├── dashboard/             # Màn hình bảng điều khiển thống kê
-│       │   ├── procurement/           # Màn hình tạo đơn & quy trình Maker-Checker
-│       │   ├── suppliers/             # Màn hình quản lý nhà cung cấp & đề xuất
-│       │   ├── company/               # Màn hình tài liệu công ty
-│       │   └── users/                 # Màn hình phân quyền & tài khoản
-│       └── shared/                    # Các components, pipes, UI dùng chung
+│       ├── core/                      # HTTP interceptors, guards & singleton services
+│       ├── features/                  # Business domain modules
+│       │   ├── auth/                  # Keycloak sign-in & callback flows
+│       │   ├── dashboard/             # Executive KPI analytics charts
+│       │   ├── procurement/           # Requisition forms & Maker-Checker review screens
+│       │   ├── suppliers/             # Supplier directory, proposals & document review
+│       │   ├── company/               # Corporate document library
+│       │   └── users/                 # User administration & role mapping
+│       └── shared/                    # Reusable components, UI widgets & pipes
 │
-└── Keycloak/                          # Tùy biến Keycloak Identity Provider
-    ├── themes/enterprise/             # Theme đăng nhập nhận diện thương hiệu doanh nghiệp
-    │   └── login/                     # Giao diện FTL, CSS, đa ngôn ngữ VI/EN
-    └── inspect-theme.mjs              # Công cụ hỗ trợ kiểm tra theme
+└── Keycloak/                          # Keycloak Identity Provider Customizations
+    ├── themes/enterprise/             # Custom branded enterprise login theme
+    │   └── login/                     # FTL templates, corporate CSS & i18n messages
+    └── inspect-theme.mjs              # Theme validation and debugging script
 ```
 
-## 8. Giấy phép & Bản quyền (License & Copyright)
+---
 
-Dự án này được phát triển và thuộc quyền sở hữu nội bộ của Doanh Nghiệp. Mọi hành vi sao chép, phân phối mã nguồn ra bên ngoài khi chưa có văn bản chấp thuận đều bị nghiêm cấm theo chính sách bảo mật thông tin của tổ chức.
+## 8. License & Copyright
+
+This software and related documentation are the proprietary and confidential property of the Enterprise. Unauthorized copying, distribution, or transfer of this repository or any portion thereof is strictly prohibited without prior written consent.
