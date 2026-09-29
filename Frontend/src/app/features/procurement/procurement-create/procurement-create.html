@@ -1,0 +1,260 @@
+<div class="create-container">
+  <div class="header-section">
+    <div class="title-meta">
+      <a type="button" routerLink="/procurement" class="btn btn-outline">&larr; Back</a>
+      <h2>
+        @if (isEditMode) {
+          Chỉnh Sửa Phiếu: <app-sensitive-value [value]="editingTicketCode" label="mã phiếu" />
+        } @else {
+          Create Ticket
+        }
+      </h2>
+      <p>
+        {{
+          isEditMode
+            ? 'Cập nhật lại thông tin chung và danh mục vật tư của phiếu đề xuất mua sắm.'
+            : 'Lập danh sách
+        vật tư / trang thiết bị cần mua sắm.'
+        }}    
+      </p>
+    </div>
+  </div>
+
+  <form [formGroup]="ticketForm" class="procurement-form" novalidate>
+    <div class="form-card">
+      <h3 class="card-title">1. Thông tin chung về đề nghị</h3>
+
+      <div class="form-grid">
+        <div class="form-group span-2">
+          <label for="title">Tiêu đề yêu cầu mua sắm <span class="req">*</span></label>
+          <input
+            id="title"
+            type="text"
+            formControlName="title"
+            placeholder="Ví dụ: Mua sắm trang thiết bị làm việc cho nhân sự"
+            [class.invalid]="
+              ticketForm.get('title')?.invalid &&
+              (ticketForm.get('title')?.touched || ticketForm.get('title')?.dirty)
+            "
+          />
+          @if (ticketForm.get('title')?.dirty || ticketForm.get('title')?.touched) {
+            @if (ticketForm.get('title')?.hasError('required')) {
+              <span class="error-msg">Tiêu đề không được để trống</span>
+            }
+            @if (ticketForm.get('title')?.hasError('minlength')) {
+              <span class="error-msg">Tiêu đề phải có tối thiểu 5 ký tự</span>
+            }
+            @if (ticketForm.get('title')?.hasError('pattern')) {
+              <span class="error-msg">Tiêu đề chỉ được chứa ký tự chữ cái</span>
+            }
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="department">Phòng ban đề xuất <span class="req">*</span></label>
+          <select id="department" formControlName="department">
+            <option value="Phòng Kỹ thuật & R&D">Phòng Kỹ thuật &amp; R&amp;D</option>
+            <option value="Phòng Kinh doanh & Marketing">Phòng Kinh doanh &amp; Marketing</option>
+            <option value="Phòng Hành chính - Nhân sự">Phòng Hành chính - Nhân sự</option>
+            <option value="Phòng Kế toán - Tài chính">Phòng Kế toán - Tài chính</option>
+            <option value="Khối Vận hành">Khối Vận hành</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="priority">Mức độ ưu tiên</label>
+          <select id="priority" formControlName="priority">
+            <option value="LOW">Thấp (Low)</option>
+            <option value="MEDIUM">Bình thường (Medium)</option>
+            <option value="HIGH">Cao (High)</option>
+            <option value="URGENT">Khẩn cấp (Urgent)</option>
+          </select>
+        </div>
+
+        <div class="form-group span-2">
+          <label for="reason">Mục đích &amp; Lý do mua sắm<span class="req">*</span></label>
+          <textarea
+            id="reason"
+            rows="2"
+            formControlName="reason"
+            placeholder="Mô tả cụ thể mục đích sử dụng, căn cứ đề xuất, đối tượng thụ hưởng..."
+          ></textarea>
+          @if (ticketForm.get('reason')?.dirty || ticketForm.get('reason')?.touched) {
+            @if (ticketForm.get('reason')?.hasError('required')) {
+              <span class="error-msg">Lý do không được để trống</span>
+            }
+          }
+        </div>
+      </div>
+    </div>
+    <div class="form-card">
+      <div class="card-header-flex">
+        <h3 class="card-title">2. Danh sách vật tư &amp; trang thiết bị đề xuất</h3>
+        <button type="button" class="btn btn-outline btn-sm" (click)="addItem()">
+          + Thêm dòng vật tư
+        </button>
+      </div>
+
+      <div class="items-table-wrapper" formArrayName="items">
+        <table class="items-form-table">
+          <thead>
+            <tr>
+              <th style="width: 40px">STT</th>
+              <th style="width: 120px">Mã SKU</th>
+              <th>Tên hàng hóa / Thiết bị <span class="req">*</span></th>
+              <th style="width: 140px">Danh mục</th>
+              <th style="width: 80px">SL <span class="req">*</span></th>
+              <th style="width: 80px">ĐVT</th>
+              <th style="width: 150px">Đơn giá (VND) <span class="req">*</span></th>
+              <th style="width: 160px">Thành tiền</th>
+              <th style="width: 160px">Nhà cung cấp dự kiến</th>
+              <th style="width: 50px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (itemGroup of items.controls; track $index; let i = $index) {
+              <tr [formGroupName]="i">
+                <td class="text-center">{{ i + 1 }}</td>
+                <td>
+                  <app-sensitive-input label="mã hàng"
+                    ><input
+                      #sensitiveInput
+                      type="password"
+                      formControlName="itemCode"
+                      placeholder="SKU-..."
+                  /></app-sensitive-input>
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    formControlName="itemName"
+                    placeholder="Tên sản phẩm..."
+                    [class.invalid]="
+                      itemGroup.get('itemName')?.invalid &&
+                      (itemGroup.get('itemName')?.touched || itemGroup.get('itemName')?.dirty)
+                    "
+                  />
+                  @if (itemGroup.get('itemName')?.dirty || itemGroup.get('itemName')?.touched) {
+                    @if (itemGroup.get('itemName')?.hasError('required')) {
+                      <span class="error-msg">Vui lòng nhập tên hàng hóa/thiết bị</span>
+                    }
+                    @if (itemGroup.get('itemName')?.hasError('pattern')) {
+                      <span class="error-msg">Tên hàng hóa/thiết bị chỉ được chứa chữ cái</span>
+                    }
+                  }
+                </td>
+                <td>
+                  <select formControlName="category">
+                    <option value="Hardware">Hardware</option>
+                    <option value="Software License">Software</option>
+                    <option value="Office Supplies">Văn phòng phẩm</option>
+                    <option value="Machinery">Máy móc / Công cụ</option>
+                    <option value="Service">Dịch vụ</option>
+                  </select>
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    min="1"
+                    formControlName="quantity"
+                    [class.invalid]="
+                      itemGroup.get('quantity')?.invalid && itemGroup.get('quantity')?.touched
+                    "
+                  />
+                </td>
+                <td>
+                  <input type="text" formControlName="unit" placeholder="Cái" />
+                  @if (itemGroup.get('unit')?.touched || itemGroup.get('unit')?.dirty) {
+                    @if (itemGroup.get('unit')?.hasError('required')) {
+                      <span class="error-msg">Vui lòng nhập đơn vị tính</span>
+                    }
+                    @if (itemGroup.get('unit')?.hasError('pattern')) {
+                      <span class="error-msg">Đơn vị tính chỉ được chứa chữ cái</span>
+                    }
+                  }
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    min="0"
+                    formControlName="unitPrice"
+                    [class.invalid]="
+                      itemGroup.get('unitPrice')?.invalid && itemGroup.get('unitPrice')?.touched
+                    "
+                  />
+                </td>
+                <td class="text-right font-bold">
+                  {{ getItemTotal(i) | number: '1.0-0' }}
+                </td>
+                <td>
+                  <select
+                    formControlName="supplierName"
+                    [class.invalid]="
+                      itemGroup.get('supplierName')?.invalid &&
+                      (itemGroup.get('supplierName')?.touched ||
+                        itemGroup.get('supplierName')?.dirty)
+                    "
+                  >
+                    <option value="">-- Chọn nhà cung cấp --</option>
+                    @for (s of suppliers; track s.id) {
+                      <option [value]="s.name">{{ s.name }}</option>
+                    }
+                  </select>
+                  @if (
+                    itemGroup.get('supplierName')?.invalid &&
+                    (itemGroup.get('supplierName')?.dirty || itemGroup.get('supplierName')?.touched)
+                  ) {
+                    <span class="error-msg">Vui lòng chọn nhà cung cấp</span>
+                  }
+                </td>
+                <td class="text-center">
+                  <button
+                    type="button"
+                    class="btn-del-row"
+                    title="Xóa dòng"
+                    (click)="removeItem(i)"
+                  >
+                    &times;
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="grand-total-bar">
+        <div class="total-label">TỔNG KINH PHÍ DỰ TÍNH:</div>
+        <div class="total-value">{{ grandTotal | number: '1.0-0' }} VND</div>
+      </div>
+    </div>
+    <div class="form-actions">
+      @if (isEditMode) {
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="onSubmit(false)"
+          [disabled]="isLoading"
+        >
+          {{ isLoading ? 'Đang lưu...' : 'Lưu cập nhật phiếu' }}
+        </button>
+      } @else {
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="onSubmit(false)"
+          [disabled]="isLoading"
+        >
+          Lưu bản nháp
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="onSubmit(true)"
+          [disabled]="isLoading"
+        >
+          {{ isLoading ? 'Đang xử lý...' : 'Nộp duyệt lên ngay' }}
+        </button>
+      }
+    </div>
+  </form>
+</div>

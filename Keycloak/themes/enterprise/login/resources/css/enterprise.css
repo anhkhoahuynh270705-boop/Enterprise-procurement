@@ -1,0 +1,340 @@
+/* Match Frontend/src/app/features/auth/login/login.scss. Native Keycloak forms remain intact. */
+:root {
+  color-scheme: dark;
+  --enterprise-blue: #3677d2;
+}
+
+html.login-pf {
+  min-height: 100%;
+  background: #101c31;
+}
+
+.login-pf body.enterprise-login {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #101c31;
+  color: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.enterprise-background,
+.enterprise-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.enterprise-background {
+  z-index: 0;
+  object-fit: cover;
+}
+.enterprise-overlay {
+  z-index: 1;
+  background: rgba(0, 0, 0, 0.2);
+}
+.enterprise-login .login-pf-page {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px 70px;
+}
+.enterprise-login #kc-header {
+  display: none;
+}
+.enterprise-login .card-pf {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 420px;
+  margin: 0;
+  padding: 48px 40px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 24px;
+  box-shadow: 0 16px 56px rgba(0, 0, 0, 0.15);
+  color: #fff;
+}
+.enterprise-login .login-pf-header {
+  margin: 0 0 32px;
+  text-align: center;
+}
+.enterprise-login #kc-page-title {
+  margin: 0 0 8px;
+  color: #fff;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.enterprise-login .enterprise-subtitle {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+}
+.enterprise-login #kc-content,
+.enterprise-login #kc-content-wrapper {
+  margin: 0;
+}
+.enterprise-login .form-group {
+  margin-bottom: 20px;
+}
+.enterprise-login label,
+.enterprise-login .pf-c-form__label,
+.enterprise-login .pf-c-form__label-text {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+.enterprise-login .pf-c-form-control,
+.enterprise-login input.form-control {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 49px;
+  padding: 13px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  background-image: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 15px;
+  line-height: 1.4;
+  outline: none;
+  box-shadow: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+.enterprise-login .pf-c-form-control::placeholder {
+  color: rgba(255, 255, 255, 0.65);
+}
+.enterprise-login .pf-c-form-control:focus {
+  border-color: #82b8ff;
+  box-shadow: 0 0 0 3px rgba(54, 119, 210, 0.3);
+}
+.enterprise-login .pf-c-form-control[aria-invalid="true"] {
+  border-color: #ffb2b2;
+}
+.enterprise-login .pf-c-input-group {
+  position: relative;
+  display: flex;
+  background: none;
+}
+.enterprise-login .pf-c-input-group .pf-c-form-control {
+  padding-right: 48px;
+  border-radius: 12px;
+}
+.enterprise-login .pf-c-input-group .pf-c-button {
+  position: absolute;
+  inset-inline-end: 1px;
+  top: 1px;
+  bottom: 1px;
+  width: 44px;
+  min-width: 44px;
+  padding: 0;
+  z-index: 2;
+  color: rgba(255, 255, 255, 0.9);
+  background: transparent;
+  border: none;
+  border-radius: 0 12px 12px 0;
+}
+.enterprise-login .pf-c-button::after {
+  border: none;
+}
+.enterprise-login .pf-c-button.pf-m-primary,
+.enterprise-login input[type="submit"] {
+  display: block;
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 16px;
+  background: var(--enterprise-blue);
+  background-image: none;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: none;
+  cursor: pointer;
+  transition:
+    transform 0.2s,
+    background 0.2s;
+}
+.enterprise-login .pf-c-button.pf-m-primary:hover,
+.enterprise-login input[type="submit"]:hover {
+  background: #2868c0;
+  transform: translateY(-2px);
+}
+.enterprise-login input[type="submit"]:disabled {
+  opacity: 0.6;
+  cursor: wait;
+  transform: none;
+}
+.enterprise-login a {
+  color: #fff;
+  text-underline-offset: 3px;
+}
+.enterprise-login a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+.enterprise-login a:focus-visible,
+.enterprise-login button:focus-visible,
+.enterprise-login input[type="submit"]:focus-visible {
+  outline: 2px solid #b7d7ff;
+  outline-offset: 3px;
+}
+.enterprise-login #kc-form-buttons {
+  margin: 24px 0 0;
+}
+.enterprise-login .login-pf-settings {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.enterprise-login #kc-form-options {
+  padding: 0;
+  width: auto;
+}
+.enterprise-login .login-pf-settings a {
+  font-size: 13px;
+  font-weight: 500;
+}
+.enterprise-login .checkbox {
+  margin: 0;
+}
+.enterprise-login input[type="checkbox"] {
+  accent-color: var(--enterprise-blue);
+}
+.enterprise-login .pf-c-alert {
+  background: rgba(14, 28, 49, 0.65);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.enterprise-login .pf-c-alert__title,
+.enterprise-login .pf-c-alert__icon {
+  color: inherit;
+}
+.enterprise-login .alert-error {
+  background: rgba(95, 15, 25, 0.65);
+  border-color: rgba(255, 150, 150, 0.5);
+  color: #ffd4d4;
+}
+.enterprise-login .pf-c-form__helper-text.pf-m-error {
+  color: #ffd4d4;
+  font-size: 12px;
+  margin-top: 6px;
+}
+.enterprise-login #kc-info-wrapper {
+  background: none;
+  padding: 16px 0 0;
+  font-size: 14px;
+}
+.enterprise-login #kc-info {
+  margin: 12px 0 0;
+}
+.enterprise-login .enterprise-contact {
+  margin: 24px 0 0;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  text-align: center;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+}
+.enterprise-login .instruction {
+  color: #fff;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.enterprise-login .subtitle,
+.enterprise-login .required {
+  color: #fff;
+}
+.enterprise-login .login-pf-header .col-md-10 {
+  width: 100%;
+  padding: 0;
+}
+.enterprise-login .login-pf-header .subtitle {
+  float: none;
+  text-align: center;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+.enterprise-login #kc-locale {
+  position: relative;
+  top: auto;
+  right: auto;
+  margin: -20px 0 20px;
+  text-align: right;
+}
+.enterprise-login #kc-current-locale-link {
+  color: #fff;
+  background: transparent;
+}
+.enterprise-login #kc-locale ul {
+  background: #162940;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+}
+.enterprise-login #kc-locale ul a {
+  color: #fff;
+}
+.enterprise-login #kc-locale ul a:hover {
+  background: #274363;
+}
+.enterprise-login #kc-username {
+  color: #fff;
+}
+@media (max-width: 480px) {
+  .enterprise-login .login-pf-page {
+    padding: 24px 16px 68px;
+  }
+  .enterprise-login .card-pf {
+    padding: 32px 24px;
+    border-radius: 20px;
+  }
+  .enterprise-login #kc-page-title {
+    font-size: 26px;
+  }
+  .enterprise-login #kc-locale {
+    margin-top: -8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .enterprise-background {
+    display: none;
+  }
+  .enterprise-login *,
+  .enterprise-login *::before,
+  .enterprise-login *::after {
+    transition: none !important;
+  }
+}
+/* Override inherited PatternFly paragraph colors on translucent cards. */
+.enterprise-login .login-pf-page .card-pf p {
+  color: rgba(255, 255, 255, 0.9);
+}
+.enterprise-login #kc-form-buttons {
+  padding-left: 0;
+  padding-right: 0;
+}

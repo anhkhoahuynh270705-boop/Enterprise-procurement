@@ -1,0 +1,191 @@
+<div class="app-layout">
+  <header class="app-top-header">
+    <div class="header-left">
+      <div class="menu-bar-dropdown">
+        <button
+          type="button"
+          class="btn-menu-toggle"
+          [class.active]="isNavMenuOpen"
+          (click)="toggleNavMenu()"
+          title="Danh mục quản lý"
+          aria-label="Menu quản lý"
+        >
+          <i class="fa fa-bars" aria-hidden="true"></i>
+        </button>
+        @if (isNavMenuOpen) {
+          <div class="menu-backdrop" (click)="closeNavMenu()"></div>
+          <nav class="nav-dropdown-pane" (click)="$event.stopPropagation()">
+            <div class="dropdown-pane-header">
+              <span class="pane-title">Hệ thống quản trị</span>
+              <button
+                type="button"
+                class="btn-close-pane"
+                (click)="closeNavMenu()"
+                aria-label="Đóng"
+              >
+                &times;
+              </button>
+            </div>
+
+            <ul class="nav-menu-list">
+              @if (authService.hasRole('ADMIN')) {
+                <li>
+                  <a
+                    routerLink="/dashboard"
+                    (click)="closeNavMenu()"
+                    class="nav-menu-item"
+                    routerLinkActive="active"
+                  >
+                    <i class="fa fa-tachometer menu-icon" aria-hidden="true"></i>
+                    <div class="menu-info">
+                      <span class="menu-name">Dashboard</span>
+                      <span class="menu-sub">Tổng quan &amp; Báo cáo</span>
+                    </div>
+                  </a>
+                </li>
+              }
+
+              <li>
+                <a
+                  routerLink="/procurement"
+                  (click)="closeNavMenu()"
+                  class="nav-menu-item"
+                  routerLinkActive="active"
+                >
+                  <i class="fa fa-shopping-cart menu-icon" aria-hidden="true"></i>
+                  <div class="menu-info">
+                    <span class="menu-name">Quản lý mua sắm</span>
+                    <span class="menu-sub">Phiếu đề xuất &amp; Phê duyệt</span>
+                  </div>
+                </a>
+              </li>
+
+              @if (authService.hasRole('ADMIN', 'USER', 'CHECKER')) {
+                <li>
+                  <a
+                    routerLink="/company-documents"
+                    (click)="closeNavMenu()"
+                    class="nav-menu-item"
+                    routerLinkActive="active"
+                  >
+                    <i class="fa fa-folder-open-o menu-icon" aria-hidden="true"></i>
+                    <div class="menu-info">
+                      <span class="menu-name">Tài liệu công ty</span
+                      ><span class="menu-sub">Nội quy, quy trình &amp; Biểu mẫu</span>
+                    </div>
+                  </a>
+                </li>
+              }
+              @if (authService.hasRole('ADMIN', 'USER', 'CHECKER')) {
+                <li class="supplier-menu-group" [class.open]="isSupplierOpen">
+                  <div class="supplier-item-wrapper">
+                    <a
+                      [routerLink]="
+                        authService.hasRole('ADMIN') ? '/suppliers' : '/supplier-proposals'
+                      "
+                      (click)="onSupplierClick($event)"
+                      class="nav-menu-item"
+                      routerLinkActive="active"
+                      [routerLinkActiveOptions]="{ exact: true }"
+                    >
+                      <i class="fa fa-truck menu-icon" aria-hidden="true"></i>
+                      <div class="menu-info">
+                        <span class="menu-name">Quản lý nhà cung cấp</span>
+                        <span class="menu-sub">Danh sách &amp; Đối tác</span>
+                      </div>
+                    </a>
+                    <button
+                      type="button"
+                      class="submenu-toggle-btn"
+                      (click)="toggleSupplierMenu($event)"
+                      [title]="isSupplierOpen ? 'Thu gọn' : 'Mở rộng'"
+                    >
+                      <i
+                        class="fa fa-chevron-down"
+                        [class.rotated]="isSupplierOpen"
+                        aria-hidden="true"
+                      ></i>
+                    </button>
+                  </div>
+                  @if (isSupplierOpen) {
+                    <ul class="supplier-submenu">
+                      @if (authService.hasRole('ADMIN')) {
+                        <li>
+                          <a
+                            routerLink="/suppliers"
+                            routerLinkActive="active"
+                            [routerLinkActiveOptions]="{ exact: true }"
+                            (click)="closeNavMenu()"
+                            >Danh sách nhà cung cấp
+                          </a>
+                        </li>
+                      }
+                      <li>
+                        <a
+                          routerLink="/supplier-proposals"
+                          routerLinkActive="active"
+                          (click)="closeNavMenu()"
+                          >Đề xuất nhà cung cấp
+                        </a>
+                      </li>
+                      <li>
+                        <a
+                          routerLink="/suppliers/documents"
+                          routerLinkActive="active"
+                          (click)="closeNavMenu()"
+                          >Tài liệu nhà cung cấp
+                        </a>
+                      </li>
+                    </ul>
+                  }
+                </li>
+              }
+              @if (authService.hasRole('ADMIN')) {
+                <li>
+                  <a
+                    routerLink="/users"
+                    (click)="closeNavMenu()"
+                    class="nav-menu-item"
+                    routerLinkActive="active"
+                  >
+                    <i class="fa fa-users menu-icon" aria-hidden="true"></i>
+                    <div class="menu-info">
+                      <span class="menu-name">Quản lý user</span>
+                      <span class="menu-sub">Danh sách &amp; Phân quyền</span>
+                    </div>
+                  </a>
+                </li>
+              }
+            </ul>
+          </nav>
+        }
+      </div>
+      <div routerLink="/" class="brand">
+        <img src="header/logo.png" alt="Logo" />
+      </div>
+    </div>
+
+    <div class="header-right">
+      @if (currentUser) {
+        <button
+          type="button"
+          class="user-session-info"
+          aria-haspopup="dialog"
+          title="Xem hồ sơ cá nhân"
+          (click)="closeNavMenu(); profilePanel.open()"
+        >
+          <i class="fa fa-user-circle" aria-hidden="true"></i>
+          <span class="session-username">{{ currentUser.username }}</span>
+        </button>
+      }
+      <button type="button" class="btn btn-logout" (click)="logout()" title="Đăng xuất">
+        <i class="fa fa-sign-out" aria-hidden="true"></i>
+        <span>Logout</span>
+      </button>
+    </div>
+  </header>
+  <main class="app-main-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>
+<app-profile-panel #profilePanel />

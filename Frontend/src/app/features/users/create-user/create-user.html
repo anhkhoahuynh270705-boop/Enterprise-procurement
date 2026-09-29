@@ -1,0 +1,71 @@
+<a type="button" class="btn btn-outline" routerLink="/users">&larr; Back</a>
+
+<p>Create User</p>
+<form [formGroup]="form" (ngSubmit)="Submit()">
+  <div>
+    <label for="create-fullname">Họ tên đầy đủ</label>
+    <input
+      id="create-fullname"
+      type="text"
+      formControlName="fullName"
+      autocomplete="name"
+      maxlength="255"
+    />
+    @if (form.controls.fullName.touched && form.controls.fullName.invalid) {
+      <span role="alert" style="color: red">Vui lòng nhập họ tên đầy đủ, tối đa 255 ký tự.</span>
+    }
+  </div>
+  <div>
+    <label> UserName:</label>
+    <input type="text" formControlName="username" />
+    @if (form.controls.username.touched && form.controls.username.invalid) {
+      <span style="color: red">Username is required</span>
+    }
+  </div>
+  <div>
+    <label>Email</label>
+    <input type="email" formControlName="email" />
+    @if (form.controls.email.touched && form.controls.email.hasError('required')) {
+      <span style="color: red">Email is required</span>
+    }
+    @if (form.controls.email.touched && form.controls.email.hasError('email')) {
+      <span style="color: red">Email is invalid</span>
+    }
+  </div>
+  <div>
+    <label>First Name</label>
+    <input type="text" formControlName="firstName" />
+  </div>
+  <div>
+    <label>Last Name</label>
+    <input type="text" formControlName="lastName" />
+  </div>
+  <div>
+    <label>Mật khẩu tạm</label>
+    <input type="password" formControlName="password" autocomplete="new-password" />
+    <p>Người dùng phải đổi mật khẩu và xác minh email khi đăng nhập lần đầu.</p>
+    @if (form.controls.password.touched && form.controls.password.invalid) {
+      <span style="color: red">Password is required</span>
+    }
+    @if (form.controls.password.touched && form.controls.password.hasError('minlength')) {
+      <span style="color: red">Password must be at least 6 characters</span>
+    }
+  </div>
+  <div>
+    <label>Role</label>
+    <select formControlName="role">
+      <option value="USER">USER</option>
+      <option value="ADMIN">ADMIN</option>
+      <option value="CHECKER">CHECKER</option>
+    </select>
+    @if (form.controls.role.touched && form.controls.role.invalid) {
+      <span style="color: red">Role is required</span>
+    }
+  </div>
+  <div>
+    <label>Enabled</label>
+    <input type="checkbox" formControlName="enabled" />
+  </div>
+  <app-user-profile-fields [form]="form" />
+  <button type="submit" [disabled]="form.invalid || loading">Submit</button>
+</form>

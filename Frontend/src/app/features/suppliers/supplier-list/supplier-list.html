@@ -1,0 +1,250 @@
+<div class="supplier-container">
+  <div class="page-title-bar">
+    <h2>Supplier Management</h2>
+    <span class="sub-breadcrumb">Danh sách đối tác &amp; thông tin liên hệ</span>
+  </div>
+
+  <div class="tabs-container">
+    <div class="left-actions">
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="openProposals()"
+        aria-haspopup="dialog"
+      >
+        <i class="fa fa-check-square-o" aria-hidden="true"></i>
+        Duyệt đề xuất
+        @if (pendingProposalCount !== null) {
+          ({{ pendingProposalCount }})
+        }
+      </button>
+    </div>
+
+    <div class="action-buttons">
+      <button type="button" class="btn btn-outline" (click)="importExcel()">
+        <i class="fa fa-upload" aria-hidden="true"></i>
+        Import Excel
+      </button>
+      <button type="button" class="btn btn-outline" (click)="exportExcel()">
+        <i class="fa fa-download" aria-hidden="true"></i>
+        Export Excel
+      </button>
+      <a routerLink="/supplier/create" class="btn btn-primary">
+        <i class="fa fa-plus" aria-hidden="true"></i>
+        Thêm nhà cung cấp mới
+      </a>
+    </div>
+  </div>
+
+  <div class="toolbar" [formGroup]="filtersForm">
+    <div class="search-box">
+      <i class="fa fa-search" aria-hidden="true"></i>
+      <input
+        type="text"
+        placeholder="Tìm theo mã NCC, tên nhà cung cấp, người liên hệ, MST..."
+        formControlName="searchKeyword"
+        (input)="onSearch()"
+      />
+    </div>
+
+    <div class="filter-box">
+      <i class="fa fa-filter" aria-hidden="true"></i>
+      <select formControlName="selectedStatus" (change)="applyFilter()">
+        <option value="ALL">Tất cả trạng thái</option>
+        <option value="ACTIVE">ACTIVE</option>
+        <option value="INACTIVE">INACTIVE</option>
+        <option value="BLACKLISTED">BLACKLISTED</option>
+      </select>
+    </div>
+  </div>
+
+  <section class="table-card" aria-labelledby="list-title">
+    <div class="card-header">
+      <h3 id="list-title">Danh sách nhà cung cấp</h3>
+      <p>Tổng số {{ filteredSuppliers.length }} nhà cung cấp</p>
+    </div>
+
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">
+              Mã NCC
+              <button
+                type="button"
+                class="btn-eye-toggle"
+                (click)="toggleAllIds()"
+                title="Ẩn/hiện tất cả mã NCC"
+              >
+                <i
+                  class="fa"
+                  [ngClass]="
+                    visibleIds.size > 0 && visibleIds.size === filteredSuppliers.length
+                      ? 'fa-eye-slash'
+                      : 'fa-eye'
+                  "
+                  aria-hidden="true"
+                ></i>
+              </button>
+            </th>
+            <th scope="col">Tên nhà cung cấp</th>
+            <th scope="col">Người liên hệ</th>
+            <th scope="col">Email &amp; SĐT</th>
+            <th scope="col">Mã số thuế</th>
+            <th scope="col">Trạng thái</th>
+            <th scope="col">Thao tác</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (supplier of filteredSuppliers; track supplier.id) {
+            <tr>
+              <td class="id-cell">
+                <div class="id-content">
+                  <span class="masked-code">
+                    {{ isIdVisible(supplier.id) ? supplier.code : '••••••••' }}
+                  </span>
+
+                  <button
+                    type="button"
+                    class="btn-eye-toggle"
+                    (click)="toggleIdVisibility(supplier.id, $event)"
+                    [attr.aria-label]="isIdVisible(supplier.id) ? 'Ẩn mã NCC' : 'Hiện mã NCC'"
+                    [title]="isIdVisible(supplier.id) ? 'Ẩn mã NCC' : 'Hiện mã NCC'"
+                  >
+                    <i
+                      class="fa"
+                      [ngClass]="isIdVisible(supplier.id) ? 'fa-eye-slash' : 'fa-eye'"
+                      aria-hidden="true"
+                    ></i>
+                  </button>
+                </div>
+              </td>
+              <td class="name-cell text-left">
+                <span class="supplier-name">{{ supplier.name }}</span>
+                @if (supplier.city) {
+                  <span class="supplier-city"
+                    ><i class="fa fa-map-marker"></i> {{ supplier.city }}</span
+                  >
+                }
+              </td>
+              <td>{{ supplier.contactPerson || 'null' }}</td>
+              <td class="contact-cell">
+                @if (supplier.email) {
+                  <div><i class="fa fa-envelope-o"></i> {{ supplier.email }}</div>
+                }
+                @if (supplier.phone) {
+                  <div><i class="fa fa-phone"></i> {{ supplier.phone }}</div>
+                }
+                @if (!supplier.email && !supplier.phone) {
+                  <span>null</span>
+                }
+              </td>
+              <td>
+                <app-sensitive-value
+                  [value]="supplier.taxCode"
+                  [recordKey]="supplier.id"
+                  label="mã số thuế"
+                />
+              </td>
+              <td>
+                <span
+                  class="badge-status"
+                  [class.badge-active]="supplier.status === 'ACTIVE'"
+                  [class.badge-inactive]="supplier.status === 'INACTIVE'"
+                  [class.badge-blacklisted]="supplier.status === 'BLACKLISTED'"
+                >
+                  {{ supplier.status }}
+                </span>
+              </td>
+
+              <td>
+                <div class="supplier-actions">
+                  <div class="export-actions">
+                    <button
+                      type="button"
+                      class="btn-export"
+                      (click)="exportSupplier(supplier, 'PDF')"
+                    >
+                      <i class="fa fa-download"></i> PDF
+                    </button>
+
+                    <button
+                      type="button"
+                      class="btn-export"
+                      (click)="exportSupplier(supplier, 'EXCEL')"
+                    >
+                      <i class="fa fa-download"></i> XLSX
+                    </button>
+                  </div>
+
+                  <div class="row-actions">
+                    <button
+                      type="button"
+                      class="btn-view"
+                      title="Xem chi tiết"
+                      (click)="openViewSupplier(supplier, $event)"
+                    >
+                      <i class="fa fa-eye"></i>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="btn-edit"
+                      title="Chỉnh sửa"
+                      (click)="editSupplier(supplier.id)"
+                    >
+                      <i class="fa fa-pencil"></i>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="btn-delete"
+                      title="Xóa"
+                      [disabled]="deletingId === supplier.id"
+                      (click)="deleteSupplier(supplier.id)"
+                    >
+                      <i
+                        class="fa"
+                        [class.fa-trash]="deletingId !== supplier.id"
+                        [class.fa-spinner]="deletingId === supplier.id"
+                        [class.fa-spin]="deletingId === supplier.id"
+                      ></i>
+                    </button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <dialog
+    #proposalDialog
+    class="proposal-dialog"
+    aria-label="Duyệt đề xuất nhà cung cấp"
+    (cancel)="closeProposals($event)"
+  >
+    @if (showProposals) {
+      <div class="proposal-dialog-toolbar">
+        <button
+          type="button"
+          class="btn btn-outline"
+          (click)="closeProposals()"
+          [disabled]="proposalPanel?.reviewing"
+          aria-label="Đóng popup duyệt đề xuất"
+          autofocus
+        >
+          <i class="fa fa-times" aria-hidden="true"></i> Đóng
+        </button>
+      </div>
+      <app-supplier-proposals
+        [embedded]="true"
+        (reviewed)="onProposalReviewed()"
+      ></app-supplier-proposals>
+    }
+  </dialog>
+  <app-supplier-view> </app-supplier-view>
+</div>

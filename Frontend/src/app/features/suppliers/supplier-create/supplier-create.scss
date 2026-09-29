@@ -1,0 +1,209 @@
+:host {
+    display: block;
+    min-height: 100vh;
+    background: #ffffff;
+    color: #222222;
+    font-family: var(--app-font-family);
+    font-size: 14px;
+}
+
+.supplier-form-page {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 2000px;
+    margin: 0 auto;
+    padding-bottom: 40px;
+}
+
+.page-title-bar {
+    margin-bottom: 24px;
+
+    .btn-outline {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 120px;
+        min-height: 40px;
+        border: 2px solid #111111;
+        border-radius: 8px;
+        color: #000000;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        margin-bottom: 2rem;
+        text-decoration: none;
+
+        &:hover:not(:disabled) {
+            border-color: #444444;
+            background: #eeeeee;
+        }
+    }
+
+    h2 {
+        margin: 0 0 4px;
+        font-family: var(--app-font-family);
+        font-size: 24px;
+        font-weight: 700;
+        color: #222222;
+    }
+
+    .sub-breadcrumb {
+        font-size: 13px;
+        color: #666666;
+    }
+}
+
+.alert-danger {
+    padding: 12px 16px;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 8px;
+    color: #721c24;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.supplier-form-card {
+    background: #ffffff;
+    border: 1px solid #888888;
+    border-radius: 8px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.form-section {
+    .section-title {
+        margin: 0 0 16px;
+        font-size: 15px;
+        font-weight: 700;
+        color: #333333;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #eeeeee;
+
+        i {
+            color: #555555;
+        }
+    }
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 20px;
+
+    @media (max-width: 640px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    &.full-width {
+        grid-column: 1 / -1;
+    }
+
+    label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #333333;
+
+        .required {
+            color: #d93025;
+        }
+    }
+
+    input,
+    select,
+    textarea {
+        box-sizing: border-box;
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid #999999;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #222222;
+        background: #ffffff;
+        transition: border-color 0.15s ease;
+
+        &:focus {
+            outline: none;
+            border-color: #222222;
+        }
+
+        &.is-invalid {
+            border-color: #d93025;
+        }
+    }
+
+    textarea {
+        resize: vertical;
+        font-family: inherit;
+    }
+
+    .error-msg {
+        font-size: 12px;
+        color: #d93025;
+    }
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    padding-top: 20px;
+    border-top: 1px solid #eeeeee;
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 20px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.15s ease;
+
+        &.btn-cancel {
+            background: #f0f0f0;
+            border: 1px solid #cccccc;
+            color: #444444;
+
+            &:hover {
+                background: #e2e2e2;
+                color: #111111;
+            }
+        }
+
+        &.btn-submit {
+            background: #000000;
+            border: 1px solid #222222;
+            color: #fff;
+            font-size: 18px;
+
+            &:hover:not(:disabled) {
+                background: #444;
+                border-color: #444444;
+            }
+
+            &:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+        }
+    }
+}

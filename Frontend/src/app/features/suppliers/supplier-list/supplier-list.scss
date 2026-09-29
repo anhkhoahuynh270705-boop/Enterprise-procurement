@@ -1,0 +1,606 @@
+:host {
+    display: block;
+    min-height: 100vh;
+    background: #ffffff;
+    color: #222222;
+    font-family: var(--app-font-family);
+    font-size: 14px;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+.supplier-container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 24px 28px;
+    font-family: var(--app-font-family);
+    color: #222222;
+}
+
+.page-title-bar {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+
+    h2 {
+        margin: 0 0 4px 0;
+        font-family: var(--app-font-family);
+        font-size: 24px;
+        font-weight: 700;
+        color: #222222;
+    }
+
+    .sub-breadcrumb {
+        font-size: 13px;
+        color: #666666;
+    }
+}
+
+.tabs-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 20px;
+
+    .left-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+        padding: 0;
+        border: 1px solid #888888;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #ffffff;
+
+        .tab-btn {
+            padding: 8px 18px;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            font-weight: 500;
+            color: #222222;
+            cursor: pointer;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.15s ease;
+
+            &.active {
+                background: #333;
+                color: #fff;
+            }
+
+            &:hover:not(.active) {
+                background: #f0f0f0;
+            }
+        }
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+}
+
+.btn {
+    min-height: 36px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    transition: all 0.15s ease;
+
+    &.btn-outline {
+        background: #ffffff;
+        color: #222222;
+        border-radius: 8px;
+        border: 2px solid #000000;
+        font-weight: 500;
+        font-size: 16px;
+
+        &:hover {
+            background: #f0f0f0;
+        }
+    }
+
+    &.btn-primary {
+        background: #ffffff;
+        color: #000000;
+        border-radius: 8px;
+        border: 2px solid #000000;
+        font-weight: 500;
+        font-size: 18px;
+        background: #e4e4e4;
+
+        &:hover {
+            background: #222222;
+            color: #ffffff;
+        }
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    width: 100%;
+
+    .search-box {
+        position: relative;
+        flex: 1; // ô input dài ra gần tới thanh trạng thái
+        min-width: 260px;
+
+        >i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666666;
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 14px 10px 40px;
+            border: 2px solid #000000;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            min-height: 42px;
+            background: #ffffff;
+            color: #222222;
+
+            &:focus {
+                border-color: #333333;
+            }
+        }
+    }
+
+    .filter-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        flex-shrink: 0;
+
+        >i {
+            font-size: 14px;
+            color: #333333;
+        }
+
+        select {
+            padding: 10px 16px;
+            border: 2px solid #000000;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #ffffff;
+            outline: none;
+            min-height: 42px;
+            cursor: pointer;
+            color: #222222;
+
+            &:focus {
+                border-color: #333333;
+            }
+        }
+    }
+}
+
+.table-card {
+    border: 1px solid #888888;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #ffffff;
+
+    .card-header {
+        padding: 12px 14px;
+        background: #d7d7d7;
+        border-bottom: 1px solid #888888;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        h3 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: #222222;
+        }
+
+        p {
+            margin: 0;
+            font-size: 12px;
+            color: #444444;
+        }
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+}
+
+.data-table {
+    width: 100%;
+    min-width: 1150px;
+    table-layout: fixed;
+    border-collapse: collapse;
+    text-align: center;
+    font-size: 13px;
+
+    th,
+    td {
+        box-sizing: border-box;
+        padding: 12px 14px;
+        vertical-align: middle;
+        border-right: 1px solid #cccccc;
+        border-bottom: 1px solid #dddddd;
+
+        &:last-child {
+            border-right: none;
+        }
+    }
+
+    thead th {
+        background: #f5f5f5;
+        color: #333333;
+        font-weight: 700;
+        white-space: nowrap;
+
+        // Tổng chiều rộng: 100%
+        &:nth-child(1) {
+            width: 14%;
+        }
+
+        // Mã NCC
+        &:nth-child(2) {
+            width: 20%;
+        }
+
+        // Tên nhà cung cấp
+        &:nth-child(3) {
+            width: 12%;
+        }
+
+        // Người liên hệ
+        &:nth-child(4) {
+            width: 20%;
+        }
+
+        // Email & SĐT
+        &:nth-child(5) {
+            width: 11%;
+        }
+
+        // Mã số thuế
+        &:nth-child(6) {
+            width: 10%;
+        }
+
+        // Trạng thái
+        &:nth-child(7) {
+            width: 13%;
+        }
+
+        // Thao tác
+    }
+
+    tbody {
+        td {
+            color: #222222;
+            overflow-wrap: anywhere;
+        }
+
+        tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        tr:hover {
+            background: #f0f0f0;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+    }
+
+    .id-cell {
+        display: table-cell;
+        font-family: "Courier New", monospace;
+    }
+
+    .id-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+
+        .masked-code {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    .contact-cell {
+        white-space: normal;
+        text-align: left;
+
+        div {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+
+            i {
+                flex: 0 0 14px;
+            }
+        }
+    }
+}
+
+.btn-eye-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #555555;
+    cursor: pointer;
+
+    &:hover {
+        background: #e4e4e4;
+        color: #111111;
+    }
+
+    &:focus-visible {
+        outline: 2px solid #333;
+        outline-offset: 2px;
+    }
+}
+
+.code-cell {
+    font-family: "Courier New", monospace;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.font-bold {
+    font-weight: 700;
+}
+
+.text-left {
+    text-align: left;
+}
+
+.name-cell {
+    max-width: 250px;
+
+    .supplier-name {
+        display: block;
+        font-weight: 600;
+        color: #111111;
+    }
+
+    .supplier-city {
+        display: block;
+        font-size: 12px;
+        color: #777777;
+        margin-top: 2px;
+    }
+}
+
+.contact-cell {
+    font-size: 12px;
+    text-align: left;
+    white-space: nowrap;
+
+    div {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #444444;
+        margin-bottom: 2px;
+
+        i {
+            width: 14px;
+            color: #777777;
+        }
+    }
+}
+
+.badge-status {
+    display: inline-block;
+    padding: 5px 20px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+
+    &.badge-active {
+        background: #22c55e;
+        color: #ffffff;
+        border: none;
+    }
+
+    &.badge-inactive {
+        background: #ffb500;
+        color: #ffffff;
+        border: none;
+    }
+
+    &.badge-blacklisted {
+        background: #dc3545;
+        color: #ffffff;
+        border: none;
+    }
+}
+
+.row-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+}
+
+.supplier-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+
+    .export-actions {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-export {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+
+        min-width: 64px;
+        padding: 6px 10px;
+        border: 2px solid #999999;
+        border-radius: 9px;
+
+        background: #e7e7e7;
+        color: #111111;
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1.2;
+        cursor: pointer;
+        transition: background-color 0.2s;
+
+        &:hover {
+            background: #d5d5d5;
+        }
+
+        &:focus-visible {
+            outline: 2px solid #2563eb;
+            outline-offset: 2px;
+        }
+    }
+
+    .row-actions {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+    }
+}
+
+.btn-view,
+.btn-edit,
+.btn-delete {
+    background: transparent !important;
+    border: none !important;
+    outline: none;
+    padding: 4px 6px;
+    margin: 0;
+    min-height: auto;
+    color: #333333;
+    font-size: 25px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s ease;
+
+    &:hover {
+        color: #000000;
+    }
+}
+
+.btn-delete:hover {
+    color: #d93025;
+}
+
+.empty-state {
+    padding: 36px 16px;
+    text-align: center;
+    color: #666666;
+}
+
+@media (max-width: 768px) {
+    .supplier-container {
+        padding: 16px;
+    }
+
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+
+        .search-box {
+            width: 100%;
+        }
+
+        .filter-box {
+            width: 100%;
+
+            select {
+                flex: 1;
+            }
+        }
+    }
+}
+
+.proposal-dialog {
+    width: min(1200px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+    max-height: calc(100dvh - 32px);
+    padding: 0;
+    border: 0;
+    border-radius: 12px;
+    background: #f7f9fc;
+    color: #222222;
+    box-shadow: 0 24px 64px rgb(0 0 0 / 25%);
+    overflow: auto;
+    overscroll-behavior: contain;
+
+    &::backdrop {
+        background: rgb(15 23 42 / 55%);
+    }
+}
+
+.proposal-dialog-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    justify-content: flex-end;
+    padding: 12px 20px;
+    background: #f7f9fc;
+    border-bottom: 1px solid #dce1e7;
+}

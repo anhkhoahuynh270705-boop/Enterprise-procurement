@@ -1,0 +1,61 @@
+:host {
+  display: block;
+  margin-bottom: 24px;
+}
+fieldset {
+  border: 1px solid #bbb;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 0;
+  min-width: 0;
+}
+legend {
+  font-weight: 700;
+  padding: 0 8px;
+}
+.profile-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.wide {
+  grid-column: 1 / -1;
+}
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+input,
+select,
+textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #888;
+  border-radius: 8px;
+  background: #fff;
+  color: #222;
+  font: inherit;
+}
+textarea {
+  resize: vertical;
+}
+span,
+small {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+}
+span {
+  color: #b91c1c;
+}
+small {
+  color: #555;
+}
+@media (max-width: 640px) {
+  .profile-fields {
+    grid-template-columns: 1fr;
+  }
+}

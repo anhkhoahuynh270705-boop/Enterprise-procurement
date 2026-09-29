@@ -1,0 +1,138 @@
+@if (isOpen && selectedUser) {
+  <div class="popover-backdrop" (click)="close()"></div>
+
+  <div class="user-popover-card" [ngStyle]="popupStyle" (click)="$event.stopPropagation()">
+    <div class="popover-arrow" [ngClass]="'arrow-' + arrowPosition" [ngStyle]="arrowStyle"></div>
+
+    <div class="popover-header">
+      <div class="popover-title-group">
+        <h3>Thông tin người dùng</h3>
+        <span class="popover-handle">{{ selectedUser.username }}</span>
+      </div>
+      <button type="button" class="btn-close" (click)="close()" aria-label="Đóng">&times;</button>
+    </div>
+
+    <div class="popover-body">
+      <div class="user-detail-horizontal">
+        <div class="profile-side">
+          <div class="avatar-box">
+            <i class="fa fa-user-circle" aria-hidden="true"></i>
+          </div>
+          <h4 class="profile-fullname">
+            {{ selectedUser.fullName || '' }}
+            @if (!selectedUser.fullName) {
+              <span class="no-name">(Chưa có tên)</span>
+            }
+          </h4>
+          <div class="profile-username">&#64;{{ selectedUser.username }}</div>
+
+          <div class="profile-badges">
+            <span class="badge-tag badge-role">{{ selectedUser.role || 'USER' }}</span>
+            <span
+              class="badge-tag"
+              [class.badge-active]="selectedUser.enabled"
+              [class.badge-inactive]="!selectedUser.enabled"
+            >
+              {{ selectedUser.enabled ? 'Enabled' : 'Disabled' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="details-side">
+          <div class="info-grid">
+            <div class="info-item full-width">
+              <span class="info-label">Họ tên đầy đủ</span>
+              <span class="info-value font-bold">{{
+                selectedUser.fullName || 'Chưa cập nhật họ tên'
+              }}</span>
+            </div>
+            <div class="info-item full-width">
+              <span class="info-label">User ID</span>
+              <div class="code-with-eye">
+                <span class="info-value id-code">{{
+                  isIdVisible ? selectedUser.id : '••••••••'
+                }}</span>
+                <button
+                  type="button"
+                  class="btn-eye-toggle"
+                  (click)="toggleIdVisibility()"
+                  [title]="isIdVisible ? 'Ẩn User ID' : 'Hiện User ID'"
+                >
+                  <i class="fa" [ngClass]="isIdVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Tên đăng nhập</span>
+              <span class="info-value font-bold">{{ selectedUser.username }}</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Email</span>
+              <span class="info-value">{{ selectedUser.email }}</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Tên (First name)</span>
+              <span class="info-value">{{ selectedUser.firstName || '---' }}</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Họ &amp; đệm (Last name)</span>
+              <span class="info-value">{{ selectedUser.lastName || '---' }}</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Vai trò</span>
+              <span class="info-value role-val">{{ selectedUser.role || 'USER' }}</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Trạng thái</span>
+              <span class="info-value status-val">
+                <span
+                  class="status-dot"
+                  [class.dot-on]="selectedUser.enabled"
+                  [class.dot-off]="!selectedUser.enabled"
+                ></span>
+                {{ selectedUser.enabled ? 'Hoạt động (Enabled)' : 'Bị khóa (Disabled)' }}
+              </span>
+            </div>
+
+            @for (field of profileFields; track field.name) {
+              <div class="info-item full-width">
+                <span class="info-label">{{ field.label }}</span>
+                <span class="info-value">
+                  @if (field.name === 'employeeId') {
+                    <app-sensitive-value
+                      [value]="selectedUser.employeeId"
+                      [recordKey]="selectedUser.id"
+                      label="mã nhân viên"
+                    />
+                  } @else {
+                    {{
+                      selectedUser[field.name] ||
+                        (field.name === 'employeeStatus' ? 'ACTIVE' : '---')
+                    }}
+                  }
+                </span>
+              </div>
+            }
+
+            @if (selectedUser.createdAt) {
+              <div class="info-item full-width">
+                <span class="info-label">Ngày tạo</span>
+                <span class="info-value">{{ selectedUser.createdAt }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="popover-footer">
+      <button type="button" class="btn btn-sm" (click)="close()">Đóng</button>
+    </div>
+  </div>
+}

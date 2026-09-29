@@ -1,0 +1,216 @@
+:host {
+    display: block;
+    min-height: 100vh;
+    padding: 28px;
+    background: #ffffff;
+    color: #222222;
+    font-family: var(--app-font-family);
+    font-size: 14px;
+}
+
+:host,
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+:host>p {
+    max-width: none;
+    width: 100%;
+    margin: 0 0 20px;
+    padding-bottom: 16px;
+    font-family: var(--app-font-family);
+    font-size: 28px;
+    font-weight: 700;
+}
+
+form {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    padding: 24px;
+    border: 1px solid #888888;
+    border-radius: 8px;
+    background: #ffffff;
+
+    >div {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    input:not([type="checkbox"]),
+    select {
+        display: block;
+        width: 100%;
+        min-height: 38px;
+        padding: 9px 12px;
+        border: 1px solid #888888;
+        border-radius: 8px;
+        background: #ffffff;
+        color: #222222;
+        font: inherit;
+
+        &:hover:not(:disabled) {
+            border-color: #444444;
+        }
+
+        &:focus-visible {
+            outline-offset: 2px;
+        }
+
+        &.ng-touched.ng-invalid {
+            border: 2px solid #444444;
+            background: #f5f5f5;
+        }
+
+        &:disabled {
+            background: #eeeeee;
+            color: #777777;
+            cursor: not-allowed;
+        }
+    }
+
+    span {
+        display: block;
+        margin-top: 6px;
+        font-size: 12px;
+        line-height: 1.5;
+
+        &::before {
+            content: "* ";
+            font-weight: 700;
+        }
+    }
+
+    >div:has(input[type="checkbox"]) {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px;
+        border: 1px solid #cccccc;
+        border-radius: 8px;
+        background: #f5f5f5;
+
+        label {
+            margin: 0;
+        }
+    }
+
+    input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        accent-color: #17aa08;
+        cursor: pointer;
+    }
+
+    >button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 110px;
+        min-height: 38px;
+        padding: 9px 20px;
+        border: 1px solid #888888;
+        border-radius: 8px;
+        font: inherit;
+        font-weight: 600;
+        vertical-align: middle;
+        cursor: pointer;
+
+        &:focus-visible {
+            outline: 2px solid #222;
+            outline-offset: 3px;
+        }
+
+        &:disabled {
+            border-color: #bbbbbb;
+            background: #e4e4e4;
+            color: #777777;
+            cursor: not-allowed;
+        }
+    }
+
+    >button+button {
+        margin-left: 8px;
+    }
+
+    >button[type="submit"] {
+        border-color: #333333;
+        background: #333;
+        color: #fff;
+
+        &:hover:not(:disabled) {
+            border-color: #111111;
+            background: #111;
+        }
+
+        &:disabled {
+            border-color: #bbbbbb;
+            background: #e4e4e4;
+            color: #777777;
+        }
+    }
+
+    >button[type="button"] {
+        background: #e4e4e4;
+        color: #222222;
+
+        &:hover:not(:disabled) {
+            border-color: #444444;
+            background: #d2d2d2;
+        }
+    }
+}
+
+.btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
+    min-height: 40px;
+    padding: 9px 20px;
+    border: 2px solid #111111;
+    border-radius: 8px;
+    color: #000000;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 2rem;
+    text-decoration: none;
+
+    &:hover:not(:disabled) {
+        border-color: #444444;
+        background: #eeeeee;
+    }
+}
+
+@media (max-width: 640px) {
+    :host {
+        padding: 16px;
+    }
+
+    :host>p {
+        font-size: 24px;
+    }
+
+    form {
+        padding: 18px;
+
+        >button {
+            width: 100%;
+        }
+
+        >button+button {
+            margin-top: 10px;
+            margin-left: 0;
+        }
+    }
+}

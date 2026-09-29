@@ -1,0 +1,149 @@
+@if (isOpen && selectedSupplier) {
+  <div class="popover-backdrop" (click)="close()"></div>
+
+  <div
+    #popupCard
+    class="supplier-popover-card"
+    [ngStyle]="popupStyle"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="popover-arrow" [ngClass]="'arrow-' + arrowPosition" [ngStyle]="arrowStyle"></div>
+    <div class="popover-header">
+      <div class="popover-title-group">
+        <h3>Chi tiết Nhà Cung Cấp</h3>
+        <span class="popover-handle"
+          ><app-sensitive-value
+            [value]="selectedSupplier.code"
+            [recordKey]="selectedSupplier.id"
+            label="mã nhà cung cấp"
+        /></span>
+      </div>
+      <button type="button" class="btn-close" (click)="close()" aria-label="Đóng">&times;</button>
+    </div>
+
+    <div class="popover-body">
+      <div class="supplier-detail-horizontal">
+        <div class="profile-side">
+          <div class="avatar-box">
+            <i class="fa fa-building-o" aria-hidden="true"></i>
+          </div>
+          <h4 class="profile-name">
+            {{ selectedSupplier.name }}
+          </h4>
+          <div class="profile-code">
+            <app-sensitive-value
+              [value]="selectedSupplier.code"
+              [recordKey]="selectedSupplier.id"
+              label="mã nhà cung cấp"
+            />
+          </div>
+
+          <div class="profile-badges">
+            <span
+              class="badge-tag"
+              [class.badge-active]="selectedSupplier.status === 'ACTIVE'"
+              [class.badge-inactive]="selectedSupplier.status === 'INACTIVE'"
+              [class.badge-blacklisted]="selectedSupplier.status === 'BLACKLISTED'"
+            >
+              {{ selectedSupplier.status }}
+            </span>
+          </div>
+        </div>
+
+        <div class="details-side">
+          <div class="info-grid">
+            <div class="info-item full-width">
+              <span class="info-label">Mã nhà cung cấp</span>
+              <span class="info-value id-code"
+                ><app-sensitive-value
+                  [value]="selectedSupplier.code"
+                  [recordKey]="selectedSupplier.id"
+                  label="mã nhà cung cấp"
+              /></span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Người liên hệ</span>
+              <span class="info-value font-bold">{{
+                selectedSupplier.contactPerson || 'null'
+              }}</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Email</span>
+              <span class="info-value">{{ selectedSupplier.email || 'null' }}</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Số điện thoại</span>
+              <span class="info-value">{{ selectedSupplier.phone || 'null' }}</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Mã số thuế</span>
+              <span class="info-value font-bold"
+                ><app-sensitive-value
+                  [value]="selectedSupplier.taxCode"
+                  [recordKey]="selectedSupplier.id"
+                  label="mã số thuế"
+              /></span>
+            </div>
+
+            <div class="info-item full-width">
+              <span class="info-label">Địa chỉ</span>
+              <span class="info-value">
+                {{ selectedSupplier.address || 'null' }}
+                {{
+                  selectedSupplier.city
+                    ? (selectedSupplier.address ? ', ' : '') + selectedSupplier.city
+                    : ''
+                }}
+                {{ selectedSupplier.country ? ', ' + selectedSupplier.country : 'null' }}
+                @if (
+                  !selectedSupplier.address && !selectedSupplier.city && !selectedSupplier.country
+                ) {
+                  null
+                }
+              </span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Ngân hàng</span>
+              <span class="info-value">{{ selectedSupplier.bankName || 'null' }}</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Số tài khoản</span>
+              <span class="info-value id-code"
+                ><app-sensitive-value
+                  [value]="selectedSupplier.bankAccount"
+                  [recordKey]="selectedSupplier.id"
+                  label="số tài khoản ngân hàng"
+              /></span>
+            </div>
+
+            @if (selectedSupplier.notes) {
+              <div class="info-item full-width">
+                <span class="info-label">Ghi chú</span>
+                <span class="info-value notes-text">{{ selectedSupplier.notes }}</span>
+              </div>
+            }
+
+            @if (selectedSupplier.createdAt) {
+              <div class="info-item full-width">
+                <span class="info-label">Ngày tạo</span>
+                <span class="info-value">{{
+                  selectedSupplier.createdAt | date: 'dd/MM/yyyy HH:mm'
+                }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="popover-footer">
+      <button type="button" class="btn btn-sm" (click)="close()">Đóng</button>
+    </div>
+  </div>
+}

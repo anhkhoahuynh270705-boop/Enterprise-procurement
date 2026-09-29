@@ -1,0 +1,303 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jasperReport name="procurement-voucher" language="java" pageWidth="595" pageHeight="842" whenNoDataType="AllSectionsNoDetail" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b6197284-933e-4b24-b152-3d7195d2c208">
+	<parameter name="TICKET_CODE" class="java.lang.String"/>
+	<parameter name="TITLE" class="java.lang.String"/>
+	<parameter name="DEPARTMENT" class="java.lang.String"/>
+	<parameter name="MAKER" class="java.lang.String"/>
+	<parameter name="CHECKER" class="java.lang.String"/>
+	<parameter name="STATUS" class="java.lang.String"/>
+	<parameter name="TOTAL_AMOUNT" class="java.lang.String"/>
+	<parameter name="CURRENCY" class="java.lang.String"/>
+	<parameter name="CREATED_AT" class="java.lang.String"/>
+	<parameter name="REASON" class="java.lang.String"/>
+	<query language="sql"><![CDATA[]]></query>
+	<field name="itemCode" class="java.lang.String"/>
+	<field name="itemName" class="java.lang.String"/>
+	<field name="category" class="java.lang.String"/>
+	<field name="quantity" class="java.lang.Integer"/>
+	<field name="unit" class="java.lang.String"/>
+	<field name="unitPrice" class="java.math.BigDecimal"/>
+	<field name="totalPrice" class="java.math.BigDecimal"/>
+	<field name="supplierName" class="java.lang.String"/>
+	<title height="296" splitType="Stretch">
+		<element kind="staticText" uuid="8173f540-9be2-4abb-8631-b7573e525cc8" x="0" y="-12" width="555" height="23" forecolor="#59616D" fontName="DejaVu Sans" fontSize="10.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7"/>
+			<text><![CDATA[ENTERPRISE PROCUREMENT MANAGEMENT]]></text>
+		</element>
+		<element kind="staticText" uuid="afb14fde-816a-40d3-b22f-d8521ef4b98a" x="0" y="47" width="555" height="23" forecolor="#59616D" fontName="DejaVu Sans" fontSize="10.0" hTextAlign="Center" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7"/>
+			<text><![CDATA[VẬT TƯ / TRANG THIẾT BỊ]]></text>
+		</element>
+		<element kind="textField" uuid="472bd9c7-4778-4b18-8fb4-846fe6aef86a" x="0" y="82" width="340" height="30" forecolor="#252A32" backcolor="#E9ECF0" mode="Opaque" fontName="DejaVu Sans" fontSize="10.0" textAdjust="ScaleFont" bold="true" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<expression><![CDATA["MÃ PHIẾU: " + ($P{TICKET_CODE} != null ? $P{TICKET_CODE} : "—")]]></expression>
+		</element>
+		<element kind="textField" uuid="b367b90b-2e14-4e4b-a782-b31efe39d746" x="340" y="82" width="215" height="30" forecolor="#252A32" backcolor="#E9ECF0" mode="Opaque" fontName="DejaVu Sans" fontSize="10.0" textAdjust="ScaleFont" bold="true" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<expression><![CDATA["TRẠNG THÁI: " + ($P{STATUS} != null ? $P{STATUS} : "—")]]></expression>
+		</element>
+		<element kind="staticText" uuid="02e8dd1f-c4f0-46f9-b4bc-6c421b040760" x="0" y="124" width="555" height="26" forecolor="#FFFFFF" backcolor="#2C58DB" mode="Opaque" fontName="DejaVu Sans" fontSize="10.0" bold="true" hTextAlign="Left" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7"/>
+			<text><![CDATA[01   THÔNG TIN ĐỀ NGHỊ]]></text>
+		</element>
+		<element kind="staticText" uuid="a66d8791-8ebe-4a0c-b4a7-47c4fa192fd6" x="0" y="150" width="92" height="36" forecolor="#252A32" backcolor="#F3F4F6" mode="Opaque" fontName="DejaVu Sans" fontSize="10.0" bold="true" hTextAlign="Left" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<text><![CDATA[Tiêu đề]]></text>
+		</element>
+		<element kind="textField" uuid="e04a29c2-09d3-407e-aa85-f9f11e5019bb" x="92" y="150" width="463" height="36" forecolor="#252A32" fontName="DejaVu Sans" fontSize="10.0" textAdjust="ScaleFont" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<expression><![CDATA[($P{TITLE} != null ? $P{TITLE} : "—")]]></expression>
+		</element>
+		<element kind="staticText" uuid="e5ad9ce9-e6d8-499f-9a74-8f02b2c62741" x="0" y="186" width="92" height="32" forecolor="#252A32" backcolor="#F3F4F6" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" hTextAlign="Left" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<text><![CDATA[Phòng ban]]></text>
+		</element>
+		<element kind="textField" uuid="3fcf4961-381c-455e-9c96-23fd6cce94b0" x="92" y="186" width="230" height="32" forecolor="#252A32" fontName="DejaVu Sans" fontSize="9.0" textAdjust="ScaleFont" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<expression><![CDATA[($P{DEPARTMENT} != null ? $P{DEPARTMENT} : "—")]]></expression>
+		</element>
+		<element kind="staticText" uuid="79ad5e0d-6193-4e90-af7b-90d325ff4419" x="322" y="186" width="78" height="32" forecolor="#252A32" backcolor="#F3F4F6" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" hTextAlign="Left" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<text><![CDATA[Ngày tạo]]></text>
+		</element>
+		<element kind="textField" uuid="9c913910-fe75-4b8b-ab39-63d984eb473e" x="400" y="186" width="155" height="32" forecolor="#252A32" fontName="DejaVu Sans" fontSize="9.0" textAdjust="ScaleFont" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<expression><![CDATA[($P{CREATED_AT} != null ? $P{CREATED_AT} : "—")]]></expression>
+		</element>
+		<element kind="staticText" uuid="c41483d5-85c6-409b-94fd-3274dd163bed" x="0" y="218" width="92" height="32" forecolor="#252A32" backcolor="#F3F4F6" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" hTextAlign="Left" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<text><![CDATA[Người đề nghị]]></text>
+		</element>
+		<element kind="textField" uuid="524701f3-6351-4541-9a03-e91a301184b3" x="92" y="218" width="230" height="32" forecolor="#252A32" fontName="DejaVu Sans" fontSize="9.0" textAdjust="ScaleFont" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<expression><![CDATA[($P{MAKER} != null ? $P{MAKER} : "—")]]></expression>
+		</element>
+		<element kind="staticText" uuid="00ac2c38-a4a4-47cb-8487-eb835248d8a4" x="322" y="218" width="78" height="32" forecolor="#252A32" backcolor="#F3F4F6" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" hTextAlign="Left" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<text><![CDATA[Người duyệt]]></text>
+		</element>
+		<element kind="textField" uuid="d2c7980e-877c-41bc-94b1-3e993c2a46e7" x="400" y="218" width="155" height="32" forecolor="#252A32" fontName="DejaVu Sans" fontSize="9.0" textAdjust="ScaleFont" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<expression><![CDATA[($P{CHECKER} != null ? $P{CHECKER} : "—")]]></expression>
+		</element>
+		<element kind="textField" uuid="4ec0cd6e-8d7e-4ffd-b477-65ef6fe53fe3" x="400" y="250" width="155" height="31" forecolor="#252A32" stretchType="ContainerHeight" fontName="DejaVu Sans" fontSize="9.0" textAdjust="StretchHeight" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<expression><![CDATA[($P{REASON} != null ? $P{REASON} : "—")]]></expression>
+		</element>
+		<element kind="textField" uuid="9043bce7-387d-4d1a-ad63-32063fa6f28e" x="140" y="17" width="299" height="30" fontName="DejaVu Sans" fontSize="19.0" bold="true">
+			<expression><![CDATA["PHIẾU ĐỀ NGHỊ MUA SẮM"]]></expression>
+		</element>
+		<element kind="staticText" uuid="e666f32a-3b26-4fde-8f19-fb83cc24cc10" x="0" y="250" width="92" height="31" forecolor="#252A32" backcolor="#F3F4F6" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" hTextAlign="Left" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<text><![CDATA[Nhà cung cấp]]></text>
+		</element>
+		<element kind="textField" uuid="d282267d-acc4-48ac-ab58-6613685d53ab" x="92" y="250" width="230" height="31" forecolor="#252A32" fontName="DejaVu Sans" fontSize="9.0" textAdjust="ScaleFont" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<expression><![CDATA[($F{supplierName} != null ? $F{supplierName} : "—")]]></expression>
+		</element>
+		<element kind="staticText" uuid="a4040619-5b68-47c8-8a9d-edb244f98f35" x="322" y="250" width="78" height="31" forecolor="#252A32" backcolor="#F3F4F6" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" hTextAlign="Left" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<text><![CDATA[Lý do mua sắm]]></text>
+		</element>
+	</title>
+	<columnHeader height="64" splitType="Stretch">
+		<element kind="staticText" uuid="df0c0328-7d74-4ff3-8186-1ef0978f7c2a" x="0" y="36" width="28" height="28" forecolor="#252A32" backcolor="#E9ECF0" mode="Opaque" fontName="DejaVu Sans" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<text><![CDATA[STT]]></text>
+		</element>
+		<element kind="staticText" uuid="67ac9e01-49bd-4851-a20c-f18dc5be8d2a" x="28" y="36" width="57" height="28" forecolor="#252A32" backcolor="#E9ECF0" mode="Opaque" fontName="DejaVu Sans" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<text><![CDATA[Mã SKU]]></text>
+		</element>
+		<element kind="staticText" uuid="8e303f47-ed1d-448d-98df-0ebbcffadb16" x="85" y="36" width="143" height="28" forecolor="#252A32" backcolor="#E9ECF0" mode="Opaque" fontName="DejaVu Sans" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<text><![CDATA[Tên hàng / Thiết bị]]></text>
+		</element>
+		<element kind="staticText" uuid="24d06b1c-83df-46d1-b4c4-8aa73cd3f063" x="228" y="36" width="65" height="28" forecolor="#252A32" backcolor="#E9ECF0" mode="Opaque" fontName="DejaVu Sans" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<text><![CDATA[Danh mục]]></text>
+		</element>
+		<element kind="staticText" uuid="923ea5a6-f2d0-4282-8160-28f3f0d70dee" x="293" y="36" width="32" height="28" forecolor="#252A32" backcolor="#E9ECF0" mode="Opaque" fontName="DejaVu Sans" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<text><![CDATA[SL]]></text>
+		</element>
+		<element kind="staticText" uuid="b5550270-7e4e-449e-9590-c50ea610433f" x="325" y="36" width="36" height="28" forecolor="#252A32" backcolor="#E9ECF0" mode="Opaque" fontName="DejaVu Sans" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<text><![CDATA[ĐVT]]></text>
+		</element>
+		<element kind="staticText" uuid="153be60e-64ee-4f9a-91bb-3f8547b462dd" x="361" y="36" width="94" height="28" forecolor="#252A32" backcolor="#E9ECF0" mode="Opaque" fontName="DejaVu Sans" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<text><![CDATA[Đơn giá]]></text>
+		</element>
+		<element kind="staticText" uuid="7f8c3cc0-900a-4590-a3f4-d520c31971b7" x="455" y="36" width="100" height="28" forecolor="#252A32" backcolor="#E9ECF0" mode="Opaque" fontName="DejaVu Sans" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<text><![CDATA[Thành tiền]]></text>
+		</element>
+		<element kind="staticText" uuid="3346fd57-4dc1-47f4-9e22-462d45c5dd6d" x="0" y="10" width="555" height="26" forecolor="#FFFFFF" backcolor="#2C58DB" mode="Opaque" fontName="DejaVu Sans" fontSize="10.0" bold="true" hTextAlign="Left" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7"/>
+			<text><![CDATA[02   DANH MỤC VẬT TƯ / THIẾT BỊ]]></text>
+		</element>
+	</columnHeader>
+	<detail>
+		<band height="38" splitType="Stretch">
+			<element kind="textField" uuid="f9724b05-d6be-403e-8762-86c4951995d8" x="0" y="0" width="28" height="38" forecolor="#252A32" stretchType="ContainerHeight" fontName="DejaVu Sans" fontSize="8.0" textAdjust="StretchHeight" blankWhenNull="true" hTextAlign="Center" vTextAlign="Middle">
+				<box topPadding="5" leftPadding="3" bottomPadding="5" rightPadding="3">
+					<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+				</box>
+				<expression><![CDATA[$V{REPORT_COUNT}]]></expression>
+			</element>
+			<element kind="textField" uuid="9a9122b6-fc96-4d64-8cf9-0885684d21d2" x="28" y="0" width="57" height="38" forecolor="#252A32" stretchType="ContainerHeight" fontName="DejaVu Sans" fontSize="8.0" textAdjust="StretchHeight" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
+				<box topPadding="5" leftPadding="3" bottomPadding="5" rightPadding="3">
+					<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+				</box>
+				<expression><![CDATA[$F{itemCode}]]></expression>
+			</element>
+			<element kind="textField" uuid="2d0543a5-9021-4813-8334-3213718e5cb0" x="85" y="0" width="143" height="38" forecolor="#252A32" stretchType="ContainerHeight" fontName="DejaVu Sans" fontSize="8.0" textAdjust="StretchHeight" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
+				<box topPadding="5" leftPadding="3" bottomPadding="5" rightPadding="3">
+					<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+				</box>
+				<expression><![CDATA[$F{itemName}]]></expression>
+			</element>
+			<element kind="textField" uuid="d4d5ed74-5e1d-4377-ac23-62f011289cbe" x="228" y="0" width="65" height="38" forecolor="#252A32" stretchType="ContainerHeight" fontName="DejaVu Sans" fontSize="8.0" textAdjust="StretchHeight" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
+				<box topPadding="5" leftPadding="3" bottomPadding="5" rightPadding="3">
+					<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+				</box>
+				<expression><![CDATA[$F{category}]]></expression>
+			</element>
+			<element kind="textField" uuid="6f0d608a-4738-48f9-a50e-ab16979edf97" x="293" y="0" width="32" height="38" forecolor="#252A32" stretchType="ContainerHeight" fontName="DejaVu Sans" fontSize="8.0" textAdjust="StretchHeight" blankWhenNull="true" hTextAlign="Center" vTextAlign="Middle">
+				<box topPadding="5" leftPadding="3" bottomPadding="5" rightPadding="3">
+					<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+				</box>
+				<expression><![CDATA[$F{quantity}]]></expression>
+			</element>
+			<element kind="textField" uuid="7585f056-703b-4929-babb-124b7c0e0a11" x="325" y="0" width="36" height="38" forecolor="#252A32" stretchType="ContainerHeight" fontName="DejaVu Sans" fontSize="8.0" textAdjust="StretchHeight" blankWhenNull="true" hTextAlign="Center" vTextAlign="Middle">
+				<box topPadding="5" leftPadding="3" bottomPadding="5" rightPadding="3">
+					<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+				</box>
+				<expression><![CDATA[$F{unit}]]></expression>
+			</element>
+			<element kind="textField" uuid="8df36a37-2491-4f3e-8003-2dfb9bc794db" x="361" y="0" width="94" height="38" forecolor="#252A32" stretchType="ContainerHeight" fontName="DejaVu Sans" fontSize="8.0" textAdjust="StretchHeight" pattern="#,##0.##" blankWhenNull="true" hTextAlign="Right" vTextAlign="Middle">
+				<box topPadding="5" leftPadding="3" bottomPadding="5" rightPadding="3">
+					<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+				</box>
+				<expression><![CDATA[$F{unitPrice}]]></expression>
+			</element>
+			<element kind="textField" uuid="66b11051-43fe-44d7-91af-2dcba25f286f" x="455" y="0" width="100" height="38" forecolor="#252A32" stretchType="ContainerHeight" fontName="DejaVu Sans" fontSize="8.0" textAdjust="StretchHeight" pattern="#,##0.##" bold="true" blankWhenNull="true" hTextAlign="Right" vTextAlign="Middle">
+				<box topPadding="5" leftPadding="3" bottomPadding="5" rightPadding="3">
+					<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+				</box>
+				<expression><![CDATA[$F{totalPrice}]]></expression>
+			</element>
+		</band>
+	</detail>
+	<pageFooter height="28" splitType="Stretch">
+		<element kind="textField" uuid="7584f2ca-4472-4dd6-8222-43bec5eb2adc" x="0" y="4" width="435" height="24" forecolor="#6B7280" fontName="DejaVu Sans" fontSize="8.0" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7"/>
+			<expression><![CDATA["PHIẾU MUA SẮM  •  " + ($P{TICKET_CODE} != null ? $P{TICKET_CODE} : "—")]]></expression>
+		</element>
+		<element kind="textField" uuid="724e1b83-0701-43d6-9590-61c68de2f24e" x="435" y="4" width="120" height="24" forecolor="#6B7280" fontName="DejaVu Sans" fontSize="8.0" blankWhenNull="true" hTextAlign="Right" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7"/>
+			<expression><![CDATA["Trang " + $V{PAGE_NUMBER}]]></expression>
+		</element>
+	</pageFooter>
+	<summary height="186" splitType="Prevent">
+		<element kind="staticText" uuid="48682159-9b45-4232-a15e-25259dfd7366" x="0" y="0" width="361" height="36" forecolor="#252A32" backcolor="#E9ECF0" mode="Opaque" fontName="DejaVu Sans" fontSize="10.0" bold="true" hTextAlign="Left" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<text><![CDATA[TỔNG KINH PHÍ DỰ TOÁN]]></text>
+		</element>
+		<element kind="textField" uuid="d9972d2c-0af1-4928-9f83-6eeeb6a5e057" x="361" y="0" width="194" height="36" forecolor="#252A32" backcolor="#E9ECF0" mode="Opaque" fontName="DejaVu Sans" fontSize="12.0" textAdjust="ScaleFont" bold="true" blankWhenNull="true" hTextAlign="Right" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<expression><![CDATA[($P{TOTAL_AMOUNT} != null ? $P{TOTAL_AMOUNT} : "—") + " " + ($P{CURRENCY} != null ? $P{CURRENCY} : "VND")]]></expression>
+		</element>
+		<element kind="staticText" uuid="2a248511-41f3-49dd-9309-6fd4353e4597" x="0" y="52" width="277" height="28" forecolor="#252A32" backcolor="#F3F4F6" mode="Opaque" fontName="DejaVu Sans" fontSize="10.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<text><![CDATA[NGƯỜI ĐỀ NGHỊ]]></text>
+		</element>
+		<element kind="frame" uuid="77df076a-e83a-462a-ade0-9cb3514ed1b3" x="0" y="80" width="277" height="106">
+			<box>
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<element kind="staticText" uuid="1b1a730c-0eba-462f-ba2a-fa39d7eddf09" x="0" y="0" width="277" height="24" forecolor="#6B7280" fontName="DejaVu Sans" fontSize="9.0" hTextAlign="Center" vTextAlign="Middle">
+				<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7"/>
+				<text><![CDATA[(Ký và ghi rõ họ tên)]]></text>
+			</element>
+			<element kind="textField" uuid="d8ec6c45-fd9b-4b71-9aaf-059fa26536fa" x="0" y="76" width="277" height="30" forecolor="#252A32" fontName="DejaVu Sans" fontSize="10.0" textAdjust="ScaleFont" bold="true" blankWhenNull="true" hTextAlign="Center" vTextAlign="Middle">
+				<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7"/>
+				<expression><![CDATA[($P{MAKER} != null ? $P{MAKER} : "—")]]></expression>
+			</element>
+		</element>
+		<element kind="staticText" uuid="0d9c4b9a-c5c9-4055-9bf1-933909d20d8a" x="277" y="52" width="278" height="28" forecolor="#252A32" backcolor="#F3F4F6" mode="Opaque" fontName="DejaVu Sans" fontSize="10.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+			<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7">
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<text><![CDATA[NGƯỜI PHÊ DUYỆT]]></text>
+		</element>
+		<element kind="frame" uuid="fe0ef03b-82a5-4228-9c3e-14bc17593540" x="277" y="80" width="278" height="106">
+			<box>
+				<pen lineWidth="0.5" lineColor="#A5ABB3"/>
+			</box>
+			<element kind="staticText" uuid="2cc6b875-7252-405f-ac81-5351b5f673e3" x="0" y="0" width="278" height="24" forecolor="#6B7280" fontName="DejaVu Sans" fontSize="9.0" hTextAlign="Center" vTextAlign="Middle">
+				<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7"/>
+				<text><![CDATA[(Ký và ghi rõ họ tên)]]></text>
+			</element>
+			<element kind="textField" uuid="2029c641-76dc-419d-a174-106f69ddeffd" x="0" y="76" width="278" height="30" forecolor="#252A32" fontName="DejaVu Sans" fontSize="10.0" textAdjust="ScaleFont" bold="true" blankWhenNull="true" hTextAlign="Center" vTextAlign="Middle">
+				<box topPadding="5" leftPadding="7" bottomPadding="5" rightPadding="7"/>
+				<expression><![CDATA[($P{CHECKER} != null ? $P{CHECKER} : "—")]]></expression>
+			</element>
+		</element>
+	</summary>
+</jasperReport>

@@ -1,0 +1,168 @@
+<div class="user-page">
+  <div class="page-title-bar">
+    <h2>User Management</h2>
+    <span class="sub-breadcrumb">Danh sách tài khoản</span>
+  </div>
+
+  <div class="toolbar" [formGroup]="searchForm">
+    <div class="search-field">
+      <i class="fa fa-search" aria-hidden="true"></i>
+      <input
+        id="user-search"
+        type="search"
+        aria-label="Tìm kiếm người dùng"
+        placeholder="Họ tên, Username hoặc Email..."
+        formControlName="searchKeyWord"
+        (input)="searchUser()"
+      />
+    </div>
+
+    <div class="toolbar-actions">
+      <button type="button" class="btn btn-dark" (click)="addUser()">
+        <i class="fa fa-user-plus" aria-hidden="true"> Add User</i>
+      </button>
+    </div>
+  </div>
+
+  <nav class="role-tabs" aria-label="Nhóm vai trò">
+    @for (role of roles; track role) {
+      <button
+        type="button"
+        [class.active]="selectedRole === role"
+        [attr.aria-pressed]="selectedRole === role"
+        aria-controls="user-role-panel"
+        (click)="selectRole(role)"
+      >
+        {{ role }} <span class="role-count">{{ roleCount(role) }}</span>
+      </button>
+    }
+  </nav>
+  <section id="user-role-panel" class="user-panel" aria-labelledby="list-title">
+    <div class="panel-heading">
+      <h2 id="list-title">Danh sách người dùng · {{ selectedRole }}</h2>
+      <span>{{ filteredUsers.length }} người dùng</span>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">
+              ID
+              <button
+                type="button"
+                class="btn-eye-toggle"
+                (click)="toggleAllIds()"
+                [title]="allVisibleIdsShown ? 'Ẩn tất cả ID' : 'Hiện tất cả ID'"
+              >
+                <i class="fa" [ngClass]="allVisibleIdsShown ? 'fa-eye-slash' : 'fa-eye'"></i>
+              </button>
+            </th>
+            <th scope="col">Username</th>
+            <th scope="col">Họ tên đầy đủ</th>
+            <th scope="col">Vai trò</th>
+            <th scope="col">Email</th>
+            <th scope="col">Enabled</th>
+            <th scope="col">Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (user of filteredUsers; track user.id) {
+            <tr>
+              <td class="id-cell">
+                <div class="id-content">
+                  <span class="masked-code">
+                    {{ isIdVisible(user.id) ? user.id : '••••••••' }}
+                  </span>
+
+                  <button
+                    type="button"
+                    class="btn-eye-toggle"
+                    (click)="toggleIdVisibility(user.id, $event)"
+                    [title]="isIdVisible(user.id) ? 'Ẩn ID' : 'Hiện ID'"
+                    [attr.aria-label]="isIdVisible(user.id) ? 'Ẩn ID' : 'Hiện ID'"
+                  >
+                    <i
+                      class="fa"
+                      [ngClass]="isIdVisible(user.id) ? 'fa-eye-slash' : 'fa-eye'"
+                      aria-hidden="true"
+                    ></i>
+                  </button>
+                </div>
+              </td>
+              <td class="username-cell">
+                {{ user.username }}
+                @if (isSelf(user)) {
+                  <span class="badge-self">Bạn</span>
+                }
+              </td>
+              <td>{{ user.fullName || 'Chưa cập nhật họ tên' }}</td>
+              <td>
+                <span class="role-badge">{{ user.role }}</span>
+              </td>
+              <td>{{ user.email }}</td>
+              <td>
+                <button
+                  type="button"
+                  class="btn btn-small"
+                  [class.btn-enable]="!user.enabled"
+                  [class.btn-disable]="user.enabled"
+                  [disabled]="togglingId === user.id || isSelf(user)"
+                  [title]="isSelf(user) ? 'Không thể tự vô hiệu hóa tài khoản của chính mình' : ''"
+                  (click)="toggleUser(user.id)"
+                >
+                  {{ togglingId === user.id ? '...' : user.enabled ? 'Disable' : 'Enable' }}
+                </button>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button
+                    type="button"
+                    class="btn-view"
+                    title="Xem chi tiết user"
+                    (click)="openViewUser(user, $event)"
+                    aria-label="Xem người dùng"
+                  >
+                    <i class="fa fa-eye"></i>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn-edit"
+                    title="Chỉnh sửa"
+                    (click)="editUser(user.id)"
+                  >
+                    <i class="fa fa-pencil" aria-hidden="true"></i>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn-delete"
+                    [disabled]="deletingId === user.id || isSelf(user)"
+                    [title]="isSelf(user) ? 'Không thể xóa chính mình' : 'Xóa'"
+                    (click)="deleteUser(user.id)"
+                    aria-label="Xóa người dùng"
+                  >
+                    <i
+                      class="fa"
+                      [class.fa-trash]="deletingId !== user.id"
+                      [class.fa-spinner]="deletingId === user.id"
+                      [class.fa-spin]="deletingId === user.id"
+                      aria-hidden="true"
+                    ></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="empty-state">Không có người dùng phù hợp.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <app-view-user></app-view-user>
+</div>

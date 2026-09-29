@@ -1,0 +1,106 @@
+
+server.port=8080
+spring.application.name=shopping
+
+# PostgreSQL
+spring.datasource.url=jdbc:postgresql://localhost:5432/shopping_db
+spring.datasource.username=postgres
+spring.datasource.password=your_database_password
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+spring.jpa.hibernate.ddl-auto=update
+spring.servlet.multipart.max-file-size=10MB
+spring.servlet.multipart.max-request-size=11MB
+spring.sql.init.mode=always
+spring.sql.init.schema-locations=classpath:db/migration/add-user-full-name.sql
+spring.sql.init.encoding=UTF-8
+
+# The migration is one PostgreSQL DO block containing internal semicolons.
+spring.sql.init.separator=^^^ END OF SCRIPT ^^^
+spring.jpa.show-sql=false
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+# Keycloak Configuration
+keycloak.auth-server-url=http://localhost:8081
+keycloak.realm=Shopping
+keycloak.client-id=shopping-backend
+keycloak.client-secret=your_keycloak_client_secret
+
+keycloak.admin-username=admin
+keycloak.admin-password=your_keycloak_admin_password
+
+# JWK Set URI
+spring.security.oauth2.resourceserver.jwt.jwk-set-uri=\
+  http://localhost:8081/realms/Shopping/protocol/openid-connect/certs
+
+# # OIDC Browser Login 
+# auth.oidc.callback-uri=http://localhost:8080/api/auth/callback
+# auth.oidc.frontend-callback-uri=http://localhost:4200/auth/callback
+# auth.oidc.frontend-login-uri=http://localhost:4200/login
+# auth.cookie.secure=false
+
+# Camunda 7 Engine & Database Configuration (HikariCP)
+spring.datasource.hikari.jdbc-url=jdbc:postgresql://localhost:5432/shopping_db
+spring.datasource.hikari.username=postgres
+spring.datasource.hikari.password=your_database_password
+spring.datasource.hikari.driver-class-name=org.postgresql.Driver
+
+camunda.bpm.database.schema-update=true
+camunda.bpm.job-execution.enabled=true
+camunda.bpm.metrics.history-level=full
+camunda.bpm.generic-properties.properties.history-time-to-live=P30D
+camunda.bpm.filter.create=All tasks
+camunda.bpm.webapp.index-redirect-enabled=true
+camunda.bpm.web.filter.auth.enabled=false
+
+# Camunda Admin User
+camunda.bpm.admin-user.id=admin
+camunda.bpm.admin-user.password=your_camunda_admin_password
+camunda.bpm.admin-user.first-name=Admin
+camunda.bpm.admin-user.last-name=User
+camunda.bpm.admin-user.email=admin@example.com
+
+# Kafka Configuration
+spring.kafka.bootstrap-servers=localhost:9092
+spring.kafka.producer.key-serializer=org.apache.kafka.common.serialization.StringSerializer
+spring.kafka.producer.value-serializer=org.springframework.kafka.support.serializer.JsonSerializer
+# Preserve the existing event type id when relocating the internal Java model.
+spring.kafka.producer.properties.spring.json.type.mapping=com.example.shopping.integration.kafka.event.entity.ProcurementEvent:com.example.shopping.integration.kafka.model.ProcurementEvent
+spring.kafka.consumer.properties.spring.json.type.mapping=com.example.shopping.integration.kafka.event.entity.ProcurementEvent:com.example.shopping.integration.kafka.model.ProcurementEvent
+spring.kafka.producer.acks=1
+spring.kafka.producer.retries=1
+# Giảm linger để gửi ngay, max-block để không chặn API nếu Kafka chậm
+spring.kafka.producer.properties.linger.ms=0
+spring.kafka.producer.properties.max.block.ms=3000
+spring.kafka.producer.properties.delivery.timeout.ms=5000
+spring.kafka.producer.properties.request.timeout.ms=3000
+
+spring.kafka.consumer.group-id=shopping-group
+spring.kafka.consumer.auto-offset-reset=earliest
+
+spring.kafka.consumer.key-deserializer=org.apache.kafka.common.serialization.StringDeserializer
+spring.kafka.consumer.value-deserializer=org.springframework.kafka.support.serializer.JsonDeserializer
+
+# Cho phép deserialize event trong package project
+spring.kafka.consumer.properties.spring.json.trusted.packages=com.example.shopping.*
+
+# Nếu consumer chưa có offset thì đọc từ đầu
+spring.kafka.consumer.enable-auto-commit=true
+
+# Thread Pool (@Async)
+spring.task.execution.pool.core-size=4
+spring.task.execution.pool.max-size=8
+spring.task.execution.pool.queue-capacity=100
+spring.task.execution.thread-name-prefix=async-task-
+
+# Mail Configuration (MailHog SMTP)
+spring.mail.host=localhost
+spring.mail.port=1025
+#spring.mail.username=
+#spring.mail.password=
+spring.mail.protocol=smtp
+spring.mail.default-encoding=UTF-8
+spring.mail.properties.mail.smtp.auth=false
+spring.mail.properties.mail.smtp.starttls.enable=false
+spring.mail.properties.mail.smtp.starttls.required=false

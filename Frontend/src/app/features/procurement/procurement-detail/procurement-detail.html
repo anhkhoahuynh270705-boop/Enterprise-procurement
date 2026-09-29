@@ -1,0 +1,561 @@
+<div class="procurement-container">
+  <button type="button" class="btn btn-outline" routerLink="/procurement">&larr;Back</button>
+  <header class="app-top-header">
+    <div class="brand">
+      <h2>Enterprise Procurement Detail</h2>
+    </div>
+  </header>
+  @if (isLoading) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Đang tải thông tin phiếu mua sắm...</p>
+    </div>
+  } @else if (ticket; as currentTicket) {
+    <div class="detail-wrapper">
+      <div class="header-card">
+        <div class="header-main">
+          <div class="code-and-title">
+            <div class="badge-group">
+              <span class="ticket-badge">
+                {{ isFieldVisible('ticketCode') ? currentTicket.ticketCode : '••••••••' }}
+                <button
+                  type="button"
+                  class="btn-eye-toggle badge-eye"
+                  (click)="toggleFieldVisibility('ticketCode')"
+                  [title]="isFieldVisible('ticketCode') ? 'Ẩn mã phiếu' : 'Hiện mã phiếu'"
+                >
+                  <i
+                    class="fa"
+                    [ngClass]="isFieldVisible('ticketCode') ? 'fa-eye-slash' : 'fa-eye'"
+                  ></i>
+                </button>
+              </span>
+              <span class="badge" [ngClass]="getStatusClass(currentTicket.status)">
+                {{ getStatusText(currentTicket.status) }}
+              </span>
+              <span class="badge" [ngClass]="getPriorityClass(currentTicket.priority)">
+                {{ currentTicket.priority }}
+              </span>
+            </div>
+            <h1 class="ticket-title">{{ currentTicket.title }}</h1>
+            <div class="ticket-meta">
+              <span
+                >Phòng ban: <strong>{{ currentTicket.department || 'N/A' }}</strong></span
+              >
+              <span
+                >Người tạo: <strong>{{ currentTicket.makerUsername }}</strong></span
+              >
+              <span>Ngày tạo: {{ currentTicket.createdAt | date: 'HH:mm dd/MM/yyyy' }}</span>
+            </div>
+          </div>
+          <div class="header-actions">
+            @if (auth.hasRole('ADMIN', 'USER')) {
+              <button type="button" class="btn btn-outline" (click)="exportPdf()">
+                <i class="fa fa-download"></i>
+                In Phiếu
+              </button>
+            }
+
+            @if (auth.hasRole('ADMIN', 'USER')) {
+              <button type="button" class="btn btn-outline" (click)="exportExcel()">
+                <i class="fa fa-download"></i>
+                Xuất Excel
+              </button>
+            }
+            @if (canModifyTicket(currentTicket)) {
+              <a class="btn btn-outline" [routerLink]="['/procurement/edit', currentTicket.id]">
+                Sửa Phiếu
+              </a>
+            }
+            @if (
+              auth.hasRole('ADMIN', 'USER') &&
+              (currentTicket.status === 'DRAFT' || currentTicket.status === 'REJECTED')
+            ) {
+              <button type="button" class="btn btn-primary" (click)="submitTicket()">
+                Nộp Duyệt
+              </button>
+            }
+            @if (
+              auth.hasRole('ADMIN', 'CHECKER') &&
+              currentTicket.status === 'PENDING_APPROVAL' &&
+              currentTicket.camundaTaskId
+            ) {
+              <button type="button" class="btn btn-success" (click)="openReviewModal()">
+                Người Phê Duyệt
+              </button>
+            }
+            @if (canModifyTicket(currentTicket)) {
+              <button type="button" class="btn btn-danger" (click)="deleteTicket()">
+                Xóa Phiếu
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+      <div class="card stepper-card">
+        <h3 class="card-title">Quy Trình Phê Duyệt</h3>
+
+        <div class="stepper">
+          <div class="step step-completed">
+            <div class="step-indicator">APPROVED</div>
+            <div class="step-content">
+              <h4>1. Maker Lập Phiếu</h4>
+              <p>{{ currentTicket.makerUsername }}</p>
+              <span class="step-time">
+                {{ currentTicket.createdAt | date: 'HH:mm dd/MM/yyyy' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="step-divider" [class.divider-active]="currentTicket.status !== 'DRAFT'"></div>
+          <div
+            class="step"
+            [ngClass]="currentTicket.status !== 'DRAFT' ? 'step-completed' : 'step-pending'"
+          >
+            <div class="step-indicator">
+              {{ currentTicket.status !== 'DRAFT' ? 'APPROVED' : '2' }}
+            </div>
+            <div class="step-content">
+              <h4>2. Kiểm Tra Ngân Sách</h4>
+              <p>Service Task tự động</p>
+
+              @if (currentTicket.status !== 'DRAFT') {
+                <span class="step-time">Đạt ngân sách</span>
+              }
+            </div>
+          </div>
+          <div
+            class="step-divider"
+            [class.divider-active]="
+              currentTicket.status === 'APPROVED' || currentTicket.status === 'REJECTED'
+            "
+          ></div>
+          <div
+            class="step"
+            [ngClass]="{
+              'step-completed':
+                currentTicket.status === 'APPROVED' || currentTicket.status === 'REJECTED',
+              'step-active': currentTicket.status === 'PENDING_APPROVAL',
+              'step-pending': currentTicket.status === 'DRAFT',
+            }"
+          >
+            <div class="step-indicator">
+              @if (currentTicket.status === 'APPROVED' || currentTicket.status === 'REJECTED') {
+                <span>APPROVED</span>
+              } @else if (currentTicket.status === 'PENDING_APPROVAL') {
+                <span>Pending</span>
+              } @else {
+                <span>3</span>
+              }
+            </div>
+
+            <div class="step-content">
+              <h4>3. Checker Thẩm Định</h4>
+              <p>{{ currentTicket.checkerUsername || 'Chờ người kiểm duyệt' }}</p>
+              @if (currentTicket.camundaTaskId) {
+                <span class="step-time">
+                  Task:
+                  {{ isFieldVisible('camundaTaskId') ? currentTicket.camundaTaskId : '••••••••' }}
+                  <button
+                    type="button"
+                    class="btn-eye-toggle step-eye"
+                    (click)="toggleFieldVisibility('camundaTaskId')"
+                    [title]="isFieldVisible('camundaTaskId') ? 'Ẩn Task ID' : 'Hiện Task ID'"
+                  >
+                    <i
+                      class="fa"
+                      [ngClass]="isFieldVisible('camundaTaskId') ? 'fa-eye-slash' : 'fa-eye'"
+                    ></i>
+                  </button>
+                </span>
+              }
+            </div>
+          </div>
+
+          <div
+            class="step-divider"
+            [class.divider-active]="
+              currentTicket.status === 'APPROVED' || currentTicket.status === 'REJECTED'
+            "
+          ></div>
+
+          <div
+            class="step"
+            [ngClass]="{
+              'step-completed': currentTicket.status === 'APPROVED',
+              'step-rejected': currentTicket.status === 'REJECTED',
+              'step-pending':
+                currentTicket.status === 'DRAFT' || currentTicket.status === 'PENDING_APPROVAL',
+            }"
+          >
+            <div class="step-indicator">
+              @if (currentTicket.status === 'APPROVED') {
+                <span>APPROVED</span>
+              } @else if (currentTicket.status === 'REJECTED') {
+                <span>REJECTED</span>
+              } @else {
+                <span>4</span>
+              }
+            </div>
+
+            <div class="step-content">
+              <h4>4. Kết Quả</h4>
+              <p>
+                {{
+                  currentTicket.status === 'APPROVED'
+                    ? 'Đã duyệt'
+                    : currentTicket.status === 'REJECTED'
+                      ? 'Từ chối'
+                      : 'Chưa hoàn tất'
+                }}
+              </p>
+              @if (currentTicket.approvedAt) {
+                <span class="step-time">
+                  {{ currentTicket.approvedAt | date: 'HH:mm dd/MM/yyyy' }}
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+        @if (currentTicket.checkerComment) {
+          <div
+            class="checker-comment-box"
+            [ngClass]="currentTicket.status === 'APPROVED' ? 'approved' : 'rejected'"
+          >
+            <strong>Ý kiến Checker ({{ currentTicket.checkerUsername }}):</strong>
+            <p>"{{ currentTicket.checkerComment }}"</p>
+          </div>
+        }
+      </div>
+      <div class="info-grid">
+        <div class="card">
+          <h3 class="card-title">Thông Tin Chung</h3>
+          <table class="info-table">
+            <tr>
+              <td class="lbl">Mã phiếu:</td>
+              <td>
+                <div class="code-with-eye">
+                  <strong>{{
+                    isFieldVisible('ticketCode') ? currentTicket.ticketCode : '••••••••'
+                  }}</strong>
+                  <button
+                    type="button"
+                    class="btn-eye-toggle"
+                    (click)="toggleFieldVisibility('ticketCode')"
+                    [title]="isFieldVisible('ticketCode') ? 'Ẩn mã phiếu' : 'Hiện mã phiếu'"
+                  >
+                    <i
+                      class="fa"
+                      [ngClass]="isFieldVisible('ticketCode') ? 'fa-eye-slash' : 'fa-eye'"
+                    ></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td class="lbl">Phòng ban:</td>
+              <td>{{ currentTicket.department || 'N/A' }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Lý do mua sắm:</td>
+              <td>{{ currentTicket.reason || 'Không có ghi chú' }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Người lập:</td>
+              <td>{{ currentTicket.makerUsername }}</td>
+            </tr>
+            <tr>
+              <td class="lbl">Ngày tạo:</td>
+              <td>{{ currentTicket.createdAt | date: 'HH:mm:ss dd/MM/yyyy' }}</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Trạng Thái & Hạ Tầng</h3>
+
+          <table class="info-table">
+            <tr>
+              <td class="lbl">Tổng kinh phí:</td>
+              <td class="total-highlight">
+                {{ currentTicket.totalAmount | number: '1.0-0' }} {{ currentTicket.currency }}
+              </td>
+            </tr>
+            <tr>
+              <td class="lbl">Trạng thái:</td>
+              <td>
+                <span class="badge" [ngClass]="getStatusClass(currentTicket.status)">
+                  {{ currentTicket.status }}
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td class="lbl">Mức độ ưu tiên:</td>
+              <td>
+                <span class="badge" [ngClass]="getPriorityClass(currentTicket.priority)">
+                  {{ currentTicket.priority }}
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td class="lbl">Instance ID:</td>
+              <td>
+                <div class="code-with-eye">
+                  <code>{{
+                    isFieldVisible('instanceId')
+                      ? currentTicket.camundaProcessInstanceId || 'Chưa khởi tạo process'
+                      : currentTicket.camundaProcessInstanceId
+                        ? '••••••••'
+                        : 'Chưa khởi tạo process'
+                  }}</code>
+                  @if (currentTicket.camundaProcessInstanceId) {
+                    <button
+                      type="button"
+                      class="btn-eye-toggle"
+                      (click)="toggleFieldVisibility('instanceId')"
+                      [title]="isFieldVisible('instanceId') ? 'Ẩn Instance ID' : 'Hiện Instance ID'"
+                    >
+                      <i
+                        class="fa"
+                        [ngClass]="isFieldVisible('instanceId') ? 'fa-eye-slash' : 'fa-eye'"
+                      ></i>
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td class="lbl">Cập nhật lần cuối:</td>
+              <td>
+                {{
+                  currentTicket.updatedAt || currentTicket.createdAt | date: 'HH:mm:ss dd/MM/yyyy'
+                }}
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="card table-card">
+        <div class="card-header-row">
+          <div>
+            <h3 class="card-title">
+              Danh Mục Hàng Hóa / Dịch Vụ Mua Sắm ({{ currentTicket.items.length }} mặt hàng)
+            </h3>
+            <p class="card-subtitle">Chi tiết các hạng mục được xuất trên PDF và bảng tính Excel</p>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 50px">STT</th>
+                <th>
+                  Mã hàng
+                  <button
+                    type="button"
+                    class="btn-eye-toggle th-eye"
+                    (click)="toggleAllItemCodes()"
+                    [title]="
+                      currentTicket.items && visibleItemCodes.size === currentTicket.items.length
+                        ? 'Ẩn tất cả mã hàng'
+                        : 'Hiện tất cả mã hàng'
+                    "
+                  >
+                    <i
+                      class="fa"
+                      [ngClass]="
+                        currentTicket.items && visibleItemCodes.size === currentTicket.items.length
+                          ? 'fa-eye-slash'
+                          : 'fa-eye'
+                      "
+                    ></i>
+                  </button>
+                </th>
+                <th>Tên hàng hóa / Mô tả dịch vụ</th>
+                <th>Phân loại</th>
+                <th style="text-align: right">Số lượng</th>
+                <th>Đơn vị</th>
+                <th style="text-align: right">Đơn giá</th>
+                <th style="text-align: right">Thành tiền</th>
+                <th>Nhà cung cấp dự kiến</th>
+                <th>Ghi chú</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (item of currentTicket.items; track $index; let idx = $index) {
+                <tr>
+                  <td>{{ idx + 1 }}</td>
+                  <td>
+                    <div class="code-with-eye">
+                      <code>{{
+                        isItemCodeVisible(idx)
+                          ? item.itemCode || '---'
+                          : item.itemCode
+                            ? '••••••••'
+                            : '---'
+                      }}</code>
+                      @if (item.itemCode) {
+                        <button
+                          type="button"
+                          class="btn-eye-toggle"
+                          (click)="toggleItemCodeVisibility(idx)"
+                          [title]="isItemCodeVisible(idx) ? 'Ẩn mã hàng' : 'Hiện mã hàng'"
+                        >
+                          <i
+                            class="fa"
+                            [ngClass]="isItemCodeVisible(idx) ? 'fa-eye-slash' : 'fa-eye'"
+                          ></i>
+                        </button>
+                      }
+                    </div>
+                  </td>
+                  <td class="font-bold">{{ item.itemName }}</td>
+                  <td>
+                    <span class="category-tag">{{ item.category || 'Mặc định' }}</span>
+                  </td>
+                  <td style="text-align: right">{{ item.quantity | number }}</td>
+                  <td>{{ item.unit || 'Cái' }}</td>
+                  <td style="text-align: right">{{ item.unitPrice | number: '1.0-2' }}</td>
+                  <td style="text-align: right" class="font-bold text-primary">
+                    {{ item.totalPrice | number: '1.0-2' }}
+                  </td>
+                  <td>{{ item.supplierName || 'N/A' }}</td>
+                  <td class="text-muted">{{ item.notes || '-' }}</td>
+                </tr>
+              }
+            </tbody>
+
+            <tfoot>
+              <tr class="tfoot-row">
+                <td colspan="7" style="text-align: right; font-weight: 700">TỔNG CỘNG:</td>
+                <td style="text-align: right; font-weight: 800; font-size: 15px; color: #2563eb">
+                  {{ currentTicket.totalAmount | number: '1.0-2' }} {{ currentTicket.currency }}
+                </td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  }
+  @if (isReviewModalOpen) {
+    <div class="modal-overlay" (click)="closeReviewModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Checker Phê Duyệt</h3>
+          <button
+            type="button"
+            class="btn-close"
+            (click)="closeReviewModal()"
+            [disabled]="isReviewing"
+          >
+            &times;
+          </button>
+        </div>
+        <form [formGroup]="reviewForm" (ngSubmit)="submitReview()">
+          <div class="modal-body">
+            <div class="review-info-box">
+              <p>
+                <strong>Mã phiếu:</strong>
+                {{ isFieldVisible('ticketCode') ? ticket?.ticketCode : '••••••••' }}
+                <button
+                  type="button"
+                  class="btn-eye-toggle"
+                  (click)="toggleFieldVisibility('ticketCode')"
+                  [title]="isFieldVisible('ticketCode') ? 'Ẩn mã phiếu' : 'Hiện mã phiếu'"
+                >
+                  <i
+                    class="fa"
+                    [ngClass]="isFieldVisible('ticketCode') ? 'fa-eye-slash' : 'fa-eye'"
+                  ></i>
+                </button>
+              </p>
+              <p>
+                <strong>Tổng số tiền:</strong>
+                {{ ticket?.totalAmount | number: '1.0-2' }} {{ ticket?.currency }}
+              </p>
+              <p><strong>Người lập:</strong> {{ ticket?.makerUsername }}</p>
+              @if (ticket?.camundaTaskId) {
+                <p>
+                  <strong>Task ID:</strong>
+                  {{ isFieldVisible('camundaTaskId') ? ticket?.camundaTaskId : '••••••••' }}
+                  <button
+                    type="button"
+                    class="btn-eye-toggle"
+                    (click)="toggleFieldVisibility('camundaTaskId')"
+                    [title]="isFieldVisible('camundaTaskId') ? 'Ẩn Task ID' : 'Hiện Task ID'"
+                  >
+                    <i
+                      class="fa"
+                      [ngClass]="isFieldVisible('camundaTaskId') ? 'fa-eye-slash' : 'fa-eye'"
+                    ></i>
+                  </button>
+                </p>
+              }
+            </div>
+            <div class="form-group">
+              <label>Quyết định phê duyệt:</label>
+              <div class="radio-group">
+                <label class="radio-label">
+                  <input type="radio" formControlName="approved" [value]="true" />
+                  <span class="text-approve">Đồng ý phê duyệt (APPROVE)</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" formControlName="approved" [value]="false" />
+                  <span class="text-reject">Từ chối phê duyệt (REJECT)</span>
+                </label>
+              </div>
+              @if (reviewForm.controls.approved.touched && reviewForm.controls.approved.invalid) {
+                <small class="error-message">Vui lòng chọn quyết định phê duyệt.</small>
+              }
+            </div>
+            <div class="form-group">
+              <label for="reviewComment">Ghi chú thẩm định / Lý do:</label>
+              <textarea
+                id="reviewComment"
+                rows="3"
+                formControlName="comment"
+                placeholder="Nhập nhận xét phê duyệt hoặc lý do từ chối phiếu..."
+              >
+              </textarea>
+              @if (
+                reviewForm.controls.comment.touched &&
+                reviewForm.controls.comment.hasError('maxlength')
+              ) {
+                <small class="error-message">Ghi chú tối đa 500 ký tự.</small>
+              }
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-outline"
+              (click)="closeReviewModal()"
+              [disabled]="isReviewing"
+            >
+              Hủy bỏ
+            </button>
+            <button
+              type="submit"
+              class="btn"
+              [ngClass]="reviewForm.controls.approved.value ? 'btn-success' : 'btn-danger'"
+              [disabled]="isReviewing || reviewForm.invalid"
+            >
+              @if (isReviewing) {
+                Đang gửi lên hệ thống...
+              } @else if (reviewForm.controls.approved.value) {
+                Xác nhận Duyệt
+              } @else {
+                Xác nhận Từ chối
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

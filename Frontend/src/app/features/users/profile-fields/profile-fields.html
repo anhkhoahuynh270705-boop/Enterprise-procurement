@@ -1,0 +1,73 @@
+<fieldset [formGroup]="form()">
+  <legend>Personal and employee details</legend>
+  <div class="profile-fields">
+    @for (field of fields; track field.name) {
+      <div>
+        <label [for]="'admin-user-' + field.name">{{ field.label }}</label>
+        @if (field.name === 'employeeId') {
+          <app-sensitive-input label="mã nhân viên" [recordKey]="form()">
+            <input
+              #sensitiveInput
+              [id]="'admin-user-' + field.name"
+              type="password"
+              [formControlName]="field.name"
+              [attr.maxlength]="field.max"
+            />
+          </app-sensitive-input>
+        } @else {
+          <input
+            [id]="'admin-user-' + field.name"
+            [type]="field.type"
+            [formControlName]="field.name"
+            [attr.maxlength]="field.max"
+          />
+        }
+        @if (form().get(field.name)?.touched && form().get(field.name)?.invalid) {
+          <span role="alert">{{ field.error }}</span>
+        }
+      </div>
+    }
+    <div>
+      <label for="admin-user-birthday">Date of birth</label>
+      <input id="admin-user-birthday" type="date" formControlName="dateOfBirth" [max]="today" />
+      @if (form().get('dateOfBirth')?.touched && form().get('dateOfBirth')?.invalid) {
+        <span role="alert">Enter a valid date on or before today.</span>
+      }
+    </div>
+    <div>
+      <label for="admin-user-gender">Gender</label>
+      <select id="admin-user-gender" formControlName="gender">
+        <option [ngValue]="null">Not specified</option>
+        <option value="MALE">Male</option>
+        <option value="FEMALE">Female</option>
+        <option value="OTHER">Other</option>
+      </select>
+      @if (form().get('gender')?.touched && form().get('gender')?.invalid) {
+        <span role="alert">Choose a gender from the list or select Not specified.</span>
+      }
+    </div>
+    <div>
+      <label for="admin-user-status">Employee status</label>
+      <select id="admin-user-status" formControlName="employeeStatus">
+        <option value="ACTIVE">Active</option>
+        <option value="INACTIVE">Inactive</option>
+      </select>
+      <small>Employment status is separate from account access (Enabled).</small>
+      @if (form().get('employeeStatus')?.touched && form().get('employeeStatus')?.invalid) {
+        <span role="alert">Choose Active or Inactive.</span>
+      }
+    </div>
+    <div class="wide">
+      <label for="admin-user-address">Address</label>
+      <textarea
+        id="admin-user-address"
+        formControlName="address"
+        maxlength="500"
+        rows="3"
+      ></textarea>
+      @if (form().get('address')?.touched && form().get('address')?.invalid) {
+        <span role="alert">Maximum 500 characters.</span>
+      }
+    </div>
+  </div>
+</fieldset>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông Báo Phiếu Mua Sắm</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f1f5f9;
+            margin: 0;
+            padding: 20px;
+        }
+        .card {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+        .header {
+            background: #0f172a;
+            color: #ffffff;
+            padding: 24px;
+            text-align: center;
+        }
+        .header h2 {
+            margin: 0 0 6px 0;
+            font-size: 20px;
+            letter-spacing: 0.5px;
+        }
+        .header p {
+            margin: 0;
+            font-size: 13px;
+            color: #94a3b8;
+        }
+        .content {
+            padding: 24px;
+        }
+        .greeting {
+            font-size: 15px;
+            color: #334155;
+            margin-bottom: 16px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #ffffff;
+            border-radius: 9999px;
+            margin-bottom: 16px;
+        }
+        .action-desc {
+            color: #334155;
+            margin: 0 0 16px 0;
+            font-size: 14px;
+        }
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+        .details-table tr {
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .details-table td {
+            padding: 10px 12px;
+        }
+        .details-table .label {
+            font-weight: 600;
+            color: #475569;
+            width: 140px;
+        }
+        .details-table .value {
+            color: #0f172a;
+        }
+        .comment-box {
+            padding: 10px 12px;
+            color: #b91c1c;
+            font-style: italic;
+            background-color: #fef2f2;
+            border-radius: 4px;
+        }
+        .footer {
+            background: #f8fafc;
+            padding: 16px;
+            text-align: center;
+            font-size: 12px;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <h2>ENTERPRISE PROCUREMENT</h2>
+            <p>Hệ Thống Mua Sắm &amp; Phê Duyệt Tự Động</p>
+        </div>
+        <div class="content">
+            <div class="greeting">Xin chào <strong th:text="${recipientName}">User</strong>,</div>
+            
+            <span class="badge" 
+                  th:style="'background-color: ' + ${badgeColor} + ';'"
+                  th:text="${badgeText}">ĐÃ PHÊ DUYỆT</span>
+            
+            <p class="action-desc" th:text="${actionDescription}">Mô tả hành động...</p>
+            
+            <table class="details-table">
+                <tr>
+                    <td class="label">Mã phiếu:</td>
+                    <td class="value"><strong style="color: #2563eb;" th:text="${ticketCode}">PR-2026-0001</strong></td>
+                </tr>
+                <tr>
+                    <td class="label">Tiêu đề:</td>
+                    <td class="value" th:text="${title}">Tiêu đề phiếu</td>
+                </tr>
+                <tr>
+                    <td class="label">Tổng số tiền:</td>
+                    <td class="value"><strong style="color: #0f172a;" th:text="${totalAmount} + ' ' + ${currency}">0 VND</strong></td>
+                </tr>
+                <tr>
+                    <td class="label">Người tạo (Maker):</td>
+                    <td class="value" th:text="${makerUsername}">maker</td>
+                </tr>
+                <tr th:if="${checkerUsername != null and !checkerUsername.isEmpty()}">
+                    <td class="label">Người duyệt (Checker):</td>
+                    <td class="value" th:text="${checkerUsername}">checker</td>
+                </tr>
+                <tr th:if="${comment != null and !comment.isEmpty()}">
+                    <td class="label" style="vertical-align: top;">Ý kiến phản hồi:</td>
+                    <td class="comment-box" th:text="${comment}">Ý kiến phản hồi ở đây</td>
+                </tr>
+                <tr>
+                    <td class="label">Thời gian:</td>
+                    <td class="value" th:text="${timestamp}">21/09/2026 10:00:00</td>
+                </tr>
+            </table>
+        </div>
+        <div class="footer">
+            Email này được gửi tự động từ hệ thống Enterprise khoa.<br>Vui lòng không trả lời trực tiếp email này.
+        </div>
+    </div>
+</body>
+</html>

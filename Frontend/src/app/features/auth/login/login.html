@@ -1,0 +1,24 @@
+<div class="login-wrapper">
+  <video
+    #bgVideo
+    class="login-background"
+    autoplay
+    [muted]="true"
+    muted
+    loop
+    playsinline
+    preload="auto"
+    src="/videos/introduce.mp4"
+  ></video>
+  <div class="background-overlay" aria-hidden="true"></div>
+  <div class="login-card">
+    <div class="login-header">
+      <h1>Đăng nhập</h1>
+      <p>Sử dụng tài khoản do quản trị viên cấp.</p>
+    </div>
+    <div class="login-form">
+      <a class="btn-login" [href]="auth.loginUrl">Đăng nhập</a>
+      <p class="auth-link">Chưa có tài khoản? Vui lòng liên hệ quản trị viên.</p>
+    </div>
+  </div>
+</div>

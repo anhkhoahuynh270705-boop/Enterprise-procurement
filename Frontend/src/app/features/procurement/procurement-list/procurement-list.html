@@ -1,0 +1,536 @@
+<div class="procurement-container">
+  <div class="page-title-bar">
+    <h2>Quản lý phiếu mua sắm</h2>
+    <span class="sub-breadcrumb">Phiếu đề xuất &amp; Phê duyệt</span>
+  </div>
+
+  <div class="tabs-container">
+    <div class="tabs">
+      @if (auth.hasRole('ADMIN', 'USER')) {
+        <button class="tab-btn" [class.active]="activeTab === 'ALL'" (click)="switchTab('ALL')">
+          Tất cả phiếu
+        </button>
+      }
+      @if (auth.hasRole('ADMIN', 'CHECKER')) {
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'CHECKER_TASKS'"
+          (click)="switchTab('CHECKER_TASKS')"
+        >
+          Hàng chờ duyệt của Checker
+          @if (checkerTasks.length > 0) {
+            <span class="count-badge">{{ checkerTasks.length }}</span>
+          }
+        </button>
+      }
+    </div>
+
+    <div class="action-buttons">
+      @if (auth.hasRole('ADMIN', 'USER')) {
+        <button class="btn btn-outline" (click)="openImportModal()">
+          <i class="fa fa-upload" aria-hidden="true"></i>
+          Import Excel
+        </button>
+        <button class="btn btn-outline" (click)="exportAllExcel()">
+          <i class="fa fa-download" aria-hidden="true"></i>
+          Export Excel
+        </button>
+        <a routerLink="/procurement/create" class="btn btn-primary">
+          <i class="fa fa-plus" aria-hidden="true"></i>
+          Tạo phiếu mới
+        </a>
+      }
+    </div>
+  </div>
+  @if (activeTab === 'ALL') {
+    <div class="toolbar" [formGroup]="filtersForm">
+      <div class="search-box">
+        <i class="fa fa-search" aria-hidden="true"></i>
+        <input
+          type="text"
+          placeholder="Tìm theo mã phiếu, tiêu đề, phòng ban, maker..."
+          formControlName="searchQuery"
+          (input)="applyFilter()"
+        />
+      </div>
+
+      <div class="filter-box">
+        <i class="fa fa-filter" aria-hidden="true"></i>
+        <select formControlName="selectedStatus" (change)="onStatusChange()">
+          <option value="">Tất cả trạng thái</option>
+          <option value="DRAFT">Bản nháp (Draft)</option>
+          <option value="PENDING_APPROVAL">Chờ người kiểm duyệt</option>
+          <option value="APPROVED">Đã phê duyệt</option>
+          <option value="REJECTED">Đã từ chối</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-card">
+      @if (isLoading) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Đang tải danh sách phiếu mua sắm...</p>
+        </div>
+      } @else if (filteredTickets.length === 0) {
+        <div class="empty-state">
+          <h3>Chưa có phiếu mua sắm nào</h3>
+          <p>Hãy tạo phiếu mới hoặc sử dụng tính năng Import Excel để nạp danh sách vật tư.</p>
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>
+                  Mã phiếu
+                  <button
+                    type="button"
+                    class="btn-eye-toggle"
+                    (click)="toggleAllCodes()"
+                    [title]="
+                      visibleCodes.size > 0 && visibleCodes.size === filteredTickets.length
+                        ? 'Ẩn tất cả mã phiếu'
+                        : 'Hiện tất cả mã phiếu'
+                    "
+                  >
+                    <i
+                      class="fa"
+                      [ngClass]="
+                        visibleCodes.size > 0 && visibleCodes.size === filteredTickets.length
+                          ? 'fa-eye-slash'
+                          : 'fa-eye'
+                      "
+                    ></i>
+                  </button>
+                </th>
+                <th>Tiêu đề yêu cầu</th>
+                <th>Phòng ban</th>
+                <th>Tổng kinh phí</th>
+                <th>Mức ưu tiên</th>
+                <th>Trạng thái</th>
+                <th>Maker</th>
+                <th>Checker</th>
+                <th>Ngày tạo</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ticket of filteredTickets; track ticket.id) {
+                <tr>
+                  <td class="code-cell">
+                    <div class="code-with-eye">
+                      <a [routerLink]="['/procurement', ticket.id]">{{
+                        isCodeVisible(ticket.id) ? ticket.ticketCode : '••••••••'
+                      }}</a>
+                      <button
+                        type="button"
+                        class="btn-eye-toggle"
+                        (click)="toggleCodeVisibility(ticket.id, $event)"
+                        [title]="isCodeVisible(ticket.id) ? 'Ẩn mã phiếu' : 'Hiện mã phiếu'"
+                      >
+                        <i
+                          class="fa"
+                          [ngClass]="isCodeVisible(ticket.id) ? 'fa-eye-slash' : 'fa-eye'"
+                        ></i>
+                      </button>
+                    </div>
+                  </td>
+                  <td class="title-cell">
+                    <strong>{{ ticket.title }}</strong>
+                    <div class="meta-sub">{{ ticket.items?.length || 0 }} hạng mục vật tư</div>
+                  </td>
+                  <td>{{ ticket.department || '—' }}</td>
+                  <td class="amount-cell">
+                    {{ ticket.totalAmount | number: '1.0-0' }} {{ ticket.currency }}
+                  </td>
+                  <td>
+                    <span class="badge" [ngClass]="getPriorityClass(ticket.priority)">
+                      {{ ticket.priority }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge" [ngClass]="getStatusClass(ticket.status)">
+                      {{ getStatusText(ticket.status) }}
+                    </span>
+                  </td>
+                  <td>{{ ticket.makerUsername }}</td>
+                  <td>{{ ticket.checkerUsername || '—' }}</td>
+                  <td>{{ ticket.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td class="actions-cell">
+                    <div class="actions-wrapper">
+                      @if (auth.hasRole('ADMIN', 'USER')) {
+                        <div class="action-row export-row">
+                          <button
+                            class="btn-icon"
+                            title="Xuất PDF phiếu"
+                            (click)="exportTicketPdf(ticket)"
+                          >
+                            <i class="fa fa-download" aria-hidden="true"></i>
+                            PDF
+                          </button>
+                          <button
+                            class="btn-icon"
+                            title="Xuất Excel phiếu"
+                            (click)="exportTicketExcel(ticket)"
+                          >
+                            <i class="fa fa-download" aria-hidden="true"></i>
+                            XLSX
+                          </button>
+                          @if (ticket.status === 'DRAFT' || ticket.status === 'REJECTED') {
+                            <button
+                              class="btn-sm btn-submit"
+                              title="Nộp lên Checker duyệt"
+                              (click)="submitTicket(ticket)"
+                            >
+                              <i class="fa fa-check" aria-hidden="true"></i>
+                              Nộp duyệt
+                            </button>
+                          }
+                        </div>
+                      }
+                      <div class="action-row crud-row">
+                        <a
+                          class="btn-action btn-view"
+                          title="Xem chi tiết phiếu"
+                          [routerLink]="['/procurement', ticket.id]"
+                        >
+                          <i class="fa fa-eye" aria-hidden="true"></i>
+                        </a>
+                        @if (canModifyTicket(ticket)) {
+                          <a
+                            class="btn-action btn-edit"
+                            title="Sửa phiếu"
+                            [routerLink]="['/procurement/edit', ticket.id]"
+                          >
+                            <i class="fa fa-pencil" aria-hidden="true"></i>
+                          </a>
+                          <button
+                            class="btn-action btn-delete"
+                            title="Xóa phiếu"
+                            (click)="deleteTicket(ticket)"
+                          >
+                            <i class="fa fa-trash" aria-hidden="true"></i>
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    @if (totalPages > 1) {
+      <div class="ticket-pagination">
+        <button
+          type="button"
+          class="btn btn-outline"
+          (click)="goToPage(currentPage - 1)"
+          [disabled]="currentPage === 0"
+        >
+          Trang trước
+        </button>
+
+        <span class="ticket-pagination__info">
+          Trang {{ currentPage + 1 }} / {{ totalPages }}
+        </span>
+
+        <button
+          type="button"
+          class="btn btn-outline"
+          (click)="goToPage(currentPage + 1)"
+          [disabled]="currentPage >= totalPages - 1"
+        >
+          Trang sau
+        </button>
+      </div>
+    }
+  }
+  @if (activeTab === 'CHECKER_TASKS') {
+    <div class="table-card">
+      <div class="card-header">
+        <h3>Phê duyệt</h3>
+        <p>
+          Các phiếu đề nghị mua sắm đã qua bước thẩm định ngân sách và đang chờ ý kiến người duyệt.
+        </p>
+      </div>
+
+      @if (isLoading) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Đang tải phiếu chờ phê duyệt...</p>
+        </div>
+      } @else if (checkerTasks.length === 0) {
+        <div class="empty-state">
+          <h3>Hiện tại không có nhiệm vụ nào cần duyệt</h3>
+          <p>Tất cả các phiếu mua sắm đều đã được xử lý xong.</p>
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>
+                  Mã phiếu
+                  <button
+                    type="button"
+                    class="btn-eye-toggle"
+                    (click)="toggleAllCodes()"
+                    [title]="visibleCodes.size > 0 ? 'Ẩn tất cả mã phiếu' : 'Hiện tất cả mã phiếu'"
+                  >
+                    <i class="fa" [ngClass]="visibleCodes.size > 0 ? 'fa-eye-slash' : 'fa-eye'"></i>
+                  </button>
+                </th>
+                <th>Tiêu đề</th>
+                <th>Phòng ban</th>
+                <th>Tổng kinh phí</th>
+                <th>Maker</th>
+                <th>Tên nhiệm vụ</th>
+                <th>Thời gian gửi</th>
+                <th>Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (task of checkerTasks; track task.taskId) {
+                <tr>
+                  <td class="code-cell">
+                    <div class="code-with-eye">
+                      <a [routerLink]="['/procurement', task.ticket?.id]">{{
+                        isCodeVisible(task.ticket?.id || task.taskId)
+                          ? task.ticket?.ticketCode
+                          : '••••••••'
+                      }}</a>
+                      <button
+                        type="button"
+                        class="btn-eye-toggle"
+                        (click)="toggleCodeVisibility(task.ticket?.id || task.taskId, $event)"
+                        [title]="
+                          isCodeVisible(task.ticket?.id || task.taskId)
+                            ? 'Ẩn mã phiếu'
+                            : 'Hiện mã phiếu'
+                        "
+                      >
+                        <i
+                          class="fa"
+                          [ngClass]="
+                            isCodeVisible(task.ticket?.id || task.taskId)
+                              ? 'fa-eye-slash'
+                              : 'fa-eye'
+                          "
+                        ></i>
+                      </button>
+                    </div>
+                  </td>
+                  <td>
+                    <strong>{{ task.ticket?.title }}</strong>
+                  </td>
+                  <td>{{ task.ticket?.department || '—' }}</td>
+                  <td class="amount-cell">
+                    {{ task.ticket?.totalAmount | number: '1.0-0' }} {{ task.ticket?.currency }}
+                  </td>
+                  <td>{{ task.ticket?.makerUsername }}</td>
+                  <td>
+                    <span class="bpmn-badge">{{ task.taskName }}</span>
+                  </td>
+                  <td>{{ task.createTime | date: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td>
+                    <button class="btn btn-primary btn-sm" (click)="openReviewModal(task)">
+                      Xem &amp; Phê duyệt
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+  @if (isReviewModalOpen) {
+    <div class="modal-overlay">
+      <div class="modal-card" [formGroup]="reviewForm">
+        <div class="modal-header">
+          <h3>
+            Phê duyệt Phiếu:
+            {{
+              isCodeVisible(selectedTask?.ticket?.id || selectedTask?.taskId || '')
+                ? selectedTask?.ticket?.ticketCode
+                : '••••••••'
+            }}
+          </h3>
+          <button class="btn-close" (click)="closeReviewModal()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="review-info-box">
+            <p><strong>Tiêu đề:</strong> {{ selectedTask?.ticket?.title }}</p>
+            <p>
+              <strong>Tổng kinh phí:</strong>
+              {{ selectedTask?.ticket?.totalAmount | number: '1.0-0' }}
+              {{ selectedTask?.ticket?.currency }}
+            </p>
+            <p>
+              <strong>Người đề nghị:</strong> {{ selectedTask?.ticket?.makerUsername }} ({{
+                selectedTask?.ticket?.department
+              }})
+            </p>
+            <p><strong>Lý do:</strong> {{ selectedTask?.ticket?.reason || 'Không có' }}</p>
+          </div>
+
+          <div class="form-group">
+            <label>Quyết định phê duyệt:</label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" [value]="true" formControlName="approved" />
+                <span class="text-approve">APPROVE</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" [value]="false" formControlName="approved" />
+                <span class="text-reject">REJECT</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Ý kiến nhận xét / Ghi chú:</label>
+            <textarea
+              rows="3"
+              placeholder="Nhập ghi chú phê duyệt hoặc lý do từ chối..."
+              formControlName="comment"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-outline" (click)="closeReviewModal()" [disabled]="isReviewing">
+            Hủy
+          </button>
+          <button
+            class="btn"
+            [class.btn-success]="reviewForm.controls.approved.value"
+            [class.btn-danger]="!reviewForm.controls.approved.value"
+            (click)="submitReview()"
+            [disabled]="isReviewing"
+          >
+            {{
+              isReviewing
+                ? 'Đang xử lý...'
+                : reviewForm.controls.approved.value
+                  ? 'Xác nhận Phê duyệt'
+                  : 'Xác nhận Từ
+          chối'
+            }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+  @if (isImportModalOpen) {
+    <div class="modal-overlay">
+      <div class="modal-card modal-lg">
+        <div class="modal-header">
+          <h3>Nhập danh mục vật tư từ file Excel</h3>
+          <button class="btn-close" (click)="closeImportModal()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div
+            class="import-help"
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 12px;
+            "
+          >
+            <p style="margin: 0">
+              Chọn file Excel danh mục hàng hóa/thiết bị cần mua. Các dòng hợp lệ sẽ được tạo thành
+              phiếu và tự động gửi duyệt.
+            </p>
+            <!-- <button type="button" class="btn btn-outline btn-sm" (click)="downloadTemplate()" title="Tải file Excel mẫu">
+            <i class="fa fa-download"></i> Tải file mẫu Excel
+          </button> -->
+          </div>
+
+          <div class="file-upload-box">
+            <input
+              type="file"
+              accept=".xlsx, .xls"
+              (change)="onFileSelected($event)"
+              id="excelFileInput"
+            />
+            <label for="excelFileInput" class="file-drop-area">
+              @if (importFile) {
+                <span class="file-name"
+                  >{{ importFile.name }} ({{ (importFile.size / 1024).toFixed(1) }} KB)</span
+                >
+              } @else {
+                <span>Kéo thả file Excel vào đây hoặc bấm để duyệt file</span>
+              }
+            </label>
+          </div>
+          @if (importResult) {
+            <div class="import-result-box" [class.has-errors]="importResult.errorRows > 0">
+              <h4>{{ importResult.message }}</h4>
+              @if (importResult.createdTicket) {
+                <p class="success-note">
+                  Đã tạo phiếu và gửi duyệt:
+                  <strong>{{
+                    isCodeVisible(importResult.createdTicket.id)
+                      ? importResult.createdTicket.ticketCode
+                      : '••••••••'
+                  }}</strong>
+                  <button
+                    type="button"
+                    class="btn-eye-toggle"
+                    (click)="toggleCodeVisibility(importResult.createdTicket.id, $event)"
+                    [title]="
+                      isCodeVisible(importResult.createdTicket.id) ? 'Ẩn mã phiếu' : 'Hiện mã phiếu'
+                    "
+                  >
+                    <i
+                      class="fa"
+                      [ngClass]="
+                        isCodeVisible(importResult.createdTicket.id) ? 'fa-eye-slash' : 'fa-eye'
+                      "
+                    ></i>
+                  </button>
+                </p>
+              }
+
+              @if (importResult.errors && importResult.errors.length > 0) {
+                <div class="error-list-container">
+                  <h5>Danh sách lỗi phát hiện trong file:</h5>
+                  <ul>
+                    @for (err of importResult.errors; track $index) {
+                      <li>
+                        <strong>Dòng {{ err.rowNumber }} [{{ err.field }}]:</strong>
+                        {{ err.errorMessage }}
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" (click)="closeImportModal()" [disabled]="isImporting">
+            Đóng
+          </button>
+          <button
+            class="btn btn-primary"
+            (click)="doImport()"
+            [disabled]="!importFile || isImporting"
+          >
+            {{ isImporting ? 'Đang nhập và gửi duyệt...' : 'Import và gửi duyệt' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

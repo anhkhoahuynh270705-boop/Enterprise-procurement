@@ -1,0 +1,77 @@
+<button type="button" class="btn-outline" routerLink="/users">&larr; Back</button>
+<h1>Edit User</h1>
+<form [formGroup]="Userform" (ngSubmit)="onUpdate()">
+  <div>
+    <label for="edit-fullname">Họ tên đầy đủ</label>
+    <input
+      id="edit-fullname"
+      type="text"
+      formControlName="fullName"
+      autocomplete="name"
+      maxlength="255"
+    />
+    @if (Userform.controls.fullName.touched && Userform.controls.fullName.invalid) {
+      <span role="alert" style="color: red">Vui lòng nhập họ tên đầy đủ, tối đa 255 ký tự.</span>
+    }
+  </div>
+  <div>
+    <label> Username:</label>
+    <input type="text" formControlName="username" readonly />
+    @if (Userform.controls.username.touched && Userform.controls.username.invalid) {
+      <span style="color: red">username is required</span>
+    }
+  </div>
+  <div>
+    <label>Email:</label>
+    <input type="text" formControlName="email" />
+    @if (Userform.controls.email.touched && Userform.controls.email.invalid) {
+      <span style="color: red">email is required</span>
+    }
+    @if (Userform.controls.email.touched && Userform.controls.email.hasError('email')) {
+      <span style="color: red">email is invalid</span>
+    }
+  </div>
+  <div>
+    <label> First Name:</label>
+    <input type="text" formControlName="firstName" />
+    @if (Userform.controls.firstName.touched && Userform.controls.firstName.invalid) {
+      <span style="color: red">firstName is required</span>
+    }
+  </div>
+  <div>
+    <label> Last Name:</label>
+    <input type="text" formControlName="lastName" />
+    @if (Userform.controls.lastName.touched && Userform.controls.lastName.invalid) {
+      <span style="color: red">lastName is required</span>
+    }
+  </div>
+  <div>
+    <label>Role</label>
+    <select formControlName="role">
+      <option value="USER">USER</option>
+      <option value="ADMIN">ADMIN</option>
+      <option value="CHECKER">CHECKER</option>
+    </select>
+    @if (Userform.controls.role.touched && Userform.controls.role.invalid) {
+      <span style="color: red">role is required</span>
+    }
+  </div>
+  <div>
+    <label>Enabled:</label>
+    <input
+      type="checkbox"
+      formControlName="enabled"
+      [title]="isSelf ? 'Không thể tự vô hiệu hóa tài khoản của chính mình' : ''"
+    />
+    @if (isSelf) {
+      <small style="color: #6b7280; margin-left: 8px"
+        >(Không thể tự vô hiệu hóa tài khoản của chính mình)</small
+      >
+    }
+    @if (Userform.controls.enabled.touched && Userform.controls.enabled.invalid) {
+      <span style="color: red">enabled is required</span>
+    }
+  </div>
+  <app-user-profile-fields [form]="Userform" />
+  <button type="submit" [disabled]="Userform.invalid || loading">Update</button>
+</form>

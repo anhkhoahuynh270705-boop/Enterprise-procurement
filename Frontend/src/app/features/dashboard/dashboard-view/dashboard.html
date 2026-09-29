@@ -1,0 +1,275 @@
+<section class="dashboard-page" aria-labelledby="dashboard-title">
+  <header class="report-header">
+    <div>
+      <h1 id="dashboard-title">Dashboard</h1>
+      <p class="report-subtitle">Theo dõi nhanh hoạt động mua sắm và vận hành hệ thống</p>
+    </div>
+    <div class="report-date">
+      <span class="live-dot" aria-hidden="true"></span>
+      Dữ liệu trực tiếp · {{ currentDate | date: 'dd/MM/yyyy' }}
+    </div>
+  </header>
+
+  <div class="filter-toolbar">
+    <label
+      >Tiền tệ
+      <select [value]="currency" (change)="changeCurrency($any($event.target).value)">
+        <option value="VND">VND</option>
+        @for (code of currencies; track code) {
+          @if (code !== 'VND') {
+            <option [value]="code">{{ code }}</option>
+          }
+        }
+      </select>
+    </label>
+    @for (filter of activeFilters; track filter[0]) {
+      <button type="button" class="filter-chip" (click)="selectFilter(filter[0], filter[1]!)">
+        {{ filterNames[filter[0]] }}: {{ filterLabel(filter[0], filter[1]!) }} ×
+      </button>
+    }
+    @if (activeFilters.length) {
+      <button type="button" (click)="clearFilters()">Xóa bộ lọc</button>
+    }
+  </div>
+  @if (hasLoadError) {
+    <div class="error-banner" role="alert">
+      <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+      <span>Không thể tải dữ liệu báo cáo.</span>
+      <button type="button" (click)="loadStats()">Thử lại</button>
+    </div>
+  }
+
+  @if (!hasLoadError) {
+    <div class="kpi-grid" aria-label="Các chỉ số chính">
+      <article class="kpi-card accent-blue">
+        <div class="kpi-heading">
+          <span>Tổng giá trị mua sắm</span>
+          <i class="fa fa-money" aria-hidden="true"></i>
+        </div>
+        <strong>{{ isLoading ? '—' : (totalProcurementAmount | number: '1.0-0') }}</strong>
+        <p>{{ currency }} · Theo bộ lọc hiện tại</p>
+      </article>
+
+      <article class="kpi-card accent-cyan">
+        <div class="kpi-heading">
+          <span>Tổng phiếu mua sắm</span>
+          <i class="fa fa-file-text-o" aria-hidden="true"></i>
+        </div>
+        <strong>{{ isLoading ? '—' : totalTickets }}</strong>
+        <p>{{ approvalRate }}% đã được phê duyệt</p>
+      </article>
+
+      <article class="kpi-card accent-amber">
+        <div class="kpi-heading">
+          <span>Chờ phê duyệt</span>
+          <i class="fa fa-clock-o" aria-hidden="true"></i>
+        </div>
+        <strong>{{ isLoading ? '—' : pendingTickets }}</strong>
+        <p>Cần Checker xử lý</p>
+      </article>
+
+      <article class="kpi-card accent-green">
+        <div class="kpi-heading">
+          <span>Người dùng hoạt động</span>
+          <i class="fa fa-users" aria-hidden="true"></i>
+        </div>
+        <strong>{{ isLoading ? '—' : activeUsers }}</strong>
+        <p>Toàn hệ thống · {{ totalUsers }} tài khoản</p>
+      </article>
+    </div>
+  }
+  @if (isLoading) {
+    <div class="loading-panel" aria-live="polite">
+      <span class="spinner" aria-hidden="true"></span>
+      Đang tổng hợp dữ liệu báo cáo...
+    </div>
+  } @else if (!hasLoadError) {
+    <div class="visual-grid">
+      <article class="report-card chart-card chart-wide">
+        <div class="card-header">
+          <div>
+            <h2>Giá trị mua sắm theo tháng</h2>
+            <p>Bấm vào cột để lọc tháng</p>
+          </div>
+          <span class="unit-label">{{ currency }}</span>
+        </div>
+        <div class="chart-container">
+          @if (monthlySummary.length) {
+            <canvas
+              #monthlyChart
+              role="img"
+              aria-label="Biểu đồ giá trị mua sắm theo tháng"
+            ></canvas>
+          } @else {
+            <div class="empty-state">Chưa có dữ liệu theo tháng</div>
+          }
+        </div>
+      </article>
+
+      <article class="report-card chart-card">
+        <div class="card-header">
+          <div>
+            <h2>Trạng thái phiếu</h2>
+            <p>Phân bổ trên tổng số {{ totalTickets }} phiếu</p>
+          </div>
+        </div>
+        <div class="chart-container doughnut-container">
+          @if (totalTickets) {
+            <canvas #statusChart role="img" aria-label="Biểu đồ phân bổ trạng thái phiếu"></canvas>
+            <div class="doughnut-total" aria-hidden="true">
+              <strong>{{ totalTickets }}</strong>
+              <span>Phiếu</span>
+            </div>
+          } @else {
+            <div class="empty-state">Chưa có phiếu mua sắm</div>
+          }
+        </div>
+      </article>
+
+      <article class="report-card chart-card">
+        <div class="card-header">
+          <div>
+            <h2>Phiếu theo phòng ban</h2>
+            <p>Bấm vào thanh để lọc phòng ban</p>
+          </div>
+        </div>
+        <div class="chart-container">
+          @if (departmentSummary.length) {
+            <canvas
+              #departmentChart
+              role="img"
+              aria-label="Biểu đồ số phiếu theo phòng ban"
+            ></canvas>
+          } @else {
+            <div class="empty-state">Chưa có dữ liệu phòng ban</div>
+          }
+        </div>
+      </article>
+
+      <article class="report-card chart-card">
+        <div class="card-header">
+          <div>
+            <h2>Giá trị theo nhà cung cấp</h2>
+            <p>Bấm vào thanh để lọc nhà cung cấp · {{ currency }}</p>
+          </div>
+        </div>
+        <div class="chart-container">
+          @if (supplierSummary.length) {
+            <canvas
+              #supplierChart
+              role="img"
+              aria-label="Giá trị mua sắm theo nhà cung cấp"
+            ></canvas>
+          } @else {
+            <div class="empty-state">Chưa có dữ liệu nhà cung cấp</div>
+          }
+        </div>
+      </article>
+      <article class="report-card table-card chart-wide">
+        <div class="card-header">
+          <div>
+            <h2>Phiếu mua sắm gần nhất</h2>
+            <p>Tối đa 50 phiếu gần nhất khớp bộ lọc; giá trị và sản phẩm theo lựa chọn</p>
+          </div>
+          <a routerLink="/procurement"
+            >Xem tất cả <i class="fa fa-angle-right" aria-hidden="true"></i
+          ></a>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Mã phiếu</th>
+                <th>Nội dung</th>
+                <th>Sản phẩm</th>
+                <th>Nhà cung cấp</th>
+                <th>Phòng ban</th>
+                <th>Giá trị</th>
+                <th>Trạng thái</th>
+                <th>Ngày tạo</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ticket of recentTickets; track ticket.id) {
+                <tr>
+                  <td>
+                    <app-sensitive-value
+                      [value]="ticket.ticketCode"
+                      [recordKey]="ticket.id"
+                      label="mã phiếu"
+                    />
+                    <a [routerLink]="['/procurement', ticket.id]" aria-label="Xem chi tiết phiếu"
+                      >Xem</a
+                    >
+                  </td>
+                  <td class="title-cell">{{ ticket.title }}</td>
+                  <td>
+                    @for (item of ticket.items; track $index) {
+                      <button
+                        type="button"
+                        class="field-filter"
+                        [attr.aria-pressed]="filters.product === productKey(item)"
+                        (click)="selectFilter('product', productKey(item))"
+                      >
+                        {{ item.itemName }}
+                      </button>
+                    }
+                  </td>
+                  <td>
+                    @for (supplier of suppliers(ticket); track supplier) {
+                      <button
+                        type="button"
+                        class="field-filter"
+                        [attr.aria-pressed]="filters.supplier === supplier"
+                        (click)="selectFilter('supplier', supplier)"
+                      >
+                        {{ supplier }}
+                      </button>
+                    }
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      class="field-filter"
+                      (click)="
+                        selectFilter('department', ticket.department?.trim() || 'Chưa xác định')
+                      "
+                    >
+                      {{ ticket.department || 'Chưa xác định' }}
+                    </button>
+                  </td>
+                  <td class="amount-cell">
+                    {{ ticket.totalAmount | number: '1.0-0' }} {{ ticket.currency }}
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      (click)="selectFilter('status', ticket.status)"
+                      class="status-pill"
+                      [class]="'status-pill status-' + ticket.status.toLowerCase()"
+                    >
+                      {{ getStatusLabel(ticket.status) }}
+                    </button>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      class="field-filter"
+                      (click)="selectFilter('month', ticket.createdAt.slice(0, 7))"
+                    >
+                      {{ ticket.createdAt | date: 'dd/MM/yyyy' }}
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="8" class="empty-row">Chưa có phiếu mua sắm</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+  }
+</section>

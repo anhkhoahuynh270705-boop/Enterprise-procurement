@@ -1,0 +1,130 @@
+<div class="supplier-form-page">
+    <div class="page-title-bar">
+        <a class="btn btn-outline" routerLink="/suppliers">
+            <i aria-hidden="true"></i>&larr; Back
+        </a>
+        <h2>Create suppliers</h2>
+        <span class="sub-breadcrumb">Nhập thông tin đối tác cung ứng mới</span>
+    </div>
+
+
+    <form [formGroup]="Createform" (ngSubmit)="onSubmit()" class="supplier-form-card">
+        <div class="form-section">
+            <h3 class="section-title">
+                <i class="fa fa-building" aria-hidden="true"></i> Thông tin cơ bản
+            </h3>
+
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="name">Tên nhà cung cấp <span class="required">*</span></label>
+                    <input id="name" type="text" formControlName="name" maxlength="200"
+                        placeholder="Ví dụ: Công ty TNHH Giải Pháp Công Nghệ ABC"
+                        [class.is-invalid]="Createform.controls.name.touched && Createform.controls.name.invalid">
+                    <span class="error-msg">{{ fieldError('name') }}</span>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="taxCode">Mã số thuế <span class="required">*</span></label>
+                    <app-sensitive-input label="mã số thuế"><input #sensitiveInput id="taxCode" type="password" formControlName="taxCode" placeholder="Ví dụ: 0101234567"
+                        maxlength="13" inputmode="numeric"
+                        [class.is-invalid]="Createform.controls.taxCode.touched && Createform.controls.taxCode.invalid"></app-sensitive-input>
+                    <span class="error-msg">{{ fieldError('taxCode') }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3 class="section-title">
+                <i class="fa fa-address-book" aria-hidden="true"></i> Thông tin liên hệ
+            </h3>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="contactPerson">Người liên hệ</label>
+                    <input id="contactPerson" type="text" formControlName="contactPerson" maxlength="200"
+                        placeholder="Ví dụ: Nguyễn Văn A">
+                    <span class="error-msg">{{ fieldError('contactPerson') }}</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Số điện thoại</label>
+                    <input id="phone" type="text" formControlName="phone" placeholder="Ví dụ: 0987654321"
+                        maxlength="15" inputmode="numeric">
+                    <span class="error-msg">{{ fieldError('phone') }}</span>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="email">Địa chỉ Email</label>
+                    <input id="email" type="email" formControlName="email" placeholder="Ví dụ: contact@supplier.com"
+                        maxlength="254"
+                        [class.is-invalid]="Createform.controls.email.touched && Createform.controls.email.invalid">
+                    <span class="error-msg">{{ fieldError('email') }}</span>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="address">Địa chỉ trụ sở</label>
+                    <input id="address" type="text" formControlName="address" maxlength="255"
+                        placeholder="Ví dụ: Số 123 Đường Sáng Tạo">
+                    <span class="error-msg">{{ fieldError('address') }}</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="city">Tỉnh / Thành phố</label>
+                    <input id="city" type="text" formControlName="city" maxlength="255" placeholder="Ví dụ: Hồ Chí Minh">
+                    <span class="error-msg">{{ fieldError('city') }}</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="country">Quốc gia</label>
+                    <input id="country" type="text" formControlName="country" maxlength="255" placeholder="Ví dụ: Việt Nam">
+                    <span class="error-msg">{{ fieldError('country') }}</span>
+                </div>
+            </div>
+            @if (Createform.touched && Createform.hasError('contactRequired')) {
+            <span class="error-msg">Cần ít nhất email hoặc số điện thoại liên hệ.</span>
+            }
+        </div>
+
+        <div class="form-section">
+            <h3 class="section-title">
+                <i class="fa fa-credit-card" aria-hidden="true"></i> Tài khoản thanh toán &amp; Ghi chú
+            </h3>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="bankName">Tên ngân hàng</label>
+                    <input id="bankName" type="text" formControlName="bankName" maxlength="255"
+                        placeholder="Ví dụ: Ngân hàng Ngoại thương">
+                    <span class="error-msg">{{ fieldError('bankName') }}</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="bankAccount">Số tài khoản</label>
+                    <app-sensitive-input label="số tài khoản"><input #sensitiveInput id="bankAccount" type="password" formControlName="bankAccount" maxlength="50" inputmode="numeric"
+                        placeholder="Ví dụ: 0011001234567"></app-sensitive-input>
+                    <span class="error-msg">{{ fieldError('bankAccount') }}</span>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="notes">Ghi chú thêm</label>
+                    <textarea id="notes" formControlName="notes" rows="3" maxlength="2000"
+                        placeholder="Thông tin điều khoản thanh toán, chính sách chiết khấu..."></textarea>
+                    <span class="error-msg">{{ fieldError('notes') }}</span>
+                </div>
+            </div>
+            @if (Createform.touched && Createform.hasError('bankDetailsIncomplete')) {
+            <span class="error-msg">Tên ngân hàng và số tài khoản phải được nhập cùng nhau.</span>
+            }
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-submit" [disabled]="Createform.invalid || loading">
+                @if (loading) {
+                <i class="fa fa-spinner fa-spin" aria-hidden="true"></i> Đang xử lý...
+                } @else {
+                <i class="fa fa-plus" aria-hidden="true"></i> Thêm mới
+                }
+            </button>
+        </div>
+    </form>
+</div>

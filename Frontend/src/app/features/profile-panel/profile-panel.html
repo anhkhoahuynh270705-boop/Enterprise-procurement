@@ -1,0 +1,235 @@
+﻿<dialog
+  #dialog
+  class="profile-panel"
+  aria-labelledby="profile-title"
+  (cancel)="onCancel($event)"
+  (click)="onBackdropClick($event)"
+>
+  <header class="panel-header">
+    <div>
+      <p>Tài khoản của bạn</p>
+      <h2 id="profile-title">Hồ sơ cá nhân</h2>
+    </div>
+    <button
+      type="button"
+      class="close-button"
+      aria-label="Đóng hồ sơ"
+      autofocus
+      [disabled]="saving()"
+      (click)="close()"
+    >
+      &times;
+    </button>
+  </header>
+  <div class="panel-body" [attr.aria-busy]="loading() || saving()">
+    @if (loading()) {
+      <p role="status">Đang tải hồ sơ…</p>
+    } @else if (error()) {
+      <p role="alert">{{ error() }}</p>
+      <button type="button" class="retry-button" (click)="load()">Thử lại</button>
+    } @else if (profile(); as user) {
+      <div class="profile-summary">
+        <div class="avatar">
+          @if (avatarUrl(user); as url) {
+            <img
+              [src]="url"
+              alt="Ảnh đại diện"
+              referrerpolicy="no-referrer"
+              (error)="avatarFailed.set(true)"
+            />
+          } @else {
+            <span aria-label="Ảnh đại diện mặc định">{{ initials(user) }}</span>
+          }
+        </div>
+        <h3>{{ fullName(user) }}</h3>
+        <span class="role-badge">{{ user.role }}</span>
+      </div>
+      @if (saved()) {
+        <p class="success" role="status">Đã lưu hồ sơ.</p>
+      }
+      <h3>Thông tin cá nhân</h3>
+      @if (editing()) {
+        <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+          <fieldset [disabled]="saving()">
+            <legend class="visually-hidden">Chỉnh sửa thông tin cá nhân</legend>
+            <label for="profile-avatar">Ảnh đại diện (URL HTTPS)</label>
+            <input
+              id="profile-avatar"
+              name="avatarUrl"
+              type="url"
+              formControlName="avatarUrl"
+              maxlength="2048"
+              aria-describedby="avatar-help"
+              [attr.aria-invalid]="
+                form.controls.avatarUrl.touched && form.controls.avatarUrl.invalid
+              "
+            />
+            <small id="avatar-help">Dùng đường dẫn ảnh HTTPS, tối đa 2048 ký tự.</small>
+            @if (form.controls.avatarUrl.touched && form.controls.avatarUrl.invalid) {
+              <p class="field-error" role="alert">Nhập URL HTTPS hợp lệ, tối đa 2048 ký tự.</p>
+            }
+            <label for="profile-phone">Điện thoại</label>
+            <input
+              id="profile-phone"
+              name="phone"
+              type="tel"
+              autocomplete="tel"
+              formControlName="phone"
+              maxlength="30"
+              [attr.aria-invalid]="form.controls.phone.touched && form.controls.phone.invalid"
+            />
+            @if (form.controls.phone.touched && form.controls.phone.invalid) {
+              <p class="field-error" role="alert">
+                Tối đa 30 ký tự: chữ số, dấu +, khoảng trắng, ngoặc, dấu chấm hoặc gạch ngang.
+              </p>
+            }
+            <label for="profile-dob">Ngày sinh</label>
+            <input
+              id="profile-dob"
+              name="dateOfBirth"
+              type="date"
+              autocomplete="bday"
+              [max]="today"
+              formControlName="dateOfBirth"
+              [attr.aria-invalid]="
+                form.controls.dateOfBirth.touched && form.controls.dateOfBirth.invalid
+              "
+            />
+            @if (form.controls.dateOfBirth.touched && form.controls.dateOfBirth.invalid) {
+              <p class="field-error" role="alert">Ngày sinh phải hợp lệ và không sau hôm nay.</p>
+            }
+            <label for="profile-gender">Giới tính</label>
+            <select id="profile-gender" name="gender" formControlName="gender">
+              <option value="">Chưa cập nhật</option>
+              <option value="MALE">Nam</option>
+              <option value="FEMALE">Nữ</option>
+              <option value="OTHER">Khác</option>
+              <option value="UNDISCLOSED">Không tiết lộ</option>
+            </select>
+            <label for="profile-address">Địa chỉ</label>
+            <textarea
+              id="profile-address"
+              name="address"
+              autocomplete="street-address"
+              formControlName="address"
+              maxlength="500"
+              rows="3"
+              [attr.aria-invalid]="form.controls.address.touched && form.controls.address.invalid"
+            ></textarea>
+            @if (form.controls.address.touched && form.controls.address.invalid) {
+              <p class="field-error" role="alert">Địa chỉ tối đa 500 ký tự.</p>
+            }
+          </fieldset>
+          @if (saveError()) {
+            <p class="field-error" role="alert">{{ saveError() }}</p>
+          }
+          @if (saving()) {
+            <p role="status">Đang lưu hồ sơ… Vui lòng chờ.</p>
+          }
+          <div class="form-actions">
+            <button class="retry-button" type="submit" [disabled]="saving()">
+              {{ saving() ? 'Đang lưu…' : 'Lưu thay đổi' }}
+            </button>
+            <button
+              class="secondary-button"
+              type="button"
+              [disabled]="saving()"
+              (click)="cancelEdit()"
+            >
+              Hủy
+            </button>
+          </div>
+        </form>
+      } @else {
+        <dl>
+          <div>
+            <dt>Điện thoại</dt>
+            <dd>{{ user.phone || 'Chưa cập nhật' }}</dd>
+          </div>
+          <div>
+            <dt>Ngày sinh</dt>
+            <dd>{{ user.dateOfBirth || 'Chưa cập nhật' }}</dd>
+          </div>
+          <div>
+            <dt>Giới tính</dt>
+            <dd>{{ genderLabel(user.gender) }}</dd>
+          </div>
+          <div>
+            <dt>Địa chỉ</dt>
+            <dd>{{ user.address || 'Chưa cập nhật' }}</dd>
+          </div>
+        </dl>
+        <button type="button" class="retry-button" (click)="edit()">
+          Chỉnh sửa thông tin cá nhân
+        </button>
+      }
+      <h3>Thông tin công việc và tài khoản</h3>
+      <p class="read-only-note">Thông tin chỉ đọc. Liên hệ quản trị viên để cập nhật.</p>
+      <dl>
+        <div>
+          <dt>Họ và tên</dt>
+          <dd>{{ fullName(user) }}</dd>
+        </div>
+        <div>
+          <dt>Mã nhân viên</dt>
+          <dd>
+            <app-sensitive-value
+              [value]="user.employeeId"
+              [recordKey]="user.id"
+              label="mã nhân viên"
+              emptyText="Chưa cập nhật"
+            />
+          </dd>
+        </div>
+        <div>
+          <dt>Email</dt>
+          <dd>{{ user.email || 'Chưa cập nhật' }}</dd>
+        </div>
+        <div>
+          <dt>Phòng ban</dt>
+          <dd>{{ user.department || 'Chưa cập nhật' }}</dd>
+        </div>
+        <div>
+          <dt>Chức danh</dt>
+          <dd>{{ user.jobTitle || 'Chưa cập nhật' }}</dd>
+        </div>
+        <div>
+          <dt>Địa điểm làm việc</dt>
+          <dd>{{ user.officeLocation || 'Chưa cập nhật' }}</dd>
+        </div>
+        <div>
+          <dt>Quản lý</dt>
+          <dd>{{ user.manager || 'Chưa cập nhật' }}</dd>
+        </div>
+        <div>
+          <dt>Trạng thái nhân viên</dt>
+          <dd>
+            {{
+              user.employeeStatus === 'ACTIVE'
+                ? 'Đang làm việc'
+                : user.employeeStatus === 'INACTIVE'
+                  ? 'Ngừng làm việc'
+                  : 'Chưa cập nhật'
+            }}
+          </dd>
+        </div>
+        <div>
+          <dt>Tên đăng nhập</dt>
+          <dd>{{ user.username }}</dd>
+        </div>
+        <div>
+          <dt>UUID</dt>
+          <dd><app-sensitive-value [value]="user.id" [recordKey]="user.id" label="UUID" /></dd>
+        </div>
+        <div>
+          <dt>Vai trò</dt>
+          <dd>{{ user.role }}</dd>
+        </div>
+        <div>
+          <dt>Trạng thái tài khoản</dt>
+          <dd>{{ user.enabled ? 'Đang hoạt động' : 'Đã vô hiệu hóa' }}</dd>
+        </div>
+      </dl>
+    }
+  </div>
+</dialog>

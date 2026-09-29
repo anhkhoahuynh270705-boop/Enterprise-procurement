@@ -1,0 +1,275 @@
+<section class="documents-page">
+  <header class="page-header">
+    <div>
+      <h1>Tài liệu công ty</h1>
+      <p>Nội quy, quy trình và biểu mẫu dùng chung trong công ty.</p>
+    </div>
+    @if (isAdmin) {
+      <button
+        type="button"
+        class="btn btn-primary"
+        data-action="upload"
+        (click)="showUpload.set(!showUpload())"
+        [disabled]="uploading()"
+      >
+        <i
+          class="fa"
+          [class.fa-plus]="!showUpload()"
+          [class.fa-times]="showUpload()"
+          aria-hidden="true"
+        ></i>
+        {{ showUpload() ? 'Đóng biểu mẫu' : 'Đăng tài liệu' }}
+      </button>
+    }
+  </header>
+
+  @if (error()) {
+    <div class="notice error" role="alert">
+      {{ error() }}
+      <button type="button" data-action="retry" (click)="load()" [disabled]="loading()">
+        Tải lại danh sách
+      </button>
+    </div>
+  }
+  @if (success()) {
+    <p class="notice success" role="status">
+      {{ success() }}
+    </p>
+  }
+
+  @if (isAdmin && showUpload()) {
+    <form class="panel upload-panel" [formGroup]="form" (ngSubmit)="upload()">
+      <h2>Đăng tài liệu mới</h2>
+      <p class="muted">Tài liệu được đăng sẽ hiển thị cho nhân viên trong công ty.</p>
+      <fieldset [disabled]="uploading()">
+        <div class="form-grid">
+          <label
+            >Tiêu đề
+            <span class="required">*</span>
+            <input
+              formControlName="title"
+              maxlength="200"
+              required
+              placeholder="Ví dụ: Quy trình đề nghị mua sắm"
+            />
+            @if (form.controls.title.touched && form.controls.title.invalid) {
+              <small class="error">Nhập tiêu đề, tối đa 200 ký tự.</small>
+            }
+          </label>
+          <label
+            >Danh mục
+            <span class="required">*</span>
+            <select formControlName="category">
+              @for (item of categories; track item.value) {
+                <option [value]="item.value">{{ item.label }}</option>
+              }
+            </select>
+          </label>
+          <label class="wide"
+            >Mô tả
+            <textarea
+              formControlName="description"
+              maxlength="2000"
+              rows="3"
+              placeholder="Nội dung chính và hướng dẫn sử dụng tài liệu"
+            ></textarea>
+          </label>
+          <label class="wide file-picker"
+            >File tài liệu
+            <span class="required">*</span>
+            <input
+              #fileInput
+              type="file"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.bmp,.webp"
+              (change)="chooseFile($event)"
+            />
+            <small>PDF, Word, Excel, PNG, JPG, GIF, BMP, WebP · tối đa 10 MB.</small>
+            @if (file(); as selected) {
+              <span>{{ selected.name }} · {{ sizeLabel(selected.size) }}</span>
+            }
+          </label>
+        </div>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="uploading() || loading() || !!busy() || !file()"
+        >
+          {{ uploading() ? 'Đang tải lên…' : 'Đăng tài liệu' }}
+        </button>
+      </fieldset>
+    </form>
+  }
+
+  <section class="panel" aria-label="Danh sách tài liệu">
+    <div class="library-header">
+      <h2>
+        Thư viện tài liệu
+        <span class="count">{{ documents().length }}</span>
+      </h2>
+      <button type="button" class="secondary" (click)="load()" [disabled]="loading() || uploading() || !!busy()">
+        <i class="fa fa-refresh"></i>
+        Tải lại
+      </button>
+    </div>
+    <div class="filters">
+      <label class="search"
+        >Tìm tài liệu
+        <input
+          type="search"
+          placeholder="Tên tài liệu, tên file hoặc mô tả…"
+          [value]="search()"
+          (input)="search.set($any($event.target).value); page.set(1)"
+        />
+      </label>
+      <label
+        >Danh mục
+        <select
+          [value]="category()"
+          (change)="category.set($any($event.target).value); page.set(1)"
+        >
+          <option value="">Tất cả danh mục</option>
+          @for (item of categories; track item.value) {
+            <option [value]="item.value">
+              {{ item.label }}
+            </option>
+          }
+        </select>
+      </label>
+    </div>
+    @if (loading()) {
+      <p class="empty" role="status">Đang tải tài liệu…</p>
+    } @else if (!filtered().length) {
+      <div class="empty">
+        <i class="fa fa-folder-open-o" aria-hidden="true"></i>
+        <h3>
+          {{ documents().length ? 'Không tìm thấy tài liệu phù hợp' : 'Chưa có tài liệu công ty' }}
+        </h3>
+        <p>
+          {{
+            documents().length
+              ? 'Thử đổi từ khóa hoặc danh mục.'
+              : isAdmin
+                ? 'Đăng tài liệu đầu tiên để chia sẻ với nhân viên.'
+                : 'Tài liệu sẽ xuất hiện khi quản trị viên đăng tải.'
+          }}
+        </p>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Tài liệu</th>
+              <th>Danh mục</th>
+              <th>Người đăng</th>
+              <th>Ngày đăng</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (doc of rows(); track doc.id) {
+              <tr>
+                <td class="document-info">
+                  <strong>{{ doc.title }}</strong>
+                  <span>{{ doc.filename }} · {{ sizeLabel(doc.size) }}</span>
+                  @if (doc.description) {
+                    <p>{{ doc.description }}</p>
+                  }
+                </td>
+                <td>
+                  <span class="category-badge">{{ categoryLabel(doc.category) }}</span>
+                </td>
+                <td>{{ doc.uploadedBy }}</td>
+                <td class="date">{{ doc.uploadedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                <td>
+                  <div class="actions">
+                    @if (canPreview(doc)) {
+                      <button
+                        type="button"
+                        (click)="download(doc, true)"
+                        [disabled]="!!busy() || uploading() || loading()"
+                        [attr.aria-label]="'Xem ' + doc.title"
+                      >
+                        <i class="fa fa-eye" aria-hidden="true"></i> Xem
+                      </button>
+                    }
+                    <button
+                      type="button"
+                      (click)="download(doc)"
+                      [disabled]="!!busy() || uploading() || loading()"
+                      [attr.aria-label]="'Tải xuống ' + doc.title"
+                    >
+                      <i class="fa fa-download" aria-hidden="true"></i> Tải xuống
+                    </button>
+                    @if (isAdmin) {
+                      <button
+                        type="button"
+                        class="danger"
+                        data-action="delete"
+                        (click)="remove(doc)"
+                        [disabled]="!!busy() || uploading() || loading()"
+                        [attr.aria-label]="'Gỡ ' + doc.title"
+                      >
+                        <i class="fa fa-trash-o" aria-hidden="true"></i>
+                        Gỡ
+                      </button>
+                    }
+                  </div>
+                  @if (busy() === doc.id) {
+                    <small role="status">Đang xử lý…</small>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <footer class="pagination">
+        <span>{{ filtered().length }} tài liệu · Trang {{ currentPage() }}/{{ pageCount() }}</span>
+        <div class="actions">
+          <button
+            type="button"
+            [disabled]="currentPage() <= 1"
+            (click)="page.set(currentPage() - 1)"
+          >
+            Trước
+          </button>
+          <button
+            type="button"
+            [disabled]="currentPage() >= pageCount()"
+            (click)="page.set(currentPage() + 1)"
+          >
+            Sau
+          </button>
+        </div>
+      </footer>
+    }
+  </section>
+</section>
+
+<dialog
+  #previewDialog
+  class="preview-dialog"
+  (cancel)="closePreview()"
+  aria-label="Xem tài liệu công ty"
+>
+  @if (preview(); as doc) {
+    <header>
+      <h2>{{ doc.title }}</h2>
+      <button type="button" (click)="closePreview()" autofocus>Đóng</button>
+    </header>
+    @if (previewUrl(); as url) {
+      <iframe [src]="url" [title]="doc.title"></iframe>
+    }
+    <footer>
+      <span>{{ doc.filename }}</span>
+      <button
+        type="button"
+        (click)="download(doc)"
+        [disabled]="!!busy() || uploading() || loading()"
+      >
+        Tải xuống
+      </button>
+    </footer>
+  }
+</dialog>

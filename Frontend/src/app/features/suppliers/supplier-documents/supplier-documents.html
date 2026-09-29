@@ -1,0 +1,256 @@
+<section class="documents-page">
+  <header>
+    <div>
+      <h1>Tài liệu nhà cung cấp</h1>
+      <p>
+        {{
+          isAdmin
+            ? 'Upload trực tiếp và quản lý các đề xuất tài liệu.'
+            : 'Gửi tài liệu theo nhà cung cấp và theo dõi
+        kết quả duyệt.'
+        }}
+      </p>
+      @if (isReviewer && !isAdmin) {
+        <p>Đề xuất của bạn cần Checker khác hoặc Admin duyệt.</p>
+      }
+    </div>
+    <button
+      type="button"
+      (click)="load()"
+      [disabled]="loading || uploading || reviewing"
+      title="Tải lại"
+    >
+      <i class="fa fa-refresh" [class.fa-spin]="loading"></i>
+      Tải lại
+    </button>
+  </header>
+  @if (error) {
+    <p class="error notice" role="alert">{{ error }}</p>
+  }
+  @if (success) {
+    <p class="success notice" role="status">{{ success }}</p>
+  }
+  <form class="panel upload-form" [formGroup]="uploadForm" (ngSubmit)="upload()">
+    <h2>{{ isAdmin ? 'Upload tài liệu chính thức' : 'Đề xuất tài liệu' }}</h2>
+    <fieldset [disabled]="uploading || loading">
+      <label
+        >Nhà cung cấp
+        <select formControlName="supplierId" required>
+          <option value="">Chọn nhà cung cấp</option>
+          @for (supplier of suppliers; track supplier.id) {
+            <option [value]="supplier.id">{{ supplier.name }}</option>
+          }
+        </select>
+      </label>
+      <label
+        >Tài liệu
+        <input
+          #fileInput
+          type="file"
+          [accept]="accept"
+          (change)="selectFile($event)"
+          aria-describedby="file-help"
+        />
+      </label>
+      <p id="file-help">
+        PDF, Word (.doc, .docx), Excel (.xls, .xlsx), ảnh PNG/JPG/GIF/BMP/WebP. Tối đa 10 MB/file.
+      </p>
+      <button
+        type="submit"
+        class="primary"
+        [disabled]="!uploadForm.controls.supplierId.value || !file || uploading || loading"
+      >
+        <i
+          class="fa"
+          [class.fa-spinner]="uploading"
+          [class.fa-spin]="uploading"
+          [class.fa-upload]="!uploading"
+        >
+        </i>
+        {{ uploading ? 'Đang tải lên…' : isAdmin ? 'Upload tài liệu' : 'Gửi đề xuất' }}
+      </button>
+    </fieldset>
+  </form>
+  <section class="panel" aria-label="Danh sách tài liệu">
+    <div class="filters" [formGroup]="filterForm">
+      <label
+        >Nhà cung cấp
+        <select formControlName="filterSupplier">
+          <option value="">Tất cả nhà cung cấp</option>
+          @for (supplier of suppliers; track supplier.id) {
+            <option [value]="supplier.id">{{ supplier.name }}</option>
+          }
+        </select>
+      </label>
+      <label
+        >Trạng thái
+        <select formControlName="filterStatus">
+          <option value="">Tất cả trạng thái</option>
+          <option value="PENDING">Chờ duyệt</option>
+          <option value="APPROVED">Chính thức</option>
+          <option value="REJECTED">Từ chối</option>
+        </select>
+      </label>
+    </div>
+    @if (loading) {
+      <p role="status">Đang tải tài liệu…</p>
+    } @else {
+      <p>{{ filtered.length }} tài liệu</p>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Tài liệu / Nhà cung cấp</th>
+              <th>Người upload</th>
+              <th>Trạng thái</th>
+              <th>Kết quả duyệt</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (document of filtered; track document.id) {
+              <tr>
+                <td>
+                  <strong>{{ document.filename }}</strong>
+                  <small>
+                    {{ document.supplierName }}
+                    ·
+                    {{ document.size / 1024 | number: '1.0-1' }} KB
+                  </small>
+                </td>
+                <td>
+                  {{ document.submittedBy }}
+                  <small> {{ document.submittedAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+                </td>
+                <td>
+                  <span
+                    class="badge"
+                    [class.approved]="document.status === 'APPROVED'"
+                    [class.rejected]="document.status === 'REJECTED'"
+                  >
+                    {{ labels[document.status] }}
+                  </span>
+                </td>
+                <td>
+                  {{ document.reviewedBy || '—' }}
+                  <small>
+                    {{ document.reviewedAt | date: 'dd/MM/yyyy HH:mm' }}
+                  </small>
+                  <small class="comment">{{ document.reviewComment }}</small>
+                </td>
+                <td>
+                  <div class="actions">
+                    <button
+                      type="button"
+                      class="btn-icon"
+                      (click)="view(document)"
+                      [disabled]="!!viewingId || !!downloadingId"
+                      title="Xem tài liệu"
+                    >
+                      <i
+                        class="fa"
+                        [class.fa-spinner]="viewingId === document.id"
+                        [class.fa-spin]="viewingId === document.id"
+                        [class.fa-eye]="viewingId !== document.id"
+                      ></i>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-icon"
+                      (click)="download(document)"
+                      [disabled]="!!downloadingId || !!viewingId"
+                      title="Tải xuống"
+                    >
+                      <i
+                        class="fa"
+                        [class.fa-spinner]="downloadingId === document.id"
+                        [class.fa-spin]="downloadingId === document.id"
+                        [class.fa-download]="downloadingId !== document.id"
+                      ></i>
+                    </button>
+                    @if (canReview(document)) {
+                      <button
+                        type="button"
+                        class="btn-icon"
+                        (click)="openReview(document)"
+                        [disabled]="reviewing"
+                        title="Duyệt tài liệu"
+                      >
+                        <i class="fa fa-check"></i>
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="empty">Chưa có tài liệu phù hợp.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+  @if (selected) {
+    <section class="panel review-panel" aria-label="Duyệt tài liệu" [formGroup]="reviewForm">
+      <h2>Duyệt: {{ selected.filename }}</h2>
+      <p>
+        {{ selected.supplierName }}
+        - Người đề xuất: {{ selected.submittedBy }}
+      </p>
+      <button
+        type="button"
+        (click)="download(selected)"
+        [disabled]="!!downloadingId"
+        title="Tải tài liệu để kiểm tra"
+      >
+        <i
+          class="fa"
+          [class.fa-spinner]="!!downloadingId"
+          [class.fa-spin]="!!downloadingId"
+          [class.fa-download]="!downloadingId"
+        ></i>
+        Tải tài liệu để kiểm tra
+      </button>
+      <label>
+        Nhận xét / lý do từ chối
+        <textarea
+          formControlName="comment"
+          maxlength="2000"
+          rows="3"
+          [disabled]="reviewing"
+        ></textarea>
+      </label>
+      <div class="actions">
+        <button
+          type="button"
+          class="primary"
+          (click)="review(true)"
+          [disabled]="reviewing"
+          title="Chấp thuận"
+        >
+          <i
+            class="fa"
+            [class.fa-spinner]="reviewing"
+            [class.fa-spin]="reviewing"
+            [class.fa-check-circle]="!reviewing"
+          ></i>
+          {{ reviewing ? 'Đang xử lý…' : 'Chấp thuận' }}
+        </button>
+        <button
+          type="button"
+          class="danger"
+          (click)="review(false)"
+          [disabled]="reviewing"
+          title="Từ chối"
+        >
+          <i class="fa fa-ban"></i> Từ chối
+        </button>
+        <button type="button" (click)="selected = null" [disabled]="reviewing" title="Đóng">
+          <i class="fa fa-times"></i> Đóng
+        </button>
+      </div>
+    </section>
+  }
+</section>
