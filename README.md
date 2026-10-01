@@ -1,259 +1,245 @@
 # Enterprise Procurement Management System (EPMS)
 
-[![Java](https://img.shields.io/badge/Java-21-orange.svg?style=flat&logo=openjdk)](https://openjdk.org/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.6-brightgreen.svg?style=flat&logo=springboot)](https://spring.io/projects/spring-boot)
-[![Angular](https://img.shields.io/badge/Angular-22.1-red.svg?style=flat&logo=angular)](https://angular.dev/)
-[![Keycloak](https://img.shields.io/badge/Keycloak-26.0.7-blue.svg?style=flat&logo=keycloak)](https://www.keycloak.org/)
-[![Camunda](https://img.shields.io/badge/Camunda-7.x-orange.svg?style=flat&logo=camunda)](https://camunda.com/)
-[![Kafka](https://img.shields.io/badge/Apache%20Kafka-4.3.1-black.svg?style=flat&logo=apachekafka)](https://kafka.apache.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15%2B-blue.svg?style=flat&logo=postgresql)](https://www.postgresql.org/)
+<div align="center">
+
+<img src="Frontend/public/header/banner.png" alt="EPMS Banner" width="100%" style="border-radius: 12px; margin-bottom: 20px;" />
+
+[![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4.5-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Angular](https://img.shields.io/badge/Angular-22.1-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.dev/)
+[![Keycloak](https://img.shields.io/badge/Keycloak-26.0.7-blue?style=for-the-badge&logo=keycloak&logoColor=white)](https://www.keycloak.org/)
+[![Camunda](https://img.shields.io/badge/Camunda-7.24.0-FC580C?style=for-the-badge&logo=camunda&logoColor=white)](https://camunda.com/)
+[![Apache Kafka](https://img.shields.io/badge/Apache_Kafka-4.3.1-231F20?style=for-the-badge&logo=apache-kafka&logoColor=white)](https://kafka.apache.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+
+<p align="center">
+  <strong>Hệ thống Quản lý Mua sắm & Chuỗi Cung ứng Doanh nghiệp Chuẩn Quốc Tế</strong>
+</p>
+
+</div>
 
 ---
 
-## 1. Executive Overview
+## 📖 1. Giới thiệu (Overview)
 
-**Enterprise Procurement Management System (EPMS)** is an enterprise-grade platform designed to digitize, standardize, and automate corporate procurement workflows, budget validation, and Supplier Relationship Management (SRM).
+**Enterprise Procurement Management System (EPMS)** là giải pháp toàn diện cấp doanh nghiệp nhằm số hóa, chuẩn hóa và tự động hóa toàn bộ quy trình mua sắm, kiểm soát ngân sách và quản lý nhà cung cấp (SRM). 
 
-The system enforces a dual-authorization **Maker - Checker** governance model powered by the **Camunda BPMN** workflow engine, centralized **Keycloak Single Sign-On (SSO)** authentication, and real-time asynchronous event streaming via **Apache Kafka**.
-
-### Core Business Value:
-- **Cost Transparency & Control:** Prevents budget overruns through automated pre-approval budget validations (Budget Check).
-- **Governance & Regulatory Compliance:** Enforces segregation of duties between procurement initiators (Makers) and approval authorities (Checkers) with full audit trails.
-- **Comprehensive Supplier Management:** Streamlines vendor onboarding, capability scoring, legal document compliance, and proposal reviews.
-- **Enterprise-Grade Reporting:** Generates high-fidelity PDF procurement vouchers and Excel analytical reports for internal accounting and audit compliance.
+Hệ thống giải quyết triệt để tình trạng vượt trần chi phí và thiếu minh bạch bằng cơ chế kiểm duyệt kép **Maker - Checker** trên nền tảng workflow **Camunda BPMN**, đồng thời bảo mật tuyệt đối với **Keycloak SSO (OAuth 2.0 PKCE)**, đăng nhập sinh trắc học **Face ID (AI)** và xử lý dữ liệu bất đồng bộ với **Apache Kafka**.
 
 ---
 
-## 2. System Architecture & Tech Stack
+## 📸 2. Ảnh chụp màn hình & Giao diện (Screenshots / Demo)
 
-The platform is designed around a modern layered, event-driven micro-service architecture:
+| **Đăng nhập Doanh nghiệp & Face ID** | **Dashboard & Thống kê Chi phí** |
+|:---:|:---:|
+| <img src="Frontend/public/header/banner.png" alt="Login & Face ID" width="100%"/> | <img src="Frontend/public/header/banner.png" alt="Dashboard" width="100%"/> |
+| *Xác thực Keycloak OIDC/PKCE & Face ID sinh trắc học* | *Thống kê trực quan KPI, dòng tiền & trạng thái phiếu mua sắm* |
 
-```mermaid
-flowchart TB
-    subgraph ClientLayer [Client Presentation Layer]
-        AngularApp["Angular SPA / Angular Material\n(Port: 4200)"]
-    end
-
-    subgraph SecurityGateway [Identity & Access Management]
-        Keycloak["Keycloak IAM / OAuth2 / OIDC\n(Enterprise Branded Theme)\n(Port: 8081)"]
-    end
-
-    subgraph ApplicationLayer [Core Business Services - Backend]
-        SpringBoot["Spring Boot 3.3.6 REST API\n(Port: 8080)"]
-        Camunda["Camunda 7 BPMN Workflow Engine"]
-        Jasper["JasperReports & Apache POI\n(Export PDF / Excel)"]
-    end
-
-    subgraph DataAndIntegration [Data Persistence & Integration]
-        Postgres[(PostgreSQL 5432\nshopping_db)]
-        Kafka["Apache Kafka 4.3.1\nEvent Streaming (Port: 9092)"]
-        MailHog["MailHog SMTP Service\n(Port: 1025 / UI: 8025)"]
-    end
-
-    AngularApp -->|OIDC Authentication| Keycloak
-    AngularApp -->|REST API with Bearer JWT| SpringBoot
-    SpringBoot -->|Validate Token / JWKS| Keycloak
-    SpringBoot --> Camunda
-    SpringBoot --> Jasper
-    SpringBoot -->|Spring Data JPA / HikariCP| Postgres
-    SpringBoot -->|Publish / Consume Events| Kafka
-    SpringBoot -->|Async Email Notifications| MailHog
-```
-
-### Technology Matrix:
-
-| Component | Core Technology | Role & Highlights |
-| :--- | :--- | :--- |
-| **Frontend** | Angular 22, TypeScript, SCSS | Single Page Application with Angular Material, Chart.js, OAuth2-OIDC |
-| **Backend** | Java 21, Spring Boot 3.3.6 | RESTful APIs, Spring Security Resource Server, Actuator, MapStruct, Lombok |
-| **Workflow Engine** | Camunda BPM 7 | Orchestrates Maker - Checker approval flows, budget verification, automated tasks |
-| **Database** | PostgreSQL 15+ | ACID relational persistence with HikariCP connection pooling |
-| **IAM & Security** | Keycloak 26.0.7 | Centralized OAuth2/OIDC provider, RBAC, customized corporate login theme |
-| **Event Streaming** | Apache Kafka 4.3.1 | Asynchronous procurement event publishing/consuming, monitored via Kafka UI |
-| **Reporting & Export** | JasperReports & Apache POI | Pixel-perfect PDF voucher generation and high-throughput Excel (.xlsx) processing |
-| **Email Mocking** | MailHog | SMTP email testing and notification inspection during development |
-| **Infrastructure** | Docker & Docker Compose | Containerized dev orchestration for Keycloak, Kafka, Kafka UI, and MailHog |
+| **Quản lý Phiếu Mua sắm (Maker - Checker)** | **Xuất Báo cáo & Tài liệu Doanh nghiệp** |
+|:---:|:---:|
+| <img src="Frontend/public/header/banner.png" alt="Procurement Workflow" width="100%"/> | <img src="Frontend/public/header/banner.png" alt="Export Reports" width="100%"/> |
+| *Luồng tạo phiếu, kiểm tra ngân sách và phê duyệt đa cấp* | *Xuất phiếu chứng từ PDF (JasperReports) & Excel (Apache POI)* |
 
 ---
 
-## 3. Core Business Modules
+## 🛠️ 3. Công nghệ sử dụng (Tech Stack)
 
-### 📌 1. Procurement & Purchase Requisitions
-- Create and manage purchase requests with itemized line items, quantities, pricing, and selected vendors.
-- Automatic calculation of subtotal, tax rates, and real-time department budget ceiling verification.
-- Searchable transaction history with audit metadata and immutable business tracking keys.
+Hệ thống được xây dựng theo kiến trúc hướng dịch vụ nhiều tầng (Layered, Event-Driven Architecture) với các công nghệ tiên tiến nhất:
 
-### 📌 2. Maker - Checker BPMN Approval Workflow
-- Enforces corporate segregation of duties:
-  - **Maker (Procurement Staff):** Submits purchase requests, uploads documentation, and initiates approval cycles.
-  - **Checker (Department Manager / Finance Director):** Receives actionable task notifications, reviews proposal details, and issues approval or rejection with mandatory remarks.
-- Automated Camunda Service Delegates: `BudgetCheckDelegate`, `ApprovalNotificationDelegate`, and `RejectionNotificationDelegate`.
-
-### 📌 3. Supplier Relationship Management (SRM)
-- Vendor directory maintaining legal identities, tax codes, rating assessments, and supplier categorization.
-- Supplier proposal evaluation and document vault for contracts, licenses, and compliance certificates.
-- Bulk vendor import via Excel spreadsheets with row-by-row data validation and detailed error reporting.
-
-### 📌 4. Enterprise Analytics & Document Generation
-- Executive KPI dashboard displaying spending trends, approval/rejection metrics, and vendor share charts via Chart.js.
-- JasperReports-powered PDF procurement vouchers and supplier dossiers formatted for printing and accounting.
-- Comprehensive Excel reports for procurement auditing and financial reconciliation.
-
-### 📌 5. Identity & Access Management (IAM)
-- Keycloak-backed Single Sign-On (SSO) with OpenID Connect (OIDC).
-- Role-Based Access Control (RBAC): `ADMIN`, `MAKER`, `CHECKER`, and `VIEWER`.
-- Fully branded enterprise login portal with video background and multi-language support (English / Vietnamese).
+| Phân hệ / Tầng | Công nghệ chính | Vai trò & Đặc điểm |
+|:---|:---|:---|
+| **Frontend** | Angular 22, TypeScript, SCSS, Chart.js | Giao diện Single Page Application (SPA), Reactive Forms, Guards phân quyền RBAC |
+| **Backend API** | Java 21, Spring Boot 3.4.5 | RESTful API, Spring Security Resource Server, Hibernate, HikariCP, MapStruct |
+| **Workflow Engine** | Camunda BPM 7.24.0 | Quản lý vòng đời quy trình mua sắm Maker - Checker, Delegates kiểm tra ngân sách |
+| **IAM & Security** | Keycloak 26.0.7 | Quản lý định danh SSO, chuẩn hóa OAuth 2.0 PKCE (mô hình BFF), mã hóa JWT |
+| **AI Biometrics** | Python 3.11+, FastAPI, InsightFace | Nhận diện khuôn mặt sinh trắc học phục vụ xác thực Face ID |
+| **Message Broker** | Apache Kafka 4.3.1 & Kafka UI | Truyền nhận message sự kiện phi tập trung giữa các service |
+| **Database** | PostgreSQL 15+ | Lưu trữ dữ liệu quan hệ ACID, hỗ trợ partitioning và schema phân tách |
+| **Reporting & Export** | JasperReports 7.0 & Apache POI | Xuất chứng từ mua sắm chuẩn in ấn PDF và tổng hợp file Excel phân tích |
+| **Email Service** | MailHog (SMTP Mock) | Giả lập máy chủ gửi nhận email thông báo phê duyệt/từ chối và reset mật khẩu |
+| **DevOps** | Docker, Docker Compose | Đóng gói và điều phối toàn bộ hạ tầng dịch vụ chạy local nhanh chóng |
 
 ---
 
-## 4. Prerequisites
+## 🚀 4. Hướng dẫn cài đặt (Installation)
 
-Ensure your development environment meets the following requirements:
+Thực hiện lần lượt các bước sau để chạy toàn bộ hệ thống trên máy cá nhân (Local):
 
-- **JDK 21** (or OpenJDK 21) & **Maven 3.9+** (or use the included `./mvnw`)
+### Bước 1: Chuẩn bị môi trường (Prerequisites)
+Đảm bảo máy tính đã cài đặt các công cụ sau:
+- **Java JDK 21** & **Maven 3.9+** (hoặc dùng `./mvnw` đi kèm)
 - **Node.js 20.x+** & **npm 10.x+**
+- **Python 3.11+** (cho Face ID Service)
 - **Docker** & **Docker Compose v2+**
-- **PostgreSQL 15+** (running on host port `5432` with database `shopping_db`)
+- **PostgreSQL 15+** (chạy tại cổng mặc định `5432`)
 
----
-
-## 5. Quick Start Guide
-
-Follow these steps to deploy and run the system locally:
-
-### Step 1: Clone the Repository
+### Bước 2: Clone mã nguồn
 ```bash
 git clone https://github.com/your-organization/enterprise-procurement.git
 cd enterprise-procurement
 ```
 
-### Step 2: Initialize PostgreSQL Database
-Ensure PostgreSQL is active on port `5432`:
-- Create the main database and the dedicated Keycloak schema:
-  ```sql
-  CREATE DATABASE shopping_db;
-  \c shopping_db;
-  CREATE SCHEMA IF NOT EXISTS keycloak;
-  ```
+### Bước 3: Khởi tạo Database PostgreSQL
+Truy cập vào PostgreSQL và tạo database cùng schema cho Keycloak:
+```sql
+CREATE DATABASE shopping_db;
+\c shopping_db;
+CREATE SCHEMA IF NOT EXISTS keycloak;
+```
 
-### Step 3: Launch Infrastructure via Docker Compose
-Start Keycloak, Apache Kafka, Kafka UI, and MailHog:
+### Bước 4: Thiết lập file môi trường (.env)
+Sao chép file cấu hình mẫu ở thư mục gốc:
+```bash
+cp .env.example .env
+```
+> *Tùy chỉnh lại mật khẩu cơ sở dữ liệu `KC_DB_PASSWORD` trong file `.env` nếu cần thiết.*
+
+### Bước 5: Khởi động các hạ tầng dịch vụ (Docker)
+Chạy Keycloak, Apache Kafka, Kafka UI và MailHog thông qua Docker Compose:
 ```bash
 docker compose up -d
 ```
 > [!NOTE]
-> On the initial launch, Keycloak may take 1–2 minutes to create database tables and initialize the `Shopping` realm.
+> Trong lần chạy đầu tiên, Keycloak sẽ mất khoảng 1-2 phút để tự động khởi tạo cơ sở dữ liệu và cấu hình Realm `Shopping`.
 
-### Step 4: Configure Environment Files
-Template files are provided to keep local credentials secure:
-
-1. **Backend Configuration:**
+### Bước 6: Khởi chạy Backend (Spring Boot)
+1. Cấu hình file `Backend/src/main/resources/application.properties` (nếu chưa có, sao chép từ file `.example`):
    ```bash
-   cd Backend/src/main/resources
-   # Copy configuration template:
-   cp application.properties.example application.properties
-   # On Windows PowerShell:
-   # Copy-Item application.properties.example application.properties
+   cp Backend/src/main/resources/application.properties.example Backend/src/main/resources/application.properties
    ```
-   *Edit `application.properties` to set your local PostgreSQL password (`spring.datasource.password`) and Keycloak secrets.*
-
-2. **Frontend Configuration:**
-   ```bash
-   cd ../../../Frontend
-   # Copy environment template:
-   cp .env.example .env
-   # On Windows PowerShell:
-   # Copy-Item .env.example .env
-   ```
-
-### Step 5: Start the Applications
-
-1. **Start Backend (Spring Boot API):**
+2. Khởi chạy ứng dụng:
    ```bash
    cd Backend
    ./mvnw spring-boot:run
-   # On Windows:
+   # Trên Windows PowerShell:
    # .\mvnw.cmd spring-boot:run
    ```
-   *The backend will be available at `http://localhost:8080`.*
+   *Backend API sẽ chạy tại: `http://localhost:8080`*
 
-2. **Start Frontend (Angular SPA):**
-   ```bash
-   cd ../Frontend
-   npm install
-   npm start
-   ```
-   *The frontend application will be available at `http://localhost:4200`.*
+### Bước 7: Khởi chạy Face Service (Tùy chọn cho Face ID)
+```bash
+cd FaceService
+python -m venv .venv
+# Kích hoạt venv (Windows):
+.venv\Scripts\activate
+# Cài đặt thư viện:
+pip install -r requirements.txt
+# Chạy service:
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+### Bước 8: Khởi chạy Frontend (Angular)
+```bash
+cd Frontend
+npm install
+npm start
+```
+*Giao diện người dùng sẽ chạy tại: `http://localhost:4200`*
 
 ---
 
-## 6. Services & Default Credentials Matrix
+## 💻 5. Cách sử dụng (Usage)
 
-| Service | Access URL | Default Credentials | Description |
-| :--- | :--- | :--- | :--- |
-| **Frontend Portal** | [http://localhost:4200](http://localhost:4200) | Authenticate via Keycloak SSO | Main Web Application Interface |
-| **Backend REST API** | [http://localhost:8080/api](http://localhost:8080/api) | — | Core REST Services & Endpoints |
-| **Keycloak Admin Console** | [http://localhost:8081](http://localhost:8081) | `admin` / `admin` | Realm `Shopping`, Roles, Users & Clients |
-| **Kafka UI** | [http://localhost:8085](http://localhost:8085) | — | Kafka Topics, Consumers & Metrics |
-| **MailHog Web UI** | [http://localhost:8025](http://localhost:8025) | — | Local Email Inbox for Notifications |
-| **MailHog SMTP** | `localhost:1025` | *(None required)* | Outgoing Mail Server for Spring Boot |
+### 5.1. Danh mục dịch vụ và Cổng truy cập (Access Matrix)
+
+| Dịch vụ | Địa chỉ truy cập | Tài khoản mặc định | Mục đích |
+|:---|:---|:---|:---|
+| **Cổng Portal Frontend** | [http://localhost:4200](http://localhost:4200) | Đăng nhập qua Keycloak SSO | Giao diện quản lý chính cho người dùng |
+| **Backend API** | [http://localhost:8080/api](http://localhost:8080/api) | Bearer JWT Token | Hệ thống API lõi |
+| **Keycloak Admin Console** | [http://localhost:8081](http://localhost:8081) | `admin` / `admin` | Quản trị Realm, User, Role & Client |
+| **Camunda Cockpit** | [http://localhost:8080/camunda](http://localhost:8080/camunda) | `admin` / `admin` | Giám sát luồng quy trình nghiệp vụ BPMN |
+| **Kafka UI** | [http://localhost:8085](http://localhost:8085) | *(Không yêu cầu)* | Quản lý Topics, Consumers & Messages |
+| **Hộp thư MailHog** | [http://localhost:8025](http://localhost:8025) | *(Không yêu cầu)* | Xem email thông báo, OTP & reset mật khẩu |
 
 ---
 
-## 7. Project Directory Structure
+### 5.2. Luồng nghiệp vụ điển hình (Maker - Checker Workflow)
 
-```text
-Enterprise/
-├── .gitignore                         # Monorepo root ignore rules (OS, IDE, .env, properties)
-├── docker-compose.yml                 # Infrastructure services (Keycloak, Kafka, Kafka UI, MailHog)
-├── README.md                          # Enterprise project documentation
-│
-├── Backend/                           # Backend Application (Java Spring Boot)
-│   ├── .gitignore                     # Ignores build artifacts, target/, application.properties
-│   ├── pom.xml                        # Maven configuration & build specifications
-│   ├── src/main/java/com/example/shopping/
-│   │   ├── audit/                     # Audit trail logging & historical event records
-│   │   ├── auth/                      # Session management & auth utility services
-│   │   ├── company/                   # Corporate documentation & enterprise profile
-│   │   ├── config/                    # Global configurations (Async, Thread Pool, WebMvc)
-│   │   ├── dashboard/                 # Analytical report services & KPI aggregators
-│   │   ├── integration/               # Kafka producers/consumers & Keycloak integration
-│   │   ├── procurement/               # Procurement requests, calculations & orders
-│   │   ├── security/                  # Spring Security OAuth2 resource server config
-│   │   ├── supplier/                  # Supplier management, proposals, reports & exports
-│   │   ├── user/                      # User management & synchronization services
-│   │   └── workflow/                  # Camunda BPMN engine, delegates & task controllers
-│   └── src/main/resources/
-│       ├── application.properties.example # Shareable configuration template
-│       ├── bpmn/                      # BPMN 2.0 executable workflow definitions
-│       ├── db/migration/              # SQL schema migration scripts
-│       ├── reports/                   # JasperReports (.jrxml) print-ready templates
-│       └── templates/mail/            # HTML Thymeleaf email templates
-│
-├── Frontend/                          # Frontend Application (Angular 22)
-│   ├── .env.example                   # Environment configuration template
-│   ├── .gitignore                     # Ignores node_modules/, dist/, .env
-│   ├── package.json                   # NPM dependencies & build scripts
-│   ├── scripts/generate-env.mjs       # Build script generating environment.ts from .env
-│   └── src/app/
-│       ├── core/                      # HTTP interceptors, guards & singleton services
-│       ├── features/                  # Business domain modules
-│       │   ├── auth/                  # Keycloak sign-in & callback flows
-│       │   ├── dashboard/             # Executive KPI analytics charts
-│       │   ├── procurement/           # Requisition forms & Maker-Checker review screens
-│       │   ├── suppliers/             # Supplier directory, proposals & document review
-│       │   ├── company/               # Corporate document library
-│       │   └── users/                 # User administration & role mapping
-│       └── shared/                    # Reusable components, UI widgets & pipes
-│
-└── Keycloak/                          # Keycloak Identity Provider Customizations
-    ├── themes/enterprise/             # Custom branded enterprise login theme
-    │   └── login/                     # FTL templates, corporate CSS & i18n messages
-    └── inspect-theme.mjs              # Theme validation and debugging script
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Maker as Maker (Nhân viên)
+    participant Front as Frontend (Angular)
+    participant Back as Backend (Spring Boot)
+    participant Camunda as Camunda BPMN
+    actor Checker as Checker (Quản lý)
+
+    Maker->>Front: Lập phiếu đề xuất mua sắm
+    Front->>Back: POST /api/procurement/tickets
+    Maker->>Front: Bấm "Gửi duyệt" (Submit)
+    Front->>Back: POST /api/procurement/tickets/{id}/submit
+    Back->>Camunda: Khởi tạo quy trình (Start Process Instance)
+    Camunda->>Camunda: Tự động chạy BudgetCheckDelegate (Kiểm tra ngân sách)
+    alt Ngân sách hợp lệ
+        Camunda-->>Checker: Giao User Task phê duyệt
+        Checker->>Front: Đăng nhập & xem danh sách chờ duyệt
+        Checker->>Back: POST /api/procurement/tasks/{taskId}/review (APPROVE)
+        Back->>Camunda: Hoàn tất Task duyệt
+        Camunda->>Back: Cập nhật trạng thái phiếu: APPROVED
+        Back-->>Maker: Gửi email thông báo phê duyệt thành công
+    else Vượt quá ngân sách
+        Camunda->>Back: Cập nhật trạng thái phiếu: REJECTED
+        Back-->>Maker: Gửi email cảnh báo vượt ngân sách
+    end
 ```
 
 ---
 
-## 8. License & Copyright
+### 5.3. Mẫu gọi API (API Usage Example)
 
-This software and related documentation are the proprietary and confidential property of the Enterprise. Unauthorized copying, distribution, or transfer of this repository or any portion thereof is strictly prohibited without prior written consent.
+Tạo mới một phiếu đề xuất mua sắm (Yêu cầu JWT Bearer Token có role `USER` hoặc `ADMIN`):
+
+```bash
+curl -X POST "http://localhost:8080/api/procurement/tickets" \
+  -H "Authorization: Bearer <YOUR_ACCESS_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ticketCode": "REQ-2026-001",
+    "title": "Mua sắm thiết bị máy tính cho Phòng IT",
+    "department": "IT",
+    "priority": "HIGH",
+    "items": [
+      {
+        "itemName": "Laptop Dell XPS 15",
+        "category": "Hardware",
+        "quantity": 3,
+        "unit": "Chiếc",
+        "unitPrice": 35000000,
+        "totalPrice": 105000000,
+        "supplierName": "FPT Trading"
+      }
+    ]
+  }'
+```
+
+---
+
+## 👥 6. Hướng dẫn Đóng góp (Contributing)
+
+Chúng tôi luôn hoan nghênh sự đóng góp từ cộng đồng để phát triển hệ thống ngày một tốt hơn! Hãy tuân theo các bước sau:
+
+1. **Fork** dự án về tài khoản GitHub của bạn.
+2. Tạo một Branch tính năng mới:
+   ```bash
+   git checkout -b feature/tinh-nang-moi
+   ```
+3. Commit các thay đổi với thông điệp rõ ràng theo chuẩn [Conventional Commits](https://www.conventionalcommits.org/):
+   ```bash
+   git commit -m "feat(procurement): them chuc nang tinh toan thue VAT tu dong"
+   ```
+4. Đẩy code lên nhánh của bạn:
+   ```bash
+   git push origin feature/tinh-nang-moi
+   ```
+5. Mở một **Pull Request (PR)** trên GitHub mô tả chi tiết các thay đổi của bạn để đội ngũ kiểm duyệt xem xét.
+
+---
+
+## 📄 7. Giấy phép (License)
+
+Dự án được phân phối dưới giấy phép **[MIT License](LICENSE)**. Xem thêm thông tin chi tiết tại file `LICENSE`.
+
+<div align="center">
+  <sub>Xây dựng với ❤️ bởi Đội ngũ Phát triển Doanh nghiệp. Mọi thắc mắc xin vui lòng liên hệ ban quản trị.</sub>
+</div>

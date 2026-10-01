@@ -58,7 +58,6 @@ public class KeycloakJwtConfig {
      * Security {@link GrantedAuthority} với prefix {@code ROLE_}.
      */
     static class KeycloakRolesConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
-
         @Override
         public Collection<GrantedAuthority> convert(Jwt jwt) {
             Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
