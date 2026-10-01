@@ -1,0 +1,76 @@
+<div class="scanner-overlay" (click)="onBackdropClick($event)">
+  <div class="scanner-modal" (click)="$event.stopPropagation()">
+    <div class="scanner-header">
+      <div class="header-info">
+        <h2>Đăng nhập Face ID</h2>
+      </div>
+      <button
+        type="button"
+        class="btn-close"
+        (click)="close()"
+        aria-label="Đóng"
+        [disabled]="verified"
+      >
+        &times;
+      </button>
+    </div>
+    <div class="scanner-viewport" [class.verified]="verified" [class.error]="!!cameraError">
+      <video #videoElement autoplay playsinline muted></video>
+      @if (!verified && !cameraError) {
+        <div class="scanner-reticle">
+          <div class="reticle-ring"></div>
+          <div class="corner-brackets"></div>
+          <div class="reticle-laser"></div>
+        </div>
+      }
+      @if (verified) {
+        <div class="success-overlay">
+          <svg
+            width="60"
+            height="60"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </div>
+      }
+      @if (cameraError) {
+        <div class="error-overlay">
+          <svg
+            width="40"
+            height="40"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+      }
+    </div>
+    <div class="scanner-feedback">
+      @if (cameraError) {
+        <div class="status-badge error">{{ cameraError }}</div>
+      } @else if (verified) {
+        <div class="status-badge success">Xác thực thành công! Đang chuyển trang…</div>
+      } @else {
+        <div class="status-badge scanning">
+          <span class="pulse-dot"></span>
+          Đang quét nhận diện tự động…
+        </div>
+        <p class="status-hint">{{ hintText }}</p>
+      }
+    </div>
+  </div>
+</div>

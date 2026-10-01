@@ -16,8 +16,10 @@ public class BrowserLoginController {
 
     @Value("${auth.cookie.secure:true}") 
     private boolean secureCookie = true;
+
     @Value("${auth.oidc.frontend-callback-uri:http://localhost:4200/auth/callback}") 
     private String frontendCallback;
+    
     @Value("${auth.oidc.frontend-login-uri:http://localhost:4200/login}") 
     private String frontendLogin;
     

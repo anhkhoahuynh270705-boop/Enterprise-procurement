@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.example.shopping.user.dto.request.CreateUserRequestDto;
 import com.example.shopping.user.dto.request.UpdateUserRequestDto;
 import com.example.shopping.user.dto.response.UserResponseDto;
+import com.example.shopping.user.entity.UserEntity;
 
 public interface UserService {
     UserResponseDto updateCurrentProfile(String username, com.example.shopping.user.dto.request.UpdateProfileRequestDto request);
@@ -24,4 +25,8 @@ public interface UserService {
     void deleteUser(UUID id);
 
     UserResponseDto toggleUserEnabled(UUID id);
+
+    UserResponseDto uploadAvatar(String username, org.springframework.web.multipart.MultipartFile file);
+
+    UserEntity getAvatarEntity(UUID userId);
 }

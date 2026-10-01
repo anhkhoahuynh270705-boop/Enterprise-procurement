@@ -11,9 +11,12 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { FaceScannerComponent } from '../../faceId/face-scanner/face-scanner';
+
 @Component({
   selector: 'app-login',
   standalone: true,
+  imports: [FaceScannerComponent],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
@@ -23,13 +26,25 @@ export class Login implements OnInit, AfterViewInit {
   readonly auth = inject(AuthService);
   readonly failed = inject(ActivatedRoute).snapshot.queryParamMap.has('error');
   private readonly toast = inject(ToastService);
+
+  showFaceScanner = false;
+
   ngOnInit(): void {
     if (this.failed) this.toast.error('Không thể hoàn tất đăng nhập. Vui lòng thử lại.');
   }
+
   ngAfterViewInit(): void {
     if (isPlatformBrowser(this.platform) && this.bgVideo?.nativeElement) {
       this.bgVideo.nativeElement.muted = true;
       void this.bgVideo.nativeElement.play().catch(() => {});
     }
+  }
+
+  openFaceScanner(): void {
+    this.showFaceScanner = true;
+  }
+
+  onFaceLoginSuccess(): void {
+    this.showFaceScanner = false;
   }
 }

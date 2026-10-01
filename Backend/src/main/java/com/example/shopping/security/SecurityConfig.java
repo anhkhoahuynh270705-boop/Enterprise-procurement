@@ -54,21 +54,28 @@ public class SecurityConfig {
                 .sessionManagement(session
                         -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                /* PUBLIC ENDPOINTS */
                 .requestMatchers("/api/auth/register", "/api/auth/login").denyAll()
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/face/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/users/*/avatar").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/camunda/**", "/engine-rest/**", "/actuator/**").hasRole("ADMIN")
+
+                /* USER PROFILE & AVATAR */
                 .requestMatchers(HttpMethod.GET, "/api/users/me").hasAnyRole("ADMIN", "USER", "CHECKER")
                 .requestMatchers(HttpMethod.PUT, "/api/users/me").hasAnyRole("ADMIN", "USER", "CHECKER")
-                .requestMatchers("/api/users/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/users/me/avatar").hasAnyRole("ADMIN", "USER", "CHECKER")
+
+                /* SUPPLIERS & PROPOSALS & DOCUMENTS */
+                .requestMatchers(HttpMethod.GET, "/api/suppliers", "/api/suppliers/*", "/api/suppliers/code/*").hasAnyRole("ADMIN", "USER")
+                .requestMatchers("/api/suppliers/export/**", "/api/suppliers/export-all", "/api/suppliers/template").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/supplier-proposals").hasAnyRole("ADMIN", "USER", "CHECKER")
                 .requestMatchers(HttpMethod.POST, "/api/supplier-proposals").hasAnyRole("USER", "CHECKER")
                 .requestMatchers("/api/supplier-proposals/**").hasAnyRole("ADMIN", "CHECKER")
                 .requestMatchers(HttpMethod.POST, "/api/supplier-documents/*/review").hasAnyRole("ADMIN", "CHECKER")
                 .requestMatchers("/api/supplier-documents/**").hasAnyRole("ADMIN", "USER", "CHECKER")
-                .requestMatchers("/api/suppliers/export/**", "/api/suppliers/export-all", "/api/suppliers/template").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.GET, "/api/suppliers", "/api/suppliers/*", "/api/suppliers/code/*").hasAnyRole("ADMIN", "USER")
-                .requestMatchers("/api/suppliers/**").hasRole("ADMIN")
+
+                /* PROCUREMENT TICKETS & TASKS & WORKFLOW */
                 .requestMatchers(HttpMethod.GET, "/api/procurement/tasks", "/api/workflow/camunda/tasks").hasAnyRole("ADMIN", "CHECKER")
                 .requestMatchers(HttpMethod.POST, "/api/procurement/tasks/*/review", "/api/workflow/camunda/tasks/*/review").hasAnyRole("ADMIN", "CHECKER")
                 .requestMatchers(HttpMethod.POST, "/api/procurement/import").hasAnyRole("ADMIN", "USER")
@@ -77,8 +84,15 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/procurement/export/*", "/api/procurement/export-detail/*", "/api/procurement/export-all").hasAnyRole("ADMIN", "USER")
                 .requestMatchers(HttpMethod.PUT, "/api/procurement/tickets/*").hasAnyRole("ADMIN", "USER")
                 .requestMatchers(HttpMethod.DELETE, "/api/procurement/tickets/*").hasAnyRole("ADMIN", "USER")
-                .requestMatchers("/api/procurement/**", "/api/workflow/**").hasRole("ADMIN")
+
+                /* COMPANY DOCUMENTS */
                 .requestMatchers(HttpMethod.GET, "/api/company-documents", "/api/company-documents/*/download").hasAnyRole("ADMIN", "USER", "CHECKER")
+
+                /* ADMIN WILDCARDS & SYSTEM */
+                .requestMatchers("/camunda/**", "/engine-rest/**", "/actuator/**").hasRole("ADMIN")
+                .requestMatchers("/api/users/**").hasRole("ADMIN")
+                .requestMatchers("/api/suppliers/**").hasRole("ADMIN")
+                .requestMatchers("/api/procurement/**", "/api/workflow/**").hasRole("ADMIN")
                 .requestMatchers("/api/company-documents/**").hasRole("ADMIN")
                 .anyRequest().hasRole("ADMIN")
                 )

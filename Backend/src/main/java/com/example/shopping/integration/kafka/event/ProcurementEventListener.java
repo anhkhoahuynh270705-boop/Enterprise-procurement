@@ -24,7 +24,7 @@ public class ProcurementEventListener {
     @Async
     @EventListener
     public void handleProcurementEvent(ProcurementEvent event) {
-        log.info("Nhận sự kiện cho phiếu: [{}]", event.getEventType(), event.getTicketCode());
+        log.info("Nhận sự kiện cho phiếu:", event.getEventType(), event.getTicketCode());
         for (NotificationService service : notificationServiceFactory.getAllServices()) {
             try {
                 service.sendNotification(event);

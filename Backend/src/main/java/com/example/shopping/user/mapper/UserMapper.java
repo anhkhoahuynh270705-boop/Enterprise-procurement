@@ -22,6 +22,8 @@ public interface UserMapper {
     @Mapping(target = "role", expression = "java(Role.parse(dto.getRole()).name())")
     @Mapping(target = "emailVerificationRequired", constant = "true")
     @Mapping(target = "employeeStatus", source = "dto.employeeStatus", defaultValue = "ACTIVE")
+    @Mapping(target = "avatarData", ignore = true)
+    @Mapping(target = "avatarContentType", ignore = true)
     UserEntity toEntity(CreateUserRequestDto dto, String encodedPassword);
 
     @Mapping(target = "id", source = "id")

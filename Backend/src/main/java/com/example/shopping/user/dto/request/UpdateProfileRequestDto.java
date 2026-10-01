@@ -12,7 +12,6 @@ import lombok.Data;
 @Data
 public class UpdateProfileRequestDto {
     @Size(max = 2048)
-    @URL(protocol = "https")
     private String avatarUrl;
 
     @Size(max = 30)

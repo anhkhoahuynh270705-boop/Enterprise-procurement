@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.shopping.common.enums.Role;
@@ -250,5 +251,43 @@ public class UserServiceImpl implements UserService {
 
         log.info("Đã user id: ", newStatus ? "kích hoạt" : "vô hiệu hoá", id);
         return userMapper.toDto(saved);
+    }
+
+    @Override
+    @Transactional
+    public UserResponseDto uploadAvatar(String username, MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File ảnh không được để trống.");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chỉ chấp nhận file hình ảnh (JPG, PNG, WEBP, GIF).");
+        }
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Dung lượng ảnh tối đa là 5MB.");
+        }
+
+        UserEntity user = userRepository.findByUsername(username)
+                .filter(account -> !account.isDeleted() && Boolean.TRUE.equals(account.getEnabled()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy hồ sơ người dùng."));
+
+        try {
+            user.setAvatarData(file.getBytes());
+            user.setAvatarContentType(contentType);
+            user.setAvatarUrl("/api/users/" + user.getId() + "/avatar");
+            UserEntity saved = userRepository.save(user);
+            return userMapper.toDto(saved);
+        } catch (java.io.IOException e) {
+            log.error("Lỗi khi đọc file avatar cho user: ", username, e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Không thể đọc dữ liệu file ảnh.");
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserEntity getAvatarEntity(UUID userId) {
+        return userRepository.findById(userId)
+                .filter(account -> !account.isDeleted() && account.getAvatarData() != null)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy ảnh đại diện của người dùng."));
     }
 }

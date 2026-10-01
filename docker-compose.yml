@@ -9,7 +9,7 @@ services:
       - ./Keycloak/themes/enterprise:/opt/keycloak/themes/enterprise:ro
       - ./Frontend/public/videos:/opt/keycloak/themes/enterprise/login/resources/videos:ro
 
-    command: start-dev
+    command: start-dev --features=token-exchange
     restart: unless-stopped
 
     environment:
@@ -26,6 +26,7 @@ services:
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
 
+      KC_FEATURES: token-exchange,admin-fine-grained-authz
       KC_LOG_LEVEL: INFO
 
     ports:

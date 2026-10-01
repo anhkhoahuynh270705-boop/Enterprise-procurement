@@ -100,20 +100,23 @@
     </form>
   }
 
+  <div class="toolbar-actions">
+    <button
+      type="button"
+      class="secondary"
+      (click)="load()"
+      [disabled]="loading() || uploading() || !!busy()"
+      title="Tải lại"
+    >
+      <i class="fa fa-refresh" [class.fa-spin]="loading()"></i> Tải lại
+    </button>
+  </div>
+
   <section class="panel" aria-label="Danh sách tài liệu">
-    <div class="library-header">
-      <h2>
-        Thư viện tài liệu
-        <span class="count">{{ documents().length }}</span>
-      </h2>
-      <button type="button" class="secondary" (click)="load()" [disabled]="loading() || uploading() || !!busy()">
-        <i class="fa fa-refresh"></i>
-        Tải lại
-      </button>
-    </div>
     <div class="filters">
-      <label class="search"
-        >Tìm tài liệu
+      <label class="search">
+        <i class="fa fa-search" aria-hidden="true"></i>
+        Tìm tài liệu
         <input
           type="search"
           placeholder="Tên tài liệu, tên file hoặc mô tả…"
@@ -171,7 +174,7 @@
               <tr>
                 <td class="document-info">
                   <strong>{{ doc.title }}</strong>
-                  <span>{{ doc.filename }} · {{ sizeLabel(doc.size) }}</span>
+                  <span>{{ doc.filename }} | {{ sizeLabel(doc.size) }}</span>
                   @if (doc.description) {
                     <p>{{ doc.description }}</p>
                   }
@@ -188,18 +191,20 @@
                         type="button"
                         (click)="download(doc, true)"
                         [disabled]="!!busy() || uploading() || loading()"
+                        [title]="'Xem ' + doc.title"
                         [attr.aria-label]="'Xem ' + doc.title"
                       >
-                        <i class="fa fa-eye" aria-hidden="true"></i> Xem
+                        <i class="fa fa-eye" aria-hidden="true"></i>
                       </button>
                     }
                     <button
                       type="button"
                       (click)="download(doc)"
                       [disabled]="!!busy() || uploading() || loading()"
+                      [title]="'Tải xuống ' + doc.title"
                       [attr.aria-label]="'Tải xuống ' + doc.title"
                     >
-                      <i class="fa fa-download" aria-hidden="true"></i> Tải xuống
+                      <i class="fa fa-download" aria-hidden="true"></i>
                     </button>
                     @if (isAdmin) {
                       <button
@@ -208,10 +213,10 @@
                         data-action="delete"
                         (click)="remove(doc)"
                         [disabled]="!!busy() || uploading() || loading()"
+                        [title]="'Gỡ ' + doc.title"
                         [attr.aria-label]="'Gỡ ' + doc.title"
                       >
                         <i class="fa fa-trash-o" aria-hidden="true"></i>
-                        Gỡ
                       </button>
                     }
                   </div>
