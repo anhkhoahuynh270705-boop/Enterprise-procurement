@@ -75,6 +75,12 @@ public class UserEntity {
     @Column(name = "avatar_url", length = 2048)
     private String avatarUrl;
 
+    @Column(name = "avatar_data", columnDefinition = "bytea")
+    private byte[] avatarData;
+
+    @Column(name = "avatar_content_type", length = 50)
+    private String avatarContentType;
+
     @Column(length = 30)
     private String phone;
 

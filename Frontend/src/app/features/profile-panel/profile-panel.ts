@@ -5,16 +5,10 @@ import { Subscription } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { environment } from '../../../environments/environment';
 import { Gender, UpdateMyProfileRequest, UserResponse } from '../../features/auth/model/auth';
+import { FaceAuthService } from '../faceId/services/face-auth.service';
+import { ToastService } from '../../core/services/toast.service';
+import { FaceEnrollComponent } from '../faceId/face-enroll/face-enroll';
 
-function httpsUrl(control: AbstractControl) {
-  if (!control.value?.trim()) return null;
-  try {
-    const url = new URL(control.value.trim());
-    return url.protocol === 'https:' && !!url.hostname ? null : { https: true };
-  } catch {
-    return { https: true };
-  }
-}
 function pastDate(control: AbstractControl) {
   if (!control.value) return null;
   const value = control.value as string;
@@ -32,24 +26,29 @@ function pastDate(control: AbstractControl) {
 @Component({
   selector: 'app-profile-panel',
   standalone: true,
-  imports: [SensitiveValue, ReactiveFormsModule],
+  imports: [SensitiveValue, ReactiveFormsModule, FaceEnrollComponent],
   templateUrl: './profile-panel.html',
   styleUrl: './profile-panel.scss',
 })
 export class ProfilePanel implements OnDestroy {
   private readonly http = inject(HttpClient);
+  private readonly faceAuth = inject(FaceAuthService);
+  private readonly toast = inject(ToastService);
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
   private request?: Subscription;
+  private faceCheckSub?: Subscription;
   readonly profile = signal<UserResponse | null>(null);
+  readonly faceEnrolled = signal(false);
+  readonly showEnrollDialog = signal(false);
   readonly loading = signal(false);
   readonly error = signal('');
   readonly editing = signal(false);
   readonly saving = signal(false);
+  readonly uploadingAvatar = signal(false);
   readonly saveError = signal('');
   readonly saved = signal(false);
   readonly avatarFailed = signal(false);
   readonly form = inject(FormBuilder).nonNullable.group({
-    avatarUrl: ['', [Validators.maxLength(2048), httpsUrl]],
     phone: ['', [Validators.maxLength(30), Validators.pattern(/^[+\d\s().-]*$/)]],
     dateOfBirth: ['', pastDate],
     gender: ['', Validators.pattern(/^(MALE|FEMALE|OTHER|UNDISCLOSED)$/)],
@@ -64,7 +63,6 @@ export class ProfilePanel implements OnDestroy {
     const user = this.profile();
     if (!user || this.saving()) return;
     this.form.reset({
-      avatarUrl: user.avatarUrl ?? '',
       phone: user.phone ?? '',
       dateOfBirth: user.dateOfBirth ?? '',
       gender: user.gender ?? '',
@@ -87,7 +85,7 @@ export class ProfilePanel implements OnDestroy {
     if (this.form.invalid) return;
     const value = this.form.getRawValue();
     const body: UpdateMyProfileRequest = {
-      avatarUrl: value.avatarUrl.trim() || null,
+      avatarUrl: this.profile()?.avatarUrl ?? null,
       phone: value.phone.trim() || null,
       dateOfBirth: value.dateOfBirth || null,
       gender: (value.gender || null) as Gender | null,
@@ -114,14 +112,58 @@ export class ProfilePanel implements OnDestroy {
       });
   }
 
+  onAvatarFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    input.value = '';
+
+    if (!file.type.startsWith('image/')) {
+      this.toast.error('Chỉ được chọn file hình ảnh (JPG, PNG, WEBP, GIF).');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      this.toast.error('Dung lượng file tối đa là 5MB.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    this.uploadingAvatar.set(true);
+    this.http.post<UserResponse>(environment.apiBaseUrl + '/users/me/avatar', formData).subscribe({
+      next: (updatedProfile) => {
+        this.uploadingAvatar.set(false);
+        this.avatarFailed.set(false);
+        this.profile.set(updatedProfile);
+        this.toast.success('Cập nhật ảnh đại diện thành công!');
+      },
+      error: (err: any) => {
+        this.uploadingAvatar.set(false);
+        const msg =
+          err?.error?.message ||
+          err?.error?.detail ||
+          'Tải ảnh đại diện thất bại. Vui lòng thử lại.';
+        this.toast.error(msg);
+      },
+    });
+  }
+
   avatarUrl(profile: UserResponse): string | null {
     if (this.avatarFailed() || !profile.avatarUrl) return null;
-    try {
-      const url = new URL(profile.avatarUrl);
-      return url.protocol === 'https:' ? profile.avatarUrl : null;
-    } catch {
-      return null;
+    const raw = profile.avatarUrl.trim();
+    if (raw.startsWith('/api/')) {
+      const base = environment.apiBaseUrl.replace(/\/api\/?$/, '');
+      return `${base}${raw}`;
     }
+    if (
+      raw.startsWith('http://') ||
+      raw.startsWith('https://') ||
+      raw.startsWith('data:image/')
+    ) {
+      return raw;
+    }
+    return null;
   }
 
   initials(profile: UserResponse): string {
@@ -166,13 +208,25 @@ export class ProfilePanel implements OnDestroy {
         next: (profile) => {
           this.profile.set(profile);
           this.loading.set(false);
-          if (!profile) this.error.set('Không tìm thấy hồ sơ của bạn.');
+          if (!profile) {
+            this.error.set('Không tìm thấy hồ sơ của bạn.');
+          } else if (profile.username) {
+            this.checkFaceEnrollment(profile.username);
+          }
         },
         error: () => {
           this.loading.set(false);
           this.error.set('Không thể tải hồ sơ. Vui lòng thử lại.');
         },
       });
+  }
+
+  checkFaceEnrollment(username: string): void {
+    this.faceCheckSub?.unsubscribe();
+    this.faceCheckSub = this.faceAuth.isEnrolled(username).subscribe({
+      next: (res) => this.faceEnrolled.set(res.enrolled),
+      error: () => this.faceEnrolled.set(false),
+    });
   }
 
   close(): void {
@@ -212,5 +266,6 @@ export class ProfilePanel implements OnDestroy {
 
   ngOnDestroy(): void {
     this.request?.unsubscribe();
+    this.faceCheckSub?.unsubscribe();
   }
 }

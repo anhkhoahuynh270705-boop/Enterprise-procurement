@@ -1,4 +1,4 @@
-﻿<dialog
+<dialog
   #dialog
   class="profile-panel"
   aria-labelledby="profile-title"
@@ -29,7 +29,23 @@
       <button type="button" class="retry-button" (click)="load()">Thử lại</button>
     } @else if (profile(); as user) {
       <div class="profile-summary">
-        <div class="avatar">
+        <div
+          class="avatar clickable"
+          (click)="avatarFileInput.click()"
+          tabindex="0"
+          role="button"
+          aria-label="Bấm để đổi ảnh đại diện"
+          title="Bấm để đổi ảnh đại diện"
+          (keydown.enter)="avatarFileInput.click()"
+          (keydown.space)="avatarFileInput.click()"
+        >
+          <input
+            #avatarFileInput
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            (change)="onAvatarFileSelected($event)"
+            hidden
+          />
           @if (avatarUrl(user); as url) {
             <img
               [src]="url"
@@ -40,6 +56,14 @@
           } @else {
             <span aria-label="Ảnh đại diện mặc định">{{ initials(user) }}</span>
           }
+          <div class="avatar-hover-overlay" [class.uploading]="uploadingAvatar()">
+            @if (uploadingAvatar()) {
+              <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>
+            } @else {
+              <i class="fa fa-camera" aria-hidden="true"></i>
+              <span class="change-label">Đổi ảnh</span>
+            }
+          </div>
         </div>
         <h3>{{ fullName(user) }}</h3>
         <span class="role-badge">{{ user.role }}</span>
@@ -52,22 +76,6 @@
         <form [formGroup]="form" (ngSubmit)="save()" novalidate>
           <fieldset [disabled]="saving()">
             <legend class="visually-hidden">Chỉnh sửa thông tin cá nhân</legend>
-            <label for="profile-avatar">Ảnh đại diện (URL HTTPS)</label>
-            <input
-              id="profile-avatar"
-              name="avatarUrl"
-              type="url"
-              formControlName="avatarUrl"
-              maxlength="2048"
-              aria-describedby="avatar-help"
-              [attr.aria-invalid]="
-                form.controls.avatarUrl.touched && form.controls.avatarUrl.invalid
-              "
-            />
-            <small id="avatar-help">Dùng đường dẫn ảnh HTTPS, tối đa 2048 ký tự.</small>
-            @if (form.controls.avatarUrl.touched && form.controls.avatarUrl.invalid) {
-              <p class="field-error" role="alert">Nhập URL HTTPS hợp lệ, tối đa 2048 ký tự.</p>
-            }
             <label for="profile-phone">Điện thoại</label>
             <input
               id="profile-phone"
@@ -230,6 +238,44 @@
           <dd>{{ user.enabled ? 'Đang hoạt động' : 'Đã vô hiệu hóa' }}</dd>
         </div>
       </dl>
+
+      <section class="face-id-card">
+        <div class="face-id-info">
+          <div class="title-row">
+            <h4>Bảo mật sinh trắc học Face ID</h4>
+            <span class="status-pill" [class.enrolled]="faceEnrolled()">
+              {{ faceEnrolled() ? 'Đã cài đặt' : 'Chưa cài đặt' }}
+            </span>
+          </div>
+          <p>
+            Đăng ký quét 3 góc nhìn (nhìn thẳng, quay trái, quay phải) để mở khóa tức thì, không bị delay.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="btn-enroll-action"
+          (click)="showEnrollDialog.set(true)"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 8V6a2 2 0 0 1 2-2h2"></path>
+            <path d="M4 16v2a2 2 0 0 0 2 2h2"></path>
+            <path d="M16 4h2a2 2 0 0 1 2 2v2"></path>
+            <path d="M16 20h2a2 2 0 0 0 2-2v-2"></path>
+            <circle cx="9" cy="10" r="1"></circle>
+            <circle cx="15" cy="10" r="1"></circle>
+            <path d="M9.5 15a3.5 3.5 0 0 0 5 0"></path>
+          </svg>
+          {{ faceEnrolled() ? 'Cập nhật Face ID' : 'Đăng ký Face ID mới' }}
+        </button>
+      </section>
+
+      @if (showEnrollDialog()) {
+        <app-face-enroll
+          [username]="user.username"
+          (closeDialog)="showEnrollDialog.set(false)"
+          (enrolledSuccess)="checkFaceEnrollment(user.username)"
+        ></app-face-enroll>
+      }
     }
   </div>
 </dialog>

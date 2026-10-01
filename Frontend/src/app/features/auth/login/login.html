@@ -14,11 +14,36 @@
   <div class="login-card">
     <div class="login-header">
       <h1>Đăng nhập</h1>
-      <p>Sử dụng tài khoản do quản trị viên cấp.</p>
+      <p>Hệ thống Quản lý Mua sắm & Chuỗi cung ứng</p>
     </div>
     <div class="login-form">
-      <a class="btn-login" [href]="auth.loginUrl">Đăng nhập</a>
+      <a class="btn-login" [href]="auth.loginUrl">Đăng nhập tài khoản</a>
+
+      <div class="divider">
+        <span>HOẶC</span>
+      </div>
+
+      <button type="button" class="btn-face-login" (click)="openFaceScanner()">
+        <svg class="face-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 8V6a2 2 0 0 1 2-2h2"></path>
+          <path d="M4 16v2a2 2 0 0 0 2 2h2"></path>
+          <path d="M16 4h2a2 2 0 0 1 2 2v2"></path>
+          <path d="M16 20h2a2 2 0 0 0 2-2v-2"></path>
+          <circle cx="9" cy="10" r="1"></circle>
+          <circle cx="15" cy="10" r="1"></circle>
+          <path d="M9.5 15a3.5 3.5 0 0 0 5 0"></path>
+        </svg>
+        <span>Đăng nhập bằng Face ID</span>
+      </button>
+
       <p class="auth-link">Chưa có tài khoản? Vui lòng liên hệ quản trị viên.</p>
     </div>
   </div>
+
+  @if (showFaceScanner) {
+    <app-face-scanner
+      (closeDialog)="showFaceScanner = false"
+      (loginSuccess)="onFaceLoginSuccess()"
+    ></app-face-scanner>
+  }
 </div>

@@ -100,7 +100,7 @@ export class CompanyDocuments implements OnInit, OnDestroy {
   categoryLabel(value: string): string {
     return this.categories.find((item) => item.value === value)?.label ?? value;
   }
-  
+
   sizeLabel(size: number): string {
     return size >= 1048576
       ? `${(size / 1048576).toFixed(1)} MB`
@@ -155,7 +155,8 @@ export class CompanyDocuments implements OnInit, OnDestroy {
           this.uploading.set(false);
           this.form.reset({ title: '', category: 'POLICY', description: '' });
           this.file.set(null);
-          if (this.fileInput()) this.fileInput()!.nativeElement.value = '';
+          if (this.fileInput()) 
+            this.fileInput()!.nativeElement.value = '';
           this.showUpload.set(false);
           this.page.set(1);
           this.search.set('');

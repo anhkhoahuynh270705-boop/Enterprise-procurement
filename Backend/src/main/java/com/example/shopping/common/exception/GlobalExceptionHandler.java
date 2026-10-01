@@ -54,11 +54,14 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.NOT_FOUND, "Không tìm thấy endpoint: " + ex.getResourcePath(), null);
     }
 
-    /** ResponseStatusException từ controller (vd: thiếu header, FORBIDDEN) */
+    /** ResponseStatusException từ controller  */
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ApiErrorResponseDto> handleResponseStatus(ResponseStatusException ex) {
-        log.warn("ResponseStatusException: {}", ex.getReason());
-        return buildError(HttpStatus.valueOf(ex.getStatusCode().value()), ex.getReason(), null);
+        String message = ex.getReason() != null && !ex.getReason().isBlank()
+                ? ex.getReason()
+                : (ex.getMessage() != null && !ex.getMessage().isBlank() ? ex.getMessage() : "Yêu cầu không thể xử lý");
+        log.warn("ResponseStatusException [{}]: {}", ex.getStatusCode().value(), message);
+        return buildError(HttpStatus.valueOf(ex.getStatusCode().value()), message, null);
     }
 
     /** Lỗi validation */

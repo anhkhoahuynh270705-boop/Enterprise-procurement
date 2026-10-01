@@ -28,8 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DirectLoginServiceImpl
-        implements DirectLoginService {
+public class DirectLoginServiceImpl implements DirectLoginService {
 
     private final KeycloakConfig config;
     private final RestTemplate http;

@@ -22,14 +22,15 @@ public class ProcurementEventPublisher {
     @Autowired
     public ProcurementEventPublisher(
             ApplicationEventPublisher applicationEventPublisher,
-            @Autowired(required = false) KafkaTemplate<String, Object> kafkaTemplate) {
+            @Autowired(required = false) 
+            KafkaTemplate<String, Object> kafkaTemplate) {
         this.applicationEventPublisher = applicationEventPublisher;
         this.kafkaTemplate = kafkaTemplate;
     }
 
     @Async
     public void publishEvent(ProcurementEvent event) {
-        log.info("Event cho phiếu: [{}] - {}", event.getEventType(), event.getTicketCode());
+        log.info("Event cho phiếu:", event.getEventType(), event.getTicketCode());
 
         // Thử gửi qua Kafka Message Queue
         if (kafkaTemplate != null) {
@@ -37,7 +38,7 @@ public class ProcurementEventPublisher {
                 kafkaTemplate.send(TOPIC_PROCUREMENT_EVENTS, event.getTicketCode(), event);
                 log.info("Đã đẩy message vào Kafka topic.", TOPIC_PROCUREMENT_EVENTS);
             } catch (Exception e) {
-                log.warn("Không thể gửi vào Kafka topic [{}]: {}.",
+                log.warn("Không thể gửi vào Kafka topic: ",
                         TOPIC_PROCUREMENT_EVENTS, e.getMessage());
             }
         }
