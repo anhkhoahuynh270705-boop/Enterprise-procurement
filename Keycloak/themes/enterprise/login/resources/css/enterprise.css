@@ -153,8 +153,12 @@ html.login-pf {
   border: none;
 }
 .enterprise-login .pf-c-button.pf-m-primary,
-.enterprise-login input[type="submit"] {
-  display: block;
+.enterprise-login input[type="submit"],
+.enterprise-login a.btn-primary,
+.enterprise-login a.pf-c-button.pf-m-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   min-height: 52px;
   padding: 14px 16px;
@@ -167,14 +171,20 @@ html.login-pf {
   font-weight: 600;
   box-shadow: none;
   cursor: pointer;
+  text-decoration: none;
+  box-sizing: border-box;
   transition:
     transform 0.2s,
     background 0.2s;
 }
 .enterprise-login .pf-c-button.pf-m-primary:hover,
-.enterprise-login input[type="submit"]:hover {
+.enterprise-login input[type="submit"]:hover,
+.enterprise-login a.btn-primary:hover,
+.enterprise-login a.pf-c-button.pf-m-primary:hover {
   background: #2868c0;
   transform: translateY(-2px);
+  text-decoration: none;
+  color: #fff;
 }
 .enterprise-login input[type="submit"]:disabled {
   opacity: 0.6;
@@ -249,6 +259,7 @@ html.login-pf {
   background: none;
   padding: 16px 0 0;
   font-size: 14px;
+  color: white;
 }
 .enterprise-login #kc-info {
   margin: 12px 0 0;

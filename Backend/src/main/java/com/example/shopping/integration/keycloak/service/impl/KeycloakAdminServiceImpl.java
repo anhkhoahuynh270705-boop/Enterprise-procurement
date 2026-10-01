@@ -176,9 +176,12 @@ public class KeycloakAdminServiceImpl implements KeycloakAdminService {
 
             String userId = (String) users.get(0).get("id");
 
-            // Gửi email thực hiện action UPDATE_PASSWORD
-            String executeActionsUrl = keycloakConfig.getAdminBaseUrl()
-                    + "/users/" + userId + "/execute-actions-email";
+            // Gửi email thực hiện action UPDATE_PASSWORD kèm redirect_uri về trang login
+            String executeActionsUrl = UriComponentsBuilder
+                    .fromUriString(keycloakConfig.getAdminBaseUrl() + "/users/" + userId + "/execute-actions-email")
+                    .queryParam("client_id", keycloakConfig.getClientId())
+                    .queryParam("redirect_uri", "http://localhost:4200/login")
+                    .toUriString();
 
             HttpEntity<List<String>> actionsEntity
                     = new HttpEntity<>(List.of("UPDATE_PASSWORD"), headers);
