@@ -22,13 +22,17 @@ import com.example.shopping.supplier.report.service.SupplierReportService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/suppliers")
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SupplierReportController {
 
-    private final SupplierReportService supplierReportService;
+    SupplierReportService supplierReportService;
 
     /**
      * Xuất chi tiết hồ sơ 1 nhà cung cấp

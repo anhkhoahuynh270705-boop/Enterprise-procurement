@@ -10,7 +10,9 @@ import { authGuard } from './core/guards/auth.guard';
 import { EditUser } from './features/users/edit-user/edit-user';
 import { ProcurementList } from './features/procurement/procurement-list/procurement-list';
 import { ProcurementCreate } from './features/procurement/procurement-create/procurement-create';
+import { ProcurementEdit } from './features/procurement/procurement-edit/procurement-edit';
 import { ProcurementDetail } from './features/procurement/procurement-detail/procurement-detail';
+import { PurchaseOrderList } from './features/purchase-orders/purchase-order-list/purchase-order-list';
 
 import { Dashboard } from './features/dashboard/dashboard-view/dashboard';
 import { AdminLayout } from './layout/admin-layout/admin-layout';
@@ -20,6 +22,7 @@ import { SupplierEdit } from './features/suppliers/supplier-edit/supplier-edit';
 import { SupplierProposals } from './features/suppliers/supplier-proposals/supplier-proposals';
 import { SupplierDocuments } from './features/suppliers/supplier-documents/supplier-documents';
 import { CompanyDocuments } from './features/company/company-documents/company-documents';
+import { ActivityLog } from './features/admin/activity-log/activity-log';
 
 export const routes: Routes = [
     { path: 'forbidden', component: Forbidden },
@@ -60,6 +63,12 @@ export const routes: Routes = [
                 data: { roles: ["ADMIN"] }
             },
             {
+                path: 'activity-logs',
+                component: ActivityLog,
+                canActivate: [roleGuard],
+                data: { roles: ["ADMIN"] }
+            },
+            {
                 path: 'user/create',
                 component: CreateUser,
                 canActivate: [roleGuard],
@@ -72,10 +81,23 @@ export const routes: Routes = [
                 data: { roles: ["ADMIN"] }
             },
             {
+                path: 'purchase-orders',
+                component: PurchaseOrderList,
+                canActivate: [roleGuard],
+                data: { roles: ["ADMIN", "USER", "CHECKER"] }
+            },
+            {
+                path: 'procurement/approvals',
+                component: ProcurementList,
+                canActivate: [roleGuard],
+                data: { roles: ["ADMIN","CHECKER"], view: 'approvals' }
+            },
+            {
                 path: 'procurement',
                 component: ProcurementList,
                 canActivate: [roleGuard],
-                data: { roles: ["ADMIN","USER","CHECKER"] }
+                data: { roles: ["ADMIN","USER","CHECKER"] },
+                pathMatch: 'full'
             },
             {
                 path: 'procurement/create',
@@ -85,7 +107,7 @@ export const routes: Routes = [
             },
             {
                 path: 'procurement/edit/:id',
-                component: ProcurementCreate,
+                component: ProcurementEdit,
                 canActivate: [roleGuard],
                 data: { roles: ["ADMIN","USER"] }
             },
@@ -112,6 +134,13 @@ export const routes: Routes = [
                 component: SupplierDocuments,
                 canActivate: [roleGuard],
                 data: { roles: ["ADMIN", "USER", "CHECKER"] }
+            },
+            {
+                path: 'suppliers/contracts',
+                loadComponent: () => import('./features/suppliers/supplier-contracts/supplier-contracts')
+                    .then((module) => module.SupplierContracts),
+                canActivate: [roleGuard],
+                data: { roles: ["ADMIN", "CHECKER"] }
             },
             {
                 path: 'supplier/create',

@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.springframework.http.HttpStatus;
+import com.example.shopping.user.dto.request.UpdateProfileRequestDto;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,8 +14,8 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 
+import com.example.shopping.common.enums.ErrorEnum;
 import com.example.shopping.common.enums.Role;
 
 import com.example.shopping.integration.keycloak.service.KeycloakAdminService;
@@ -30,25 +30,27 @@ import com.example.shopping.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserServiceImpl implements UserService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final UserMapper userMapper;
-    private final KeycloakAdminService keycloakAdminService;
+    UserRepository userRepository;
+    PasswordEncoder passwordEncoder;
+    UserMapper userMapper;
+    KeycloakAdminService keycloakAdminService;
 
     @Override
     @Transactional 
     public UserResponseDto updateCurrentProfile(String username,
-            com.example.shopping.user.dto.request.UpdateProfileRequestDto request) {
+            UpdateProfileRequestDto request) {
         UserEntity user = userRepository.findByUsername(username)
                 .filter(account -> !account.isDeleted() && Boolean.TRUE.equals(account.getEnabled()))
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Không tìm thấy hồ sơ."));
-        user.setAvatarUrl(optionalText(request.getAvatarUrl()));
+                .orElseThrow(() -> ErrorEnum.USER_PROFILE_NOT_FOUND.ex());
         user.setPhone(optionalText(request.getPhone()));
         user.setDateOfBirth(request.getDateOfBirth());
         user.setGender(optionalText(request.getGender()));
@@ -83,14 +85,14 @@ public class UserServiceImpl implements UserService {
     public UserResponseDto createUser(CreateUserRequestDto request) {
         request.setEmployeeId(optionalText(request.getEmployeeId()));
         if (request.getEmployeeId() != null && userRepository.existsByEmployeeId(request.getEmployeeId())) {
-            throw new IllegalArgumentException("Mã nhân viên đã tồn tại.");
+            throw ErrorEnum.USER_EMPLOYEE_CODE_EXISTS.ex();
         }
         String role = Role.parse(request.getRole()).name();
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("Username đã tồn tại: " + request.getUsername());
+            throw ErrorEnum.USER_USERNAME_EXISTS.ex("Username đã tồn tại: " + request.getUsername());
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email đã tồn tại: " + request.getEmail());
+            throw ErrorEnum.USER_EMAIL_EXISTS.ex("Email đã tồn tại: " + request.getEmail());
         }
         keycloakAdminService.createKeycloakUser(
                 request.getUsername(),
@@ -100,9 +102,15 @@ public class UserServiceImpl implements UserService {
                 request.getLastName()
         );
 
+        UserEntity saved;
         try {
             keycloakAdminService.assignApplicationRole(request.getUsername(), role);
-            if (Boolean.FALSE.equals(request.getEnabled())) keycloakAdminService.updateUserEnabled(request.getUsername(), false);
+            if (Boolean.FALSE.equals(request.getEnabled())) {
+                keycloakAdminService.updateUserEnabled(request.getUsername(), false);
+            }
+
+            UserEntity entity = userMapper.toEntity(request, passwordEncoder.encode(request.getPassword()));
+            saved = userRepository.save(entity);
         } catch (RuntimeException ex) {
             try {
                 keycloakAdminService.deleteKeycloakUser(request.getUsername());
@@ -111,9 +119,11 @@ public class UserServiceImpl implements UserService {
             }
             throw ex;
         }
-        UserEntity entity = userMapper.toEntity(request, passwordEncoder.encode(request.getPassword()));
-        UserEntity saved = userRepository.save(entity);
-        log.info("Đã tạo user mới: ", saved.getUsername());
+
+        if (!Boolean.FALSE.equals(request.getEnabled())) {
+            keycloakAdminService.sendVerifyEmail(request.getUsername());
+        }
+        log.info("Đã tạo user mới: {}", saved.getUsername());
         return userMapper.toDto(saved);
     }
 
@@ -145,28 +155,27 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponseDto updateUser(UUID id, UpdateUserRequestDto request) {
         UserEntity user = userRepository.findById(id).filter(account -> !account.isDeleted())
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user với id: " + id));
+                .orElseThrow(() -> ErrorEnum.USER_NOT_FOUND.ex());
 
         // Ticket ownership and the Keycloak account are tied to this immutable username.
         if (!user.getUsername().equals(request.getUsername())) {
-            throw new IllegalArgumentException("Không được thay đổi username của tài khoản.");
+            throw ErrorEnum.USER_CANNOT_CHANGE_USERNAME.ex();
         }
 
         if (!user.getUsername().equals(request.getUsername())
                 && userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("Username đã tồn tại: " + request.getUsername());
+            throw ErrorEnum.USER_USERNAME_EXISTS.ex("Username đã tồn tại: " + request.getUsername());
         }
         if (!user.getEmail().equals(request.getEmail())
                 && userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email đã tồn tại: " + request.getEmail());
+            throw ErrorEnum.USER_EMAIL_EXISTS.ex("Email đã tồn tại: " + request.getEmail());
         }
 
         String employeeId = optionalText(request.getEmployeeId());
         if (employeeId != null && userRepository.existsByEmployeeIdAndIdNot(employeeId, id)) {
-            throw new IllegalArgumentException("Mã nhân viên đã tồn tại.");
+            throw ErrorEnum.USER_EMPLOYEE_CODE_EXISTS.ex();
         }
 
-        user.setAvatarUrl(optionalText(request.getAvatarUrl()));
         user.setPhone(optionalText(request.getPhone()));
         user.setDateOfBirth(request.getDateOfBirth());
         user.setGender(optionalText(request.getGender()));
@@ -194,17 +203,17 @@ public class UserServiceImpl implements UserService {
         }
         if (request.getEnabled() != null) {
             if (Boolean.FALSE.equals(request.getEnabled()) && isSelf(user)) {
-                throw new IllegalArgumentException("Bạn không thể tự vô hiệu hóa tài khoản của chính mình.");
+                throw ErrorEnum.USER_CANNOT_DISABLE_SELF.ex();
             }
             user.setEnabled(request.getEnabled());
             try {
                 keycloakAdminService.updateUserEnabled(user.getUsername(), request.getEnabled());
             } catch (Exception e) {
-                log.error("Lỗi khi cập nhật trạng thái Keycloak cho user: ", user.getUsername(), e.getMessage());
+                log.error("Lỗi khi cập nhật trạng thái cho user: ", user.getUsername(), e.getMessage());
             }
         }
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
-            keycloakAdminService.resetTemporaryPassword(user.getUsername(), request.getPassword());
+            keycloakAdminService.changePasswordAndClearAction(user.getUsername(), request.getPassword());
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
@@ -216,27 +225,28 @@ public class UserServiceImpl implements UserService {
     public void deleteUser(UUID id) {
         UserEntity user = userRepository.findById(id).filter(account -> !account.isDeleted()).orElse(null);
         if (user == null) {
-            log.warn("User id {} không tồn tại", id);
+            log.warn("User id {} không tồn tại hoặc đã bị xoá", id);
             return;
         }
         if (isSelf(user)) {
-            throw new IllegalArgumentException("Bạn không thể tự xóa tài khoản của chính mình.");
+            throw ErrorEnum.USER_CANNOT_DELETE_SELF.ex();
         }
-        // Keep the identity reserved: tickets are owned by the immutable username.
-        keycloakAdminService.updateUserEnabled(user.getUsername(), false);
+        keycloakAdminService.deleteKeycloakUser(user.getUsername());
+
+        // Soft-delete trong DB
         user.setEnabled(false);
         user.setDeleted(true);
         userRepository.save(user);
-        log.info("Đã xoá user:", user.getUsername(), id);
+        log.info("Đã xoá user: {} (id: {})", user.getUsername(), id);
     }
     /* Cannot Delete self account */
     @Override
     public UserResponseDto toggleUserEnabled(UUID id) {
         UserEntity user = userRepository.findById(id).filter(account -> !account.isDeleted())
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user với id: " + id));
+                .orElseThrow(() -> ErrorEnum.USER_NOT_FOUND.ex());
 
         if (Boolean.TRUE.equals(user.getEnabled()) && isSelf(user)) {
-            throw new IllegalArgumentException("Bạn không thể tự vô hiệu hóa tài khoản của chính mình.");
+            throw ErrorEnum.USER_CANNOT_DISABLE_SELF.ex();
         }
 
         boolean newStatus = !Boolean.TRUE.equals(user.getEnabled());
@@ -256,20 +266,24 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserResponseDto uploadAvatar(String username, MultipartFile file) {
+        UserEntity user = userRepository.findByUsername(username)
+                .filter(account -> !account.isDeleted() && Boolean.TRUE.equals(account.getEnabled()))
+                .orElseThrow(() -> ErrorEnum.USER_PROFILE_NOT_FOUND.ex());
+
+        return storeAvatar(user, file);
+    }
+
+    private UserResponseDto storeAvatar(UserEntity user, MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File ảnh không được để trống.");
+            throw ErrorEnum.USER_AVATAR_EMPTY.ex();
         }
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chỉ chấp nhận file hình ảnh (JPG, PNG, WEBP, GIF).");
+            throw ErrorEnum.USER_AVATAR_INVALID_TYPE.ex();
         }
         if (file.getSize() > 5 * 1024 * 1024) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Dung lượng ảnh tối đa là 5MB.");
+            throw ErrorEnum.USER_AVATAR_TOO_LARGE.ex();
         }
-
-        UserEntity user = userRepository.findByUsername(username)
-                .filter(account -> !account.isDeleted() && Boolean.TRUE.equals(account.getEnabled()))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy hồ sơ người dùng."));
 
         try {
             user.setAvatarData(file.getBytes());
@@ -278,8 +292,8 @@ public class UserServiceImpl implements UserService {
             UserEntity saved = userRepository.save(user);
             return userMapper.toDto(saved);
         } catch (java.io.IOException e) {
-            log.error("Lỗi khi đọc file avatar cho user: ", username, e.getMessage());
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Không thể đọc dữ liệu file ảnh.");
+            log.error("Lỗi khi đọc file avatar cho user {}", user.getUsername(), e);
+            throw ErrorEnum.USER_AVATAR_READ_ERROR.ex(e);
         }
     }
 
@@ -288,6 +302,6 @@ public class UserServiceImpl implements UserService {
     public UserEntity getAvatarEntity(UUID userId) {
         return userRepository.findById(userId)
                 .filter(account -> !account.isDeleted() && account.getAvatarData() != null)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy ảnh đại diện của người dùng."));
+                .orElseThrow(() -> ErrorEnum.USER_AVATAR_NOT_FOUND.ex());
     }
 }

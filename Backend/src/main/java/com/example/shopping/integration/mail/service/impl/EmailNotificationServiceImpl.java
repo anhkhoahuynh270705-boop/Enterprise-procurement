@@ -11,28 +11,33 @@ import org.thymeleaf.context.Context;
 import com.example.shopping.integration.kafka.model.ProcurementEvent;
 import com.example.shopping.integration.kafka.event.enums.ProcurementEventType;
 import com.example.shopping.integration.mail.enums.NotificationChannel;
-import com.example.shopping.integration.mail.service.EmailNotificationService;
 import com.example.shopping.integration.mail.service.MailService;
+import com.example.shopping.integration.mail.service.NotificationService;
 import com.example.shopping.user.entity.UserEntity;
 import com.example.shopping.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class EmailNotificationServiceImpl implements EmailNotificationService {
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+public class EmailNotificationServiceImpl implements NotificationService {
         
     /* Determine the recipient: When approved/rejected, send to Maker */
-    private final MailService mailService;
-    private final UserRepository userRepository;
-    private final TemplateEngine templateEngine;
+    MailService mailService;
+    UserRepository userRepository;
+    TemplateEngine templateEngine;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
     @Override
     public NotificationChannel getChannel() {
+
         return NotificationChannel.EMAIL;
     }
 

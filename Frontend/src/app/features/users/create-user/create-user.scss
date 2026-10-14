@@ -143,19 +143,21 @@ form {
     }
 
     >button[type="submit"] {
-        border-color: #333333;
-        background: #333;
+        border-color: #145c2e;
+        background: #226b3e;
         color: #fff;
 
         &:hover:not(:disabled) {
-            border-color: #111111;
-            background: #111;
+            border-color: #145c2e;
+            background: #145c2e;
         }
 
         &:disabled {
-            border-color: #bbbbbb;
-            background: #e4e4e4;
-            color: #777777;
+            border-color: #145c2e;
+            background: #226b3e;
+            color: #ffffff;
+            opacity: 1;
+            cursor: not-allowed;
         }
     }
 

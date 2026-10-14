@@ -2,8 +2,6 @@ package com.example.shopping.user.dto.request;
 
 import java.time.LocalDate;
 
-import org.hibernate.validator.constraints.URL;
-
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PastOrPresent;
@@ -40,10 +38,6 @@ public class CreateUserRequestDto {
     @Pattern(regexp = "ADMIN|USER|CHECKER", message = "Role must be ADMIN, USER or CHECKER")
     private String role;
     private Boolean enabled;
-
-    @Size(max = 2048)
-    @URL(protocol = "https")
-    private String avatarUrl;
 
     @Size(max = 30)
     @Pattern(regexp = "[+0-9().\\s-]*", message = "Invalid phone number")

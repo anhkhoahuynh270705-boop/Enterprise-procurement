@@ -1,4 +1,4 @@
-<button type="button" class="btn-outline" routerLink="/users">&larr; Back</button>
+<button type="button" class="btn-outline" routerLink="/users"><i class="fa fa-arrow-left" aria-hidden="true"></i> Back</button>
 <h1>Edit User</h1>
 <form [formGroup]="Userform" (ngSubmit)="onUpdate()">
   <div>
@@ -43,6 +43,14 @@
     <input type="text" formControlName="lastName" />
     @if (Userform.controls.lastName.touched && Userform.controls.lastName.invalid) {
       <span style="color: red">lastName is required</span>
+    }
+  </div>
+  <div>
+    <label for="edit-password">Mật khẩu mới (tùy chọn)</label>
+    <input id="edit-password" type="password" formControlName="password" autocomplete="new-password" />
+    <small>Để trống nếu không muốn thay đổi mật khẩu.</small>
+    @if (Userform.controls.password.touched && Userform.controls.password.hasError('minlength')) {
+      <span role="alert" style="color: red">Mật khẩu phải có ít nhất 6 ký tự.</span>
     }
   </div>
   <div>

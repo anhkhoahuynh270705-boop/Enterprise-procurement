@@ -34,6 +34,7 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
+
   private accessToken: string | null = null;
   private currentProfile: CurrentUser | null = null;
   private refreshRequest?: Observable<LoginResponse>;
@@ -119,10 +120,8 @@ export class AuthService {
   }
 
   restoreSession(): Observable<boolean> {
-    if (this.sessionClosed || !isPlatformBrowser(this.platformId)) 
-        return of(false);
-    if (this.isLoggedIn()) 
-        return of(true);
+    if (this.sessionClosed || !isPlatformBrowser(this.platformId)) return of(false);
+    if (this.isLoggedIn()) return of(true);
     return this.refreshToken().pipe(
       map(() => this.isLoggedIn()),
       catchError(() => {

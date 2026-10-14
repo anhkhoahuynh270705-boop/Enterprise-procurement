@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_PurchaseOrder" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.32.0">
+  <bpmn:process id="purchase-order-maker-checker" name="Purchase Order Maker Checker" isExecutable="true" camunda:historyTimeToLive="P30D">
+    <bpmn:startEvent id="StartEvent_SubmitPurchaseOrder" name="Đơn đặt hàng được gửi duyệt">
+      <bpmn:outgoing>Flow_SubmitToChecker</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="UserTask_CheckerReviewPurchaseOrder" name="Duyệt đơn đặt hàng" camunda:candidateGroups="CHECKER">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="approved" label="Kết quả duyệt" type="enum">
+            <camunda:validation>
+              <camunda:constraint name="required" />
+            </camunda:validation>
+            <camunda:value id="true" name="Duyệt" />
+            <camunda:value id="false" name="Từ chối" />
+          </camunda:formField>
+          <camunda:formField id="reviewComment" label="Nhận xét / lý do từ chối" type="string">
+            <camunda:validation>
+              <camunda:constraint name="maxlength" config="1000" />
+            </camunda:validation>
+          </camunda:formField>
+        </camunda:formData>
+        <camunda:taskListener delegateExpression="${purchaseOrderReviewTaskListener}" event="complete" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_SubmitToChecker</bpmn:incoming>
+      <bpmn:outgoing>Flow_CheckerToDecision</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_PurchaseOrderDecision" name="Kết quả duyệt">
+      <bpmn:incoming>Flow_CheckerToDecision</bpmn:incoming>
+      <bpmn:outgoing>Flow_PurchaseOrderApproved</bpmn:outgoing>
+      <bpmn:outgoing>Flow_PurchaseOrderRejected</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="EndEvent_PurchaseOrderApproved" name="Đơn được duyệt">
+      <bpmn:incoming>Flow_PurchaseOrderApproved</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="EndEvent_PurchaseOrderRejected" name="Đơn bị từ chối">
+      <bpmn:incoming>Flow_PurchaseOrderRejected</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_SubmitToChecker" sourceRef="StartEvent_SubmitPurchaseOrder" targetRef="UserTask_CheckerReviewPurchaseOrder" />
+    <bpmn:sequenceFlow id="Flow_CheckerToDecision" sourceRef="UserTask_CheckerReviewPurchaseOrder" targetRef="Gateway_PurchaseOrderDecision" />
+    <bpmn:sequenceFlow id="Flow_PurchaseOrderApproved" name="Đồng ý" sourceRef="Gateway_PurchaseOrderDecision" targetRef="EndEvent_PurchaseOrderApproved">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approved == true || approved == 'true'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_PurchaseOrderRejected" name="Từ chối" sourceRef="Gateway_PurchaseOrderDecision" targetRef="EndEvent_PurchaseOrderRejected">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approved == false || approved == 'false'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_PurchaseOrder">
+    <bpmndi:BPMNPlane id="BPMNPlane_PurchaseOrder" bpmnElement="purchase-order-maker-checker">
+      <bpmndi:BPMNShape id="StartEvent_SubmitPurchaseOrder_di" bpmnElement="StartEvent_SubmitPurchaseOrder">
+        <dc:Bounds x="150" y="172" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="116" y="215" width="104" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_CheckerReviewPurchaseOrder_di" bpmnElement="UserTask_CheckerReviewPurchaseOrder">
+        <dc:Bounds x="260" y="150" width="150" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_PurchaseOrderDecision_di" bpmnElement="Gateway_PurchaseOrderDecision" isMarkerVisible="true">
+        <dc:Bounds x="490" y="165" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="542" y="183" width="69" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_PurchaseOrderApproved_di" bpmnElement="EndEvent_PurchaseOrderApproved">
+        <dc:Bounds x="690" y="112" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="669" y="155" width="78" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_PurchaseOrderRejected_di" bpmnElement="EndEvent_PurchaseOrderRejected">
+        <dc:Bounds x="690" y="252" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="669" y="295" width="78" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_SubmitToChecker_di" bpmnElement="Flow_SubmitToChecker">
+        <di:waypoint x="186" y="190" />
+        <di:waypoint x="260" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_CheckerToDecision_di" bpmnElement="Flow_CheckerToDecision">
+        <di:waypoint x="410" y="190" />
+        <di:waypoint x="490" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_PurchaseOrderApproved_di" bpmnElement="Flow_PurchaseOrderApproved">
+        <di:waypoint x="515" y="165" />
+        <di:waypoint x="515" y="130" />
+        <di:waypoint x="690" y="130" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="545" y="103" width="62" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_PurchaseOrderRejected_di" bpmnElement="Flow_PurchaseOrderRejected">
+        <di:waypoint x="515" y="215" />
+        <di:waypoint x="515" y="270" />
+        <di:waypoint x="690" y="270" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="545" y="276" width="62" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

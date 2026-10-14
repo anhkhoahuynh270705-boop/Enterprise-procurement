@@ -13,11 +13,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+
 @RestController
 @RequestMapping("/api/supplier-proposals")
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SupplierProposalController {
-    private final SupplierProposalService service;
+    SupplierProposalService service;
 
     @GetMapping
     public List<SupplierProposalResponseDto> list() { 

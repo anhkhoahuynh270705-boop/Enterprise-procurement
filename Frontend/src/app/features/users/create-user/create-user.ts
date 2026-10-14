@@ -43,10 +43,10 @@ export class CreateUser {
     });
     this.loading = true;
     this.userService.addUser(data).subscribe({
-      next: (res) => {
+      next: () => {
         this.loading = false;
+        this.toast.success('Tạo người dùng thành công');
         this.router.navigate(['/users']);
-        console.log(res);
         this.form.reset({
           enabled: true,
           role: 'USER',
@@ -55,7 +55,6 @@ export class CreateUser {
       },
       error: (err) => {
         this.loading = false;
-        console.error(err);
         this.toast.error(err.error?.message || 'Failed to create user');
       },
     });

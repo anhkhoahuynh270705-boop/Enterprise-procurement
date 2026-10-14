@@ -23,137 +23,310 @@
                 (click)="closeNavMenu()"
                 aria-label="Đóng"
               >
-                &times;
+                <i class="fa fa-times" aria-hidden="true"></i>
               </button>
             </div>
 
             <ul class="nav-menu-list">
               @if (authService.hasRole('ADMIN')) {
-                <li>
-                  <a
-                    routerLink="/dashboard"
-                    (click)="closeNavMenu()"
-                    class="nav-menu-item"
-                    routerLinkActive="active"
+                <li class="nav-menu-group">
+                  <button
+                    type="button"
+                    class="nav-menu-section"
+                    (click)="toggleMenuSection('overview')"
+                    [attr.aria-expanded]="isMenuSectionOpen('overview')"
+                    aria-controls="overview-submenu"
                   >
-                    <i class="fa fa-tachometer menu-icon" aria-hidden="true"></i>
-                    <div class="menu-info">
-                      <span class="menu-name">Dashboard</span>
-                      <span class="menu-sub">Tổng quan &amp; Báo cáo</span>
-                    </div>
-                  </a>
+                    <span>Tổng quan</span>
+                    <i
+                      class="fa fa-chevron-down"
+                      [class.rotated]="isMenuSectionOpen('overview')"
+                      aria-hidden="true"
+                    ></i>
+                  </button>
+                  @if (isMenuSectionOpen('overview')) {
+                    <ul class="nav-submenu" id="overview-submenu">
+                      @if (authService.hasRole('ADMIN')) {
+                        <li>
+                          <a
+                            routerLink="/dashboard"
+                            (click)="closeNavMenu()"
+                            class="nav-menu-item"
+                            routerLinkActive="active"
+                            [routerLinkActiveOptions]="{ exact: true }"
+                            ><i class="fa fa-tachometer menu-icon" aria-hidden="true"></i
+                            ><span class="menu-name">Dashboard</span></a
+                          >
+                        </li>
+                      }
+                    </ul>
+                  }
                 </li>
               }
 
-              <li>
-                <a
-                  routerLink="/procurement"
-                  (click)="closeNavMenu()"
-                  class="nav-menu-item"
-                  routerLinkActive="active"
+              <li class="nav-menu-group">
+                <button
+                  type="button"
+                  class="nav-menu-section"
+                  (click)="toggleMenuSection('procurement')"
+                  [attr.aria-expanded]="isMenuSectionOpen('procurement')"
+                  aria-controls="procurement-submenu"
                 >
-                  <i class="fa fa-shopping-cart menu-icon" aria-hidden="true"></i>
-                  <div class="menu-info">
-                    <span class="menu-name">Quản lý mua sắm</span>
-                    <span class="menu-sub">Phiếu đề xuất &amp; Phê duyệt</span>
-                  </div>
-                </a>
+                  <span>Mua sắm</span>
+                  <i
+                    class="fa fa-chevron-down"
+                    [class.rotated]="isMenuSectionOpen('procurement')"
+                    aria-hidden="true"
+                  ></i>
+                </button>
+                @if (isMenuSectionOpen('procurement')) {
+                  <ul class="nav-submenu" id="procurement-submenu">
+                    @if (authService.hasRole('ADMIN', 'USER', 'CHECKER')) {
+                      <li>
+                        <a
+                          routerLink="/procurement"
+                          (click)="closeNavMenu()"
+                          class="nav-menu-item"
+                          routerLinkActive="active"
+                          [routerLinkActiveOptions]="{ exact: true }"
+                          ><i class="fa fa-file-text-o menu-icon" aria-hidden="true"></i
+                          ><span class="menu-name">Yêu cầu &amp; phiếu mua sắm</span></a
+                        >
+                      </li>
+                    }
+                    @if (authService.hasRole('ADMIN', 'CHECKER')) {
+                      <li>
+                        <a
+                          routerLink="/procurement/approvals"
+                          (click)="closeNavMenu()"
+                          class="nav-menu-item"
+                          routerLinkActive="active"
+                          [routerLinkActiveOptions]="{ exact: true }"
+                          ><i class="fa fa-check-square-o menu-icon" aria-hidden="true"></i
+                          ><span class="menu-name">Phê duyệt mua hàng</span></a
+                        >
+                      </li>
+                    }
+                    @if (authService.hasRole('ADMIN', 'USER', 'CHECKER')) {
+                      <li>
+                        <a
+                          routerLink="/purchase-orders"
+                          (click)="closeNavMenu()"
+                          class="nav-menu-item"
+                          routerLinkActive="active"
+                          [routerLinkActiveOptions]="{ exact: true }"
+                          ><i class="fa fa-shopping-basket menu-icon" aria-hidden="true"></i
+                          ><span class="menu-name">Đơn đặt hàng</span></a
+                        >
+                      </li>
+                    }
+                    <li>
+                      <span class="nav-menu-item is-disabled" aria-disabled="true"
+                        ><i class="fa fa-list-alt menu-icon" aria-hidden="true"></i
+                        ><span class="menu-name">Yêu cầu báo giá &amp; so sánh báo giá</span
+                        ><span class="menu-status">Chưa khả dụng</span></span
+                      >
+                    </li>
+                  </ul>
+                }
               </li>
 
               @if (authService.hasRole('ADMIN', 'USER', 'CHECKER')) {
-                <li>
-                  <a
-                    routerLink="/company-documents"
-                    (click)="closeNavMenu()"
-                    class="nav-menu-item"
-                    routerLinkActive="active"
+                <li class="nav-menu-group">
+                  <button
+                    type="button"
+                    class="nav-menu-section"
+                    (click)="toggleMenuSection('suppliers')"
+                    [attr.aria-expanded]="isMenuSectionOpen('suppliers')"
+                    aria-controls="suppliers-submenu"
                   >
-                    <i class="fa fa-folder-open-o menu-icon" aria-hidden="true"></i>
-                    <div class="menu-info">
-                      <span class="menu-name">Tài liệu công ty</span
-                      ><span class="menu-sub">Nội quy, quy trình &amp; Biểu mẫu</span>
-                    </div>
-                  </a>
-                </li>
-              }
-              @if (authService.hasRole('ADMIN', 'USER', 'CHECKER')) {
-                <li class="supplier-menu-group" [class.open]="isSupplierOpen">
-                  <div class="supplier-item-wrapper">
-                    <a
-                      [routerLink]="
-                        authService.hasRole('ADMIN') ? '/suppliers' : '/supplier-proposals'
-                      "
-                      (click)="onSupplierClick($event)"
-                      class="nav-menu-item"
-                      routerLinkActive="active"
-                      [routerLinkActiveOptions]="{ exact: true }"
-                    >
-                      <i class="fa fa-truck menu-icon" aria-hidden="true"></i>
-                      <div class="menu-info">
-                        <span class="menu-name">Quản lý nhà cung cấp</span>
-                        <span class="menu-sub">Danh sách &amp; Đối tác</span>
-                      </div>
-                    </a>
-                    <button
-                      type="button"
-                      class="submenu-toggle-btn"
-                      (click)="toggleSupplierMenu($event)"
-                      [title]="isSupplierOpen ? 'Thu gọn' : 'Mở rộng'"
-                    >
-                      <i
-                        class="fa fa-chevron-down"
-                        [class.rotated]="isSupplierOpen"
-                        aria-hidden="true"
-                      ></i>
-                    </button>
-                  </div>
-                  @if (isSupplierOpen) {
-                    <ul class="supplier-submenu">
+                    <span>Nhà cung cấp</span>
+                    <i
+                      class="fa fa-chevron-down"
+                      [class.rotated]="isMenuSectionOpen('suppliers')"
+                      aria-hidden="true"
+                    ></i>
+                  </button>
+                  @if (isMenuSectionOpen('suppliers')) {
+                    <ul class="nav-submenu" id="suppliers-submenu">
                       @if (authService.hasRole('ADMIN')) {
                         <li>
                           <a
                             routerLink="/suppliers"
+                            (click)="closeNavMenu()"
+                            class="nav-menu-item"
                             routerLinkActive="active"
                             [routerLinkActiveOptions]="{ exact: true }"
-                            (click)="closeNavMenu()"
-                            >Danh sách nhà cung cấp
-                          </a>
+                            ><i class="fa fa-truck menu-icon" aria-hidden="true"></i
+                            ><span class="menu-name">Danh sách nhà cung cấp</span></a
+                          >
                         </li>
                       }
                       <li>
                         <a
                           routerLink="/supplier-proposals"
-                          routerLinkActive="active"
                           (click)="closeNavMenu()"
-                          >Đề xuất nhà cung cấp
-                        </a>
+                          class="nav-menu-item"
+                          routerLinkActive="active"
+                          [routerLinkActiveOptions]="{ exact: true }"
+                          ><i class="fa fa-paper-plane-o menu-icon" aria-hidden="true"></i
+                          ><span class="menu-name">Đề xuất nhà cung cấp</span></a
+                        >
                       </li>
                       <li>
                         <a
                           routerLink="/suppliers/documents"
-                          routerLinkActive="active"
                           (click)="closeNavMenu()"
-                          >Tài liệu nhà cung cấp
-                        </a>
+                          class="nav-menu-item"
+                          routerLinkActive="active"
+                          [routerLinkActiveOptions]="{ exact: true }"
+                          ><i class="fa fa-folder-open-o menu-icon" aria-hidden="true"></i
+                          ><span class="menu-name">Tài liệu nhà cung cấp</span></a
+                        >
+                      </li>
+                      <li>
+                        <span class="nav-menu-item is-disabled" aria-disabled="true"
+                          ><i class="fa fa-star-o menu-icon" aria-hidden="true"></i
+                          ><span class="menu-name">Đánh giá nhà cung cấp</span
+                          ><span class="menu-status">Chưa khả dụng</span></span
+                        >
                       </li>
                     </ul>
                   }
                 </li>
               }
+
+              <li class="nav-menu-group">
+                <button
+                  type="button"
+                  class="nav-menu-section"
+                  (click)="toggleMenuSection('catalog')"
+                  [attr.aria-expanded]="isMenuSectionOpen('catalog')"
+                  aria-controls="catalog-submenu"
+                >
+                  <span>Danh mục mua sắm</span>
+                  <i
+                    class="fa fa-chevron-down"
+                    [class.rotated]="isMenuSectionOpen('catalog')"
+                    aria-hidden="true"
+                  ></i>
+                </button>
+                @if (isMenuSectionOpen('catalog')) {
+                  <ul class="nav-submenu" id="catalog-submenu">
+                    <li>
+                      <span class="nav-menu-item is-disabled" aria-disabled="true"
+                        ><i class="fa fa-cube menu-icon" aria-hidden="true"></i
+                        ><span class="menu-name">Sản phẩm &amp; dịch vụ</span
+                        ><span class="menu-status">Chưa khả dụng</span></span
+                      >
+                    </li>
+                    <li>
+                      <span class="nav-menu-item is-disabled" aria-disabled="true"
+                        ><i class="fa fa-tags menu-icon" aria-hidden="true"></i
+                        ><span class="menu-name">Nhóm hàng &amp; đơn vị tính</span
+                        ><span class="menu-status">Chưa khả dụng</span></span
+                      >
+                    </li>
+                  </ul>
+                }
+              </li>
+
+              <li class="nav-menu-group">
+                <button
+                  type="button"
+                  class="nav-menu-section"
+                  (click)="toggleMenuSection('documents')"
+                  [attr.aria-expanded]="isMenuSectionOpen('documents')"
+                  aria-controls="documents-submenu"
+                >
+                  <span>Tài liệu &amp; hợp đồng</span>
+                  <i
+                    class="fa fa-chevron-down"
+                    [class.rotated]="isMenuSectionOpen('documents')"
+                    aria-hidden="true"
+                  ></i>
+                </button>
+                @if (isMenuSectionOpen('documents')) {
+                  <ul class="nav-submenu" id="documents-submenu">
+                    @if (authService.hasRole('ADMIN', 'USER', 'CHECKER')) {
+                      <li>
+                        <a
+                          routerLink="/company-documents"
+                          (click)="closeNavMenu()"
+                          class="nav-menu-item"
+                          routerLinkActive="active"
+                          [routerLinkActiveOptions]="{ exact: true }"
+                          ><i class="fa fa-folder-open-o menu-icon" aria-hidden="true"></i
+                          ><span class="menu-name">Tài liệu công ty</span></a
+                        >
+                      </li>
+                    }
+                    @if (authService.hasRole('ADMIN', 'CHECKER')) {
+                      <li>
+                        <a
+                          routerLink="/suppliers/contracts"
+                          (click)="closeNavMenu()"
+                          class="nav-menu-item"
+                          routerLinkActive="active"
+                          [routerLinkActiveOptions]="{ exact: true }"
+                          ><i class="fa fa-file-text menu-icon" aria-hidden="true"></i
+                          ><span class="menu-name">Hợp đồng nhà cung cấp</span></a
+                        >
+                      </li>
+                    }
+                    <li>
+                      <span class="nav-menu-item is-disabled" aria-disabled="true"
+                        ><i class="fa fa-archive menu-icon" aria-hidden="true"></i
+                        ><span class="menu-name">Hồ sơ mua sắm &amp; biên bản nhận hàng</span
+                        ><span class="menu-status">Chưa khả dụng</span></span
+                      >
+                    </li>
+                  </ul>
+                }
+              </li>
+
               @if (authService.hasRole('ADMIN')) {
-                <li>
-                  <a
-                    routerLink="/users"
-                    (click)="closeNavMenu()"
-                    class="nav-menu-item"
-                    routerLinkActive="active"
+                <li class="nav-menu-group">
+                  <button
+                    type="button"
+                    class="nav-menu-section"
+                    (click)="toggleMenuSection('admin')"
+                    [attr.aria-expanded]="isMenuSectionOpen('admin')"
+                    aria-controls="admin-submenu"
                   >
-                    <i class="fa fa-users menu-icon" aria-hidden="true"></i>
-                    <div class="menu-info">
-                      <span class="menu-name">Quản lý user</span>
-                      <span class="menu-sub">Danh sách &amp; Phân quyền</span>
-                    </div>
-                  </a>
+                    <span>Quản trị hệ thống</span>
+                    <i
+                      class="fa fa-chevron-down"
+                      [class.rotated]="isMenuSectionOpen('admin')"
+                      aria-hidden="true"
+                    ></i>
+                  </button>
+                  @if (isMenuSectionOpen('admin')) {
+                    <ul class="nav-submenu" id="admin-submenu">
+                      <li>
+                        <a
+                          routerLink="/users"
+                          (click)="closeNavMenu()"
+                          class="nav-menu-item"
+                          routerLinkActive="active"
+                          [routerLinkActiveOptions]="{ exact: true }"
+                          ><i class="fa fa-users menu-icon" aria-hidden="true"></i
+                          ><span class="menu-name">Người dùng</span></a
+                        >
+                      </li>
+                      <li>
+                        <a
+                          routerLink="/activity-logs"
+                          (click)="closeNavMenu()"
+                          class="nav-menu-item"
+                          routerLinkActive="active"
+                          [routerLinkActiveOptions]="{ exact: true }"
+                          ><i class="fa fa-history menu-icon" aria-hidden="true"></i
+                          ><span class="menu-name">Nhật ký hoạt động</span></a
+                        >
+                      </li>
+                    </ul>
+                  }
                 </li>
               }
             </ul>
@@ -174,7 +347,18 @@
           title="Xem hồ sơ cá nhân"
           (click)="closeNavMenu(); profilePanel.open()"
         >
-          <i class="fa fa-user-circle" aria-hidden="true"></i>
+          <span class="header-avatar-wrap">
+            @if (headerAvatarUrl) {
+              <img
+                class="header-avatar-img"
+                [src]="headerAvatarUrl"
+                alt="Ảnh đại diện"
+                (error)="headerAvatarFailed.set(true)"
+              />
+            } @else {
+              <span class="header-avatar-initials">{{ headerInitials }}</span>
+            }
+          </span>
           <span class="session-username">{{ currentUser.username }}</span>
         </button>
       }

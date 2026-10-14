@@ -15,9 +15,6 @@
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 18px;
-  box-shadow:
-    0 10px 25px -5px rgba(0, 0, 0, 0.1),
-    0 8px 10px -6px rgba(0, 0, 0, 0.05);
   width: 100%;
   max-width: 800px;
   overflow: hidden;
@@ -136,11 +133,15 @@
     color: #16a34a;
     animation: fadeIn 0.2s ease-out;
 
-    svg {
+    .fa {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 60px;
+      height: 60px;
       background: #ffffff;
       border-radius: 50%;
-      padding: 6px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      font-size: 2rem;
     }
   }
 
@@ -153,11 +154,15 @@
     justify-content: center;
     color: #dc2626;
 
-    svg {
+    .fa {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
       background: #ffffff;
       border-radius: 50%;
-      padding: 6px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      font-size: 1.5rem;
     }
   }
 }

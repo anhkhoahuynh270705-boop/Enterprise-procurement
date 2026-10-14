@@ -2,6 +2,7 @@ import { Component, OnInit, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+
 @Component({
   selector: 'app-auth-callback',
   standalone: true,
@@ -30,6 +31,7 @@ export class AuthCallback implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly platform = inject(PLATFORM_ID);
+
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platform)) return;
     this.auth.completeLogin().subscribe({

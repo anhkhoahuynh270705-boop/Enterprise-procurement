@@ -7,17 +7,21 @@ import java.time.YearMonth;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
+import com.example.shopping.common.enums.ErrorEnum;
 import lombok.RequiredArgsConstructor;
 import com.example.shopping.procurement.enums.ProcurementStatus;
 import java.time.format.DateTimeParseException;
+
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
 
 @RestController
 @RequestMapping("/api/dashboard")
 @PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class DashboardController {
-    private final DashboardService service;
+    DashboardService service;
 
     @GetMapping
     public DashboardReportDto report(
@@ -33,7 +37,7 @@ public class DashboardController {
                 parsedMonth = YearMonth.parse(month); 
             }
             catch (DateTimeParseException ex) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "month must use YYYY-MM");
+                throw ErrorEnum.DASHBOARD_INVALID_MONTH_FORMAT.ex();
             }
         }
         return service.report(supplier, product, department, status, parsedMonth, currency);

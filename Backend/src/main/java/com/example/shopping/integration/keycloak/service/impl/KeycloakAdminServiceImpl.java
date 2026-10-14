@@ -19,21 +19,27 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import com.example.shopping.common.enums.ErrorEnum;
 import com.example.shopping.integration.keycloak.config.KeycloakConfig;
 import com.example.shopping.common.enums.Role;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
 /**
  * Service tương tác với Keycloak Admin REST API. 
  */
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class KeycloakAdminServiceImpl implements KeycloakAdminService {
 
-    private final RestTemplate restTemplate;
-    private final KeycloakConfig keycloakConfig;
+    RestTemplate restTemplate;
+    KeycloakConfig keycloakConfig;
 
     /** Replace application roles only; retain Keycloak's unrelated system roles. */
     public void assignApplicationRole(String username, String applicationRole) {
@@ -48,7 +54,7 @@ public class KeycloakAdminServiceImpl implements KeycloakAdminService {
         var users = restTemplate.exchange(searchUri, HttpMethod.GET, request,
             new ParameterizedTypeReference<List<Map<String, Object>>>() { }).getBody();
         if (users == null || users.size() != 1) {
-            throw new IllegalStateException("Cannot find the Keycloak account for role assignment.");
+            throw ErrorEnum.KEYCLOAK_ACCOUNT_NOT_FOUND.ex();
         }
         String roleUrl = base + "/roles/" + roleName;
         Map<String, Object> role;
@@ -64,7 +70,7 @@ public class KeycloakAdminServiceImpl implements KeycloakAdminService {
                 new ParameterizedTypeReference<Map<String, Object>>() { }).getBody();
         }
         if (role == null) 
-            throw new IllegalStateException("Keycloak returned an empty role.");
+            throw ErrorEnum.KEYCLOAK_ROLE_INVALID.ex();
         String mappings = base + "/users/" + users.get(0).get("id") + "/role-mappings/realm";
         var current = restTemplate.exchange(mappings, HttpMethod.GET, request,
             new ParameterizedTypeReference<List<Map<String, Object>>>() { }).getBody();
@@ -93,7 +99,6 @@ public class KeycloakAdminServiceImpl implements KeycloakAdminService {
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(body, headers);
 
         try {
-            @SuppressWarnings("unchecked")
             ResponseEntity<Map<String, Object>> response
                     = restTemplate.exchange(tokenEndpoint, HttpMethod.POST, entity,
                             new ParameterizedTypeReference<Map<String, Object>>() {
@@ -101,7 +106,7 @@ public class KeycloakAdminServiceImpl implements KeycloakAdminService {
             return (String) response.getBody().get("access_token");
         } catch (Exception e) {
             log.error("Không thể lấy Keycloak admin token", e);
-            throw new IllegalStateException("Không thể kết nối đến Authentication Server.");
+            throw ErrorEnum.KEYCLOAK_UNAVAILABLE.ex(e);
         }
     }
 
@@ -137,13 +142,13 @@ public class KeycloakAdminServiceImpl implements KeycloakAdminService {
 
         try {
             restTemplate.postForEntity(createUserUrl, entity, String.class);
-            log.info("Đã tạo Keycloak user: {}", username);
+            log.info("Đã tạo Keycloak user: ", username);
         } catch (HttpClientErrorException e) {
             if (e.getStatusCode() == HttpStatus.CONFLICT) {
-                throw new IllegalArgumentException("User đã tồn tại trong Keycloak: " + username);
+                throw ErrorEnum.KEYCLOAK_USER_EXISTS.ex("User đã tồn tại trong Keycloak: " + username);
             }
             log.error("Tạo Keycloak user thất bại:", e.getStatusCode(), e.getResponseBodyAsString());
-            throw new IllegalStateException("Không thể tạo tài khoản: " + e.getMessage());
+            throw ErrorEnum.KEYCLOAK_CREATE_FAILED.ex("Không thể tạo tài khoản: " + e.getMessage(), e);
         }
     }
 
@@ -185,13 +190,13 @@ public class KeycloakAdminServiceImpl implements KeycloakAdminService {
 
             HttpEntity<List<String>> actionsEntity
                     = new HttpEntity<>(List.of("UPDATE_PASSWORD"), headers);
-            restTemplate.postForEntity(executeActionsUrl, actionsEntity, String.class);
+            restTemplate.exchange(executeActionsUrl, HttpMethod.PUT, actionsEntity, Void.class);
 
-            log.info("Đã gửi email đặt lại mật khẩu tới:", email);
+            log.info("Đã gửi email đặt lại mật khẩu tới: {}", email);
 
         } catch (Exception e) {
             log.error("Gửi email forgot password thất bại", e);
-            throw new IllegalStateException("Không thể gửi email đặt lại mật khẩu. Vui lòng thử lại.");
+            throw ErrorEnum.KEYCLOAK_PASSWORD_RESET_FAILED.ex(e);
         }
     }
 
@@ -240,10 +245,11 @@ public class KeycloakAdminServiceImpl implements KeycloakAdminService {
             log.info("Đã cập nhật trạng thái enabled trên Keycloak cho user: {}", enabled, username);
         } catch (HttpClientErrorException e) {
             log.error("Cập nhật trạng thái Keycloak user thất bại: ", e.getStatusCode(), e.getResponseBodyAsString());
-            throw new IllegalStateException("Không thể cập nhật trạng thái tài khoản trên Authentication Server: " + e.getMessage());
+            throw ErrorEnum.KEYCLOAK_STATUS_UPDATE_FAILED.ex(
+                    "Không thể cập nhật trạng thái tài khoản trên Authentication Server: " + e.getMessage(), e);
         } catch (Exception e) {
             log.error("Lỗi khi cập nhật trạng thái Keycloak user: {}", username, e);
-            throw new IllegalStateException("Không thể cập nhật trạng thái tài khoản trên Authentication Server.");
+            throw ErrorEnum.KEYCLOAK_STATUS_UPDATE_FAILED.ex(e);
         }
     }
     
@@ -266,7 +272,7 @@ public class KeycloakAdminServiceImpl implements KeycloakAdminService {
       ).getBody();
 
       if (users == null || users.size() != 1) {
-          throw new IllegalStateException("Keycloak account not found");
+          throw ErrorEnum.KEYCLOAK_ACCOUNT_NOT_FOUND.ex();
       }
 
       String resetUrl = base + "/users/" + users.get(0).get("id")
@@ -296,7 +302,7 @@ public class KeycloakAdminServiceImpl implements KeycloakAdminService {
             .queryParam("username", username).queryParam("exact", true).build().encode().toUriString();
         var users = restTemplate.exchange(search, HttpMethod.GET, new HttpEntity<>(headers),
             new ParameterizedTypeReference<List<Map<String, Object>>>() { }).getBody();
-        if (users == null || users.size() != 1) throw new IllegalStateException("Keycloak account not found");
+        if (users == null || users.size() != 1) throw ErrorEnum.KEYCLOAK_ACCOUNT_NOT_FOUND.ex();
         String userUrl = base + "/users/" + users.get(0).get("id");
         restTemplate.exchange(userUrl + "/reset-password", HttpMethod.PUT,
             new HttpEntity<>(Map.of("type", "password", "value", newPassword, "temporary", false), headers),
@@ -317,14 +323,22 @@ public class KeycloakAdminServiceImpl implements KeycloakAdminService {
         var users = restTemplate.exchange(search, HttpMethod.GET, new HttpEntity<>(headers),
             new ParameterizedTypeReference<List<Map<String, Object>>>() { }).getBody();
         if (users == null || users.isEmpty()) {
-            log.warn("sendVerifyEmail: không tìm thấy user {}", username);
+            log.warn("sendVerifyEmail: không tìm thấy user", username);
             return;
         }
         String userId = (String) users.get(0).get("id");
-        String executeActionsUrl = base + "/users/" + userId + "/execute-actions-email";
-        restTemplate.postForEntity(executeActionsUrl,
-            new HttpEntity<>(List.of("VERIFY_EMAIL"), headers), String.class);
-        log.info("Đã gửi email xác minh cho user: {}", username);
+        String executeActionsUrl = UriComponentsBuilder
+            .fromUriString(base + "/users/" + userId + "/execute-actions-email")
+            .queryParam("client_id", keycloakConfig.getClientId())
+            .queryParam("redirect_uri", "http://localhost:4200/login")
+            .toUriString();
+        try {
+            restTemplate.exchange(executeActionsUrl, HttpMethod.PUT,
+                new HttpEntity<>(List.of("VERIFY_EMAIL"), headers), Void.class);
+            log.info("Đã gửi email xác minh cho user: {}", username);
+        } catch (Exception e) {
+            log.error("Gửi email xác minh thất bại cho user {}: {}", username, e.getMessage(), e);
+        }
     }
 
     public void deleteKeycloakUser(String username) {
@@ -360,10 +374,11 @@ public class KeycloakAdminServiceImpl implements KeycloakAdminService {
             log.info("Đã xóa Keycloak user: {}", username);
         } catch (HttpClientErrorException e) {
             log.error("Xóa Keycloak user thất bại [{}]: {}", e.getStatusCode(), e.getResponseBodyAsString());
-            throw new IllegalStateException("Không thể xóa tài khoản trên Authentication Server: " + e.getMessage());
+            throw ErrorEnum.KEYCLOAK_DELETE_FAILED.ex(
+                    "Không thể xóa tài khoản trên Authentication Server: " + e.getMessage(), e);
         } catch (Exception e) {
             log.error("Lỗi khi xóa Keycloak user: {}", username, e);
-            throw new IllegalStateException("Không thể xóa tài khoản trên Authentication Server.");
+            throw ErrorEnum.KEYCLOAK_DELETE_FAILED.ex(e);
         }
     }
 

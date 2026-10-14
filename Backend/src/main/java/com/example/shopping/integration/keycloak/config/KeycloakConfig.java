@@ -15,8 +15,8 @@ import lombok.Getter;
  * keycloak.realm            = Shopping
  * keycloak.client-id        = shopping-backend
  * keycloak.client-secret    = &lt;secret&gt;
- * keycloak.admin-username   = admin
- * keycloak.admin-password   = admin
+ * keycloak.admin-username   = ###
+ * keycloak.admin-password   = ###
  * </pre>
  */
 @Getter

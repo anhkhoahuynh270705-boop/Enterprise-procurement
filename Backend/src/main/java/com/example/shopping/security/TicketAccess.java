@@ -2,11 +2,11 @@ package com.example.shopping.security;
 
 import com.example.shopping.procurement.entity.ProcurementTicket;
 import com.example.shopping.procurement.enums.ProcurementStatus;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
+import com.example.shopping.common.enums.ErrorEnum;
 public final class TicketAccess {
     private TicketAccess() { }
 
@@ -39,7 +39,7 @@ public final class TicketAccess {
         if (hasRole("CHECKER")) {
             if (ticket.getStatus() == ProcurementStatus.PENDING_APPROVAL) 
                 return;
-        } else if (hasRole("USER") && username().equals(ticket.getMakerUsername())) 
+        } else if (hasRole("USER"))
             return;
         throw denied();
     }
@@ -51,7 +51,7 @@ public final class TicketAccess {
             throw denied();
     }
 
-    private static AccessDeniedException denied() {
-        return new AccessDeniedException("Bạn không có quyền truy cập phiếu này.");
+    private static RuntimeException denied() {
+        return ErrorEnum.TICKET_ACCESS_DENIED.ex();
     }
 }

@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.shopping.admin.auditlog.annotation.Audited;
 import com.example.shopping.user.dto.request.CreateUserRequestDto;
 import com.example.shopping.user.dto.request.UpdateProfileRequestDto;
 import com.example.shopping.user.dto.request.UpdateUserRequestDto;
@@ -31,12 +32,16 @@ import com.example.shopping.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserController {
 
-    private final UserService userService;
+    UserService userService;
 
     @GetMapping
     public ResponseEntity<List<UserResponseDto>> getAllUsers() {
@@ -51,11 +56,23 @@ public class UserController {
     }
 
     @PostMapping
+    @Audited(
+        action = "Tạo người dùng mới",
+        module = "AUTH",
+        moduleLabel = "Xác thực & Người dùng",
+        description = "Quản trị viên tạo tài khoản người dùng mới"
+    )
     public ResponseEntity<UserResponseDto> createUser(@Valid @RequestBody CreateUserRequestDto request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(request));
     }
 
     @PutMapping("/{id}")
+    @Audited(
+        action = "Cập nhật người dùng",
+        module = "AUTH",
+        moduleLabel = "Xác thực & Người dùng",
+        description = "Quản trị viên cập nhật thông tin người dùng"
+    )
     public ResponseEntity<UserResponseDto> updateUser(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateUserRequestDto request) {
@@ -63,12 +80,24 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
+    @Audited(
+        action = "Xóa người dùng",
+        module = "AUTH",
+        moduleLabel = "Xác thực & Người dùng",
+        description = "Quản trị viên xóa tài khoản người dùng"
+    )
     public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/toggle-status")
+    @Audited(
+        action = "Đổi trạng thái người dùng",
+        module = "AUTH",
+        moduleLabel = "Xác thực & Người dùng",
+        description = "Bật/Tắt kích hoạt tài khoản người dùng"
+    )
     public ResponseEntity<UserResponseDto> toggleUserStatus(@PathVariable UUID id) {
         return ResponseEntity.ok(userService.toggleUserEnabled(id));
     }

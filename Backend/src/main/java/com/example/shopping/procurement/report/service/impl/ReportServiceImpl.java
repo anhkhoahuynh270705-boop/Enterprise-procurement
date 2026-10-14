@@ -2,6 +2,7 @@ package com.example.shopping.procurement.report.service.impl;
 
 import com.example.shopping.procurement.report.service.ReportService;
 import com.example.shopping.common.dto.response.ReportFileResponse;
+import com.example.shopping.common.enums.ErrorEnum;
 import com.example.shopping.common.enums.ReportFormat;
 import java.util.UUID;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,7 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.shopping.common.report.validation.ImportWorkbookValidator;
 import com.example.shopping.procurement.service.ProcurementService;
-import com.example.shopping.procurement.service.ProcurementCalculationService;
+import com.example.shopping.procurement.service.ProcurementSkuGenerator;
 import com.example.shopping.procurement.enums.ProcurementStatus;
 
 import com.example.shopping.procurement.dto.request.CreateProcurementTicketRequestDto;
@@ -40,17 +41,21 @@ import com.example.shopping.procurement.repository.ProcurementTicketRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ReportServiceImpl implements ReportService {
 
-    private final PdfExporter pdfExporter;
-    private final ExcelExporter excelExporter;
-    private final ProcurementTicketRepository ticketRepository;
-    private final ProcurementMapper procurementMapper;
-    private final ProcurementService procurementService;
-    private final ProcurementCalculationService calculations;
+    PdfExporter pdfExporter;
+    ExcelExporter excelExporter;
+    ProcurementTicketRepository ticketRepository;
+    ProcurementMapper procurementMapper;
+    ProcurementService procurementService;
+    ProcurementSkuGenerator skuGenerator;
 
     @Override
     @Transactional(readOnly = true)
@@ -110,7 +115,7 @@ public class ReportServiceImpl implements ReportService {
 
         try (Workbook workbook = ImportWorkbookValidator.open(inputStream)) {
             if (workbook.getNumberOfSheets() == 0) {
-                throw new IllegalArgumentException("File Excel không có sheet nào.");
+                throw ErrorEnum.EXCEL_NO_SHEET.ex();
             }
 
             Sheet sheet = workbook.getSheetAt(0);
@@ -188,9 +193,7 @@ public class ReportServiceImpl implements ReportService {
             }
 
             if (headerRowIndex == -1) {
-                throw new IllegalArgumentException(
-                        "File import không hợp lệ. Vui lòng dùng mẫu vật tư."
-                );
+                throw ErrorEnum.EXCEL_MISSING_TEMPLATE_HEADERS.ex();
             }
 
             int totalRows = 0;
@@ -305,8 +308,9 @@ public class ReportServiceImpl implements ReportService {
                         .build();
 
                 ProcurementTicket ticket = procurementMapper.toEntity(request, ticketCode, makerUsername);
+                ticket.getItems().forEach(item -> item.setItemCode(skuGenerator.generateNextSku()));
                 ticket.setStatus(request.isSubmitImmediately() ? ProcurementStatus.PENDING_APPROVAL : ProcurementStatus.DRAFT);
-                calculations.recalculate(ticket);
+                procurementService.recalculate(ticket);
                 ProcurementTicket saved = ticketRepository.save(ticket);
                 createdTicketDto = procurementService.submitTicket(saved.getId(), makerUsername);
             }
@@ -523,7 +527,7 @@ public class ReportServiceImpl implements ReportService {
                 return new BigDecimal(str);
             }
         } catch (Exception ignored) {
-        }
+            }
         return null;
     }
 }

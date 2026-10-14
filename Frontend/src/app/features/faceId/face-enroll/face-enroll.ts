@@ -225,15 +225,13 @@ export class FaceEnrollComponent implements OnInit, OnDestroy {
    * but larger resolution, so YuNet gets a clear face for feature extraction).
    */
   private captureForEnroll(video: HTMLVideoElement): string | null {
-    if (!video || video.videoWidth === 0 || video.videoHeight === 0) 
-      return null;
+    if (!video || video.videoWidth === 0 || video.videoHeight === 0) return null;
     const canvas = document.createElement('canvas');
     const size = 640;
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext('2d');
-    if (!ctx) 
-      return null;
+    if (!ctx) return null;
     const vw = video.videoWidth;
     const vh = video.videoHeight;
     const minDim = Math.min(vw, vh);
@@ -298,8 +296,7 @@ export class FaceEnrollComponent implements OnInit, OnDestroy {
   }
 
   onBackdropClick(event: MouseEvent): void {
-    if (event.target === event.currentTarget) 
-      this.close();
+    if (event.target === event.currentTarget) this.close();
   }
 
   private cleanup(): void {
@@ -313,7 +310,6 @@ export class FaceEnrollComponent implements OnInit, OnDestroy {
       this.stream.getTracks().forEach((t) => t.stop());
       this.stream = undefined;
     }
-    if (this.videoRef?.nativeElement) 
-      this.videoRef.nativeElement.srcObject = null;
+    if (this.videoRef?.nativeElement) this.videoRef.nativeElement.srcObject = null;
   }
 }

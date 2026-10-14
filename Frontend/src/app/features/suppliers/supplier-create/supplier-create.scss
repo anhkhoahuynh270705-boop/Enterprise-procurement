@@ -1,4 +1,4 @@
-:host {
+    :host {
     display: block;
     min-height: 100vh;
     background: #ffffff;
@@ -74,7 +74,6 @@
     display: flex;
     flex-direction: column;
     gap: 28px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .form-section {
@@ -190,18 +189,21 @@
         }
 
         &.btn-submit {
-            background: #000000;
-            border: 1px solid #222222;
+            background: #226b3e;
+            border: 1px solid #145c2e;
             color: #fff;
             font-size: 18px;
 
             &:hover:not(:disabled) {
-                background: #444;
-                border-color: #444444;
+                background: #145c2e;
+                border-color: #145c2e;
             }
 
             &:disabled {
-                opacity: 0.5;
+                background: #226b3e;
+                border-color: #145c2e;
+                color: #fff;
+                opacity: 0.55;
                 cursor: not-allowed;
             }
         }

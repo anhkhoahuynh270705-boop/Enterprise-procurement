@@ -1,5 +1,7 @@
 <div class="procurement-container">
-  <button type="button" class="btn btn-outline" routerLink="/procurement">&larr;Back</button>
+  <button type="button" class="btn btn-outline" routerLink="/procurement">
+    <i class="fa fa-arrow-left" aria-hidden="true"></i> Back
+  </button>
   <header class="app-top-header">
     <div class="brand">
       <h2>Enterprise Procurement Detail</h2>
@@ -71,7 +73,8 @@
               auth.hasRole('ADMIN', 'USER') &&
               (currentTicket.status === 'DRAFT' || currentTicket.status === 'REJECTED')
             ) {
-              <button type="button" class="btn btn-primary" (click)="submitTicket()">
+              <button type="button" class="btn btn-primary btn-submit" (click)="submitTicket()">
+                <i class="fa fa-paper-plane" aria-hidden="true"></i>
                 Nộp Duyệt
               </button>
             }
@@ -80,11 +83,16 @@
               currentTicket.status === 'PENDING_APPROVAL' &&
               currentTicket.camundaTaskId
             ) {
-              <button type="button" class="btn btn-success" (click)="openReviewModal()">
-                Người Phê Duyệt
+              <button type="button" class="btn btn-success" (click)="toggleReviewPanel()">
+                <i
+                  class="fa"
+                  [class.fa-check-square-o]="!isReviewModalOpen"
+                  [class.fa-times]="isReviewModalOpen"
+                ></i>
+                {{ isReviewModalOpen ? 'Đóng phê duyệt' : 'Người Phê Duyệt' }}
               </button>
             }
-            @if (canModifyTicket(currentTicket)) {
+            @if (canDeleteTicket(currentTicket)) {
               <button type="button" class="btn btn-danger" (click)="deleteTicket()">
                 Xóa Phiếu
               </button>
@@ -222,8 +230,8 @@
             class="checker-comment-box"
             [ngClass]="currentTicket.status === 'APPROVED' ? 'approved' : 'rejected'"
           >
-            <strong>Ý kiến Checker ({{ currentTicket.checkerUsername }}):</strong>
-            <p>"{{ currentTicket.checkerComment }}"</p>
+            <strong>Ý kiến ({{ currentTicket.checkerUsername }}):</strong>
+            <p>{{ currentTicket.checkerComment }}</p>
           </div>
         }
       </div>
@@ -443,119 +451,143 @@
     </div>
   }
   @if (isReviewModalOpen) {
-    <div class="modal-overlay" (click)="closeReviewModal()">
-      <div class="modal-card" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>Checker Phê Duyệt</h3>
-          <button
-            type="button"
-            class="btn-close"
-            (click)="closeReviewModal()"
-            [disabled]="isReviewing"
-          >
-            &times;
-          </button>
-        </div>
-        <form [formGroup]="reviewForm" (ngSubmit)="submitReview()">
-          <div class="modal-body">
-            <div class="review-info-box">
-              <p>
-                <strong>Mã phiếu:</strong>
-                {{ isFieldVisible('ticketCode') ? ticket?.ticketCode : '••••••••' }}
-                <button
-                  type="button"
-                  class="btn-eye-toggle"
-                  (click)="toggleFieldVisibility('ticketCode')"
-                  [title]="isFieldVisible('ticketCode') ? 'Ẩn mã phiếu' : 'Hiện mã phiếu'"
-                >
-                  <i
-                    class="fa"
-                    [ngClass]="isFieldVisible('ticketCode') ? 'fa-eye-slash' : 'fa-eye'"
-                  ></i>
-                </button>
-              </p>
-              <p>
-                <strong>Tổng số tiền:</strong>
-                {{ ticket?.totalAmount | number: '1.0-2' }} {{ ticket?.currency }}
-              </p>
-              <p><strong>Người lập:</strong> {{ ticket?.makerUsername }}</p>
-              @if (ticket?.camundaTaskId) {
-                <p>
-                  <strong>Task ID:</strong>
-                  {{ isFieldVisible('camundaTaskId') ? ticket?.camundaTaskId : '••••••••' }}
-                  <button
-                    type="button"
-                    class="btn-eye-toggle"
-                    (click)="toggleFieldVisibility('camundaTaskId')"
-                    [title]="isFieldVisible('camundaTaskId') ? 'Ẩn Task ID' : 'Hiện Task ID'"
-                  >
-                    <i
-                      class="fa"
-                      [ngClass]="isFieldVisible('camundaTaskId') ? 'fa-eye-slash' : 'fa-eye'"
-                    ></i>
-                  </button>
-                </p>
-              }
-            </div>
-            <div class="form-group">
-              <label>Quyết định phê duyệt:</label>
-              <div class="radio-group">
-                <label class="radio-label">
-                  <input type="radio" formControlName="approved" [value]="true" />
-                  <span class="text-approve">Đồng ý phê duyệt (APPROVE)</span>
-                </label>
-                <label class="radio-label">
-                  <input type="radio" formControlName="approved" [value]="false" />
-                  <span class="text-reject">Từ chối phê duyệt (REJECT)</span>
-                </label>
-              </div>
-              @if (reviewForm.controls.approved.touched && reviewForm.controls.approved.invalid) {
-                <small class="error-message">Vui lòng chọn quyết định phê duyệt.</small>
-              }
-            </div>
-            <div class="form-group">
-              <label for="reviewComment">Ghi chú thẩm định / Lý do:</label>
-              <textarea
-                id="reviewComment"
-                rows="3"
-                formControlName="comment"
-                placeholder="Nhập nhận xét phê duyệt hoặc lý do từ chối phiếu..."
-              >
-              </textarea>
-              @if (
-                reviewForm.controls.comment.touched &&
-                reviewForm.controls.comment.hasError('maxlength')
-              ) {
-                <small class="error-message">Ghi chú tối đa 500 ký tự.</small>
-              }
-            </div>
-          </div>
-          <div class="modal-footer">
+    <section class="panel details review-panel" id="review-panel" aria-label="Phê duyệt phiếu">
+      <div class="list-header">
+        <h2>
+          Phiếu:
+          {{ isFieldVisible('ticketCode') ? ticket?.ticketCode : '••••••••' }}
+          — {{ ticket?.title }}
+        </h2>
+        <button
+          class="secondary"
+          type="button"
+          (click)="closeReviewModal()"
+          [disabled]="isReviewing"
+          title="Đóng chi tiết"
+        >
+          <i class="fa fa-times" aria-hidden="true"></i>
+          Đóng
+        </button>
+      </div>
+      <dl>
+        <div>
+          <dt>Mã phiếu</dt>
+          <dd>
+            <span>{{ isFieldVisible('ticketCode') ? ticket?.ticketCode : '••••••••' }}</span>
             <button
               type="button"
-              class="btn btn-outline"
-              (click)="closeReviewModal()"
-              [disabled]="isReviewing"
+              class="btn-eye-toggle"
+              (click)="toggleFieldVisibility('ticketCode')"
+              [title]="isFieldVisible('ticketCode') ? 'Ẩn mã phiếu' : 'Hiện mã phiếu'"
             >
-              Hủy bỏ
+              <i
+                class="fa"
+                [ngClass]="isFieldVisible('ticketCode') ? 'fa-eye-slash' : 'fa-eye'"
+              ></i>
             </button>
-            <button
-              type="submit"
-              class="btn"
-              [ngClass]="reviewForm.controls.approved.value ? 'btn-success' : 'btn-danger'"
-              [disabled]="isReviewing || reviewForm.invalid"
-            >
-              @if (isReviewing) {
-                Đang gửi lên hệ thống...
-              } @else if (reviewForm.controls.approved.value) {
-                Xác nhận Duyệt
-              } @else {
-                Xác nhận Từ chối
-              }
-            </button>
+          </dd>
+        </div>
+        <div>
+          <dt>Tiêu đề yêu cầu</dt>
+          <dd>
+            <strong>{{ ticket?.title }}</strong>
+          </dd>
+        </div>
+        <div>
+          <dt>Tổng kinh phí</dt>
+          <dd class="amount-highlight">
+            {{ ticket?.totalAmount | number: '1.0-0' }} {{ ticket?.currency }}
+          </dd>
+        </div>
+        <div>
+          <dt>Phòng ban</dt>
+          <dd>{{ ticket?.department || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Người đề nghị (Maker)</dt>
+          <dd>{{ ticket?.makerUsername }}</dd>
+        </div>
+        <div>
+          <dt>Ngày tạo</dt>
+          <dd>{{ ticket?.createdAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
+        </div>
+        @if (ticket?.camundaTaskId) {
+          <div>
+            <dt>Task ID</dt>
+            <dd>
+              <span>{{
+                isFieldVisible('camundaTaskId') ? ticket?.camundaTaskId : '••••••••'
+              }}</span>
+              <button
+                type="button"
+                class="btn-eye-toggle"
+                (click)="toggleFieldVisibility('camundaTaskId')"
+                [title]="isFieldVisible('camundaTaskId') ? 'Ẩn Task ID' : 'Hiện Task ID'"
+              >
+                <i
+                  class="fa"
+                  [ngClass]="isFieldVisible('camundaTaskId') ? 'fa-eye-slash' : 'fa-eye'"
+                ></i>
+              </button>
+            </dd>
           </div>
-        </form>
-      </div>
-    </div>
+        }
+        <div class="wide">
+          <dt>Lý do đề xuất</dt>
+          <dd class="multiline">{{ ticket?.reason || 'Không có ghi chú thêm' }}</dd>
+        </div>
+      </dl>
+      <form [formGroup]="reviewForm">
+        <div class="form-group">
+          <label class="wide" for="reviewComment">Nhận xét (bắt buộc khi từ chối)</label>
+          <textarea
+            id="reviewComment"
+            rows="3"
+            maxlength="500"
+            formControlName="comment"
+            placeholder="Nhập nhận xét phê duyệt hoặc lý do từ chối phiếu..."
+            [readonly]="isReviewing"
+          >
+          </textarea>
+          @if (
+            reviewForm.controls.comment.touched && reviewForm.controls.comment.hasError('maxlength')
+          ) {
+            <small class="error-message">Ghi chú tối đa 500 ký tự.</small>
+          }
+        </div>
+        <div class="review-panel-footer">
+          <button
+            type="button"
+            class="review-approve"
+            (click)="submitReview(true)"
+            [disabled]="isReviewing"
+            title="Chấp thuận và tạo phiếu"
+          >
+            @if (isReviewing) {
+              <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>
+              Đang xử lý...
+            } @else {
+              <i class="fa fa-check-circle" aria-hidden="true"></i>
+              Chấp thuận và tạo phiếu
+            }
+          </button>
+          <button
+            type="button"
+            class="review-reject"
+            (click)="submitReview(false)"
+            [disabled]="isReviewing"
+            title="Từ chối phiếu"
+          >
+            @if (isReviewing) {
+              <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>
+              Đang xử lý...
+            } @else {
+              <i class="fa fa-ban" aria-hidden="true"></i>
+              Từ chối
+            }
+          </button>
+        </div>
+      </form>
+    </section>
   }
 </div>

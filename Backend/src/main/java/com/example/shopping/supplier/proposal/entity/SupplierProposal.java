@@ -10,7 +10,8 @@ import lombok.Setter;
 @Entity
 @Table(name = "supplier_proposals", indexes = {
     @Index(name = "idx_supplier_proposal_owner", columnList = "submittedBy"),
-    @Index(name = "idx_supplier_proposal_status", columnList = "status")
+    @Index(name = "idx_supplier_proposal_status", columnList = "status"),
+    @Index(name = "idx_supplier_proposal_process_instance", columnList = "camundaProcessInstanceId")
 })
 @Getter
 @Setter
@@ -38,6 +39,7 @@ public class SupplierProposal {
     private LocalDateTime reviewedAt;
     @Column(length = 2000) private String reviewComment;
     private UUID supplierId;
+    @Column(length = 100) private String camundaProcessInstanceId;
 
     // PostgreSQL permits multiple NULL values, freeing the reservation after review.
     @Column(unique = true, length = 13)

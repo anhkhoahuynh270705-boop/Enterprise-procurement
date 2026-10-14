@@ -1,9 +1,10 @@
 package com.example.shopping.auth.faceId.service.impl;
 
 import com.example.shopping.auth.dto.response.LoginResponseDto;
-import com.example.shopping.auth.faceId.client.FaceEnrollResponse;
-import com.example.shopping.auth.faceId.client.FaceServiceRequest;
-import com.example.shopping.auth.faceId.client.FaceVerifyResponse;
+import com.example.shopping.common.enums.ErrorEnum;
+import com.example.shopping.auth.faceId.dto.response.FaceEnrollResponse;
+import com.example.shopping.auth.faceId.dto.request.FaceServiceRequest;
+import com.example.shopping.auth.faceId.dto.response.FaceVerifyResponse;
 import com.example.shopping.auth.faceId.service.FaceAuthService;
 import com.example.shopping.integration.keycloak.config.KeycloakConfig;
 import com.example.shopping.user.entity.UserEntity;
@@ -17,13 +18,11 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
@@ -32,19 +31,27 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 /**
  * Orchestrates multi-angle face enrollment and instant login.
  */
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+
 public class FaceAuthServiceImpl implements FaceAuthService {
 
-    private final UserRepository users;
-    private final RestTemplate http;
-    private final KeycloakConfig keycloakConfig;
+    UserRepository users;
+    RestTemplate http;
+    KeycloakConfig keycloakConfig;
 
     @Value("${face.service.url:http://localhost:8000}")
+    @NonFinal
     private String faceServiceUrl;
 
     @Override
@@ -72,7 +79,7 @@ public class FaceAuthServiceImpl implements FaceAuthService {
             );
             if (resp == null || !resp.isSuccess()) {
                 String msg = resp != null ? resp.getMessage() : "Không nhận được phản hồi từ dịch vụ Face ID";
-                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, msg);
+                throw ErrorEnum.FACE_ENROLL_FAILED.ex(msg);
             }
             log.info("Face enrolled for user with poses ", username, resp.getEnrolledPoses(), user.getId());
         } catch (HttpClientErrorException ex) {
@@ -81,10 +88,7 @@ public class FaceAuthServiceImpl implements FaceAuthService {
             if (msg == null || msg.isBlank()) {
                 msg = "Đăng ký khuôn mặt không thành công (" + ex.getStatusCode().value() + ")";
             }
-            throw new ResponseStatusException(
-                HttpStatus.valueOf(ex.getStatusCode().value()),
-                msg
-            );
+            throw ErrorEnum.FACE_ENROLL_FAILED.ex(msg);
         }
     }
 
@@ -98,7 +102,7 @@ public class FaceAuthServiceImpl implements FaceAuthService {
             FaceVerifyResponse verifyResp = callVerify(user.getId().toString(), imageB64);
             if (!verifyResp.isVerified()) {
                 log.info("Face verify FAILED for: ", effectiveUsername, verifyResp.getMessage());
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Khuôn mặt không khớp. Vui lòng thử lại.");
+                throw ErrorEnum.FACE_NOT_MATCH.ex();
             }
             log.info("Face verify OK for: ", effectiveUsername, verifyResp.getSimilarity());
         } else {
@@ -106,18 +110,18 @@ public class FaceAuthServiceImpl implements FaceAuthService {
             FaceVerifyResponse verifyResp = callVerify(null, imageB64);
             if (!verifyResp.isVerified() || verifyResp.getUserId() == null) {
                 log.info("Face identification FAILED: {}", verifyResp.getMessage());
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Không nhận diện được khuôn mặt người dùng.");
+                throw ErrorEnum.FACE_NOT_RECOGNIZED.ex();
             }
 
             try {
                 UUID userUuid = UUID.fromString(verifyResp.getUserId());
                 UserEntity identifiedUser = users.findById(userUuid)
                     .filter(u -> !u.isDeleted() && Boolean.TRUE.equals(u.getEnabled()))
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tài khoản không tồn tại hoặc đã bị khóa."));
+                    .orElseThrow(() -> ErrorEnum.ACCOUNT_UNAVAILABLE.ex());
                 effectiveUsername = identifiedUser.getUsername();
                 log.info("Face identified as user:", effectiveUsername, verifyResp.getSimilarity());
             } catch (IllegalArgumentException ex) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "ID người dùng không hợp lệ.");
+                throw ErrorEnum.FACE_USER_NOT_FOUND.ex();
             }
         }
         // Issue tokens for the authenticated user
@@ -147,7 +151,7 @@ public class FaceAuthServiceImpl implements FaceAuthService {
     private UserEntity resolveUser(String username) {
         return users.findByUsername(username)
             .filter(u -> !u.isDeleted() && Boolean.TRUE.equals(u.getEnabled()))
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Người dùng không tồn tại hoặc đã bị khóa"));
+            .orElseThrow(() -> ErrorEnum.ACCOUNT_UNAVAILABLE.ex());
     }
 
     private FaceVerifyResponse callVerify(String userId, String imageB64) {
@@ -167,7 +171,7 @@ public class FaceAuthServiceImpl implements FaceAuthService {
             );
             return resp != null ? resp : unverifiedResponse("Không có phản hồi từ dịch vụ Face ID");
         } catch (HttpClientErrorException.NotFound ex) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Người dùng chưa đăng ký khuôn mặt");
+            throw ErrorEnum.FACE_NOT_REGISTERED.ex();
         } catch (HttpClientErrorException ex) {
             log.warn("Face Service verify error: {} {}", ex.getStatusCode(), ex.getResponseBodyAsString());
             return unverifiedResponse(extractMessage(ex.getResponseBodyAsString()));
@@ -202,16 +206,14 @@ public class FaceAuthServiceImpl implements FaceAuthService {
                 LoginResponseDto.class
             );
             if (tokens == null || tokens.getAccessToken() == null) {
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Không tạo được token phiên làm việc");
+                throw ErrorEnum.FACE_SESSION_TOKEN_FAILED.ex();
             }
             log.info("Token exchange succeeded for user:" + username);
             return tokens;
         } catch (HttpClientErrorException ex) {
             log.error("Token exchange failed for user: " + username + ": status=" + ex.getStatusCode() + ", body=" + ex.getResponseBodyAsString());
-            throw new ResponseStatusException(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                "Không thể cấp token đăng nhập: " + extractMessage(ex.getResponseBodyAsString())
-            );
+            throw ErrorEnum.FACE_TOKEN_EXCHANGE_FAILED.ex(
+                    "Không thể cấp token đăng nhập: " + extractMessage(ex.getResponseBodyAsString()), ex);
         }
     }
 
@@ -234,12 +236,12 @@ public class FaceAuthServiceImpl implements FaceAuthService {
                 LoginResponseDto.class
             );
             if (resp == null || resp.getAccessToken() == null) {
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Service account token trống");
+                throw ErrorEnum.FACE_SERVICE_ACCOUNT_EMPTY.ex();
             }
             return resp.getAccessToken();
         } catch (HttpClientErrorException ex) {
             log.error("Service account token fetch failed:", ex.getResponseBodyAsString());
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Dịch vụ xác thực không khả dụng");
+            throw ErrorEnum.FACE_SERVICE_UNAVAILABLE.ex();
         }
     }
 

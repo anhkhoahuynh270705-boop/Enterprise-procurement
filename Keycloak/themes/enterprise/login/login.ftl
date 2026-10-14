@@ -64,7 +64,7 @@
                             </div>
                             <div class="${properties.kcFormOptionsWrapperClass!}">
                                 <#if realm.resetPasswordAllowed>
-                                    <span><a tabindex="6" href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a></span>
+                                    <span><a tabindex="6" href="${url.loginResetCredentialsUrl}<#if locale?? && locale.currentLanguageTag??>&amp;kc_locale=${locale.currentLanguageTag?url}</#if>">${msg("doForgotPassword")}</a></span>
                                 </#if>
                             </div>
 

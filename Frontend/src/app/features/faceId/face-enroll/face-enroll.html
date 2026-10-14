@@ -6,7 +6,7 @@
         <p>Camera tự động nhận diện và chụp — không cần bấm nút</p>
       </div>
       <button type="button" class="btn-close" (click)="close()" aria-label="Đóng"
-              [disabled]="phase === 'saving'">&times;</button>
+              [disabled]="phase === 'saving'"><i class="fa fa-times" aria-hidden="true"></i></button>
     </div>
     <div class="enroll-steps-indicator">
       @for (label of ['Thẳng', 'Trái', 'Phải']; track $index) {
@@ -14,7 +14,7 @@
           <div class="step-circle"
                [class.active]="currentStep === $index && phase !== 'done'"
                [class.done]="thumbs[$index]">
-            @if (thumbs[$index]) { ✓ } @else { {{ $index + 1 }} }
+            @if (thumbs[$index]) { <i class="fa fa-check" aria-hidden="true"></i> } @else { {{ $index + 1 }} }
           </div>
           <span>{{ label }}</span>
         </div>
@@ -41,20 +41,13 @@
 
       @if (phase === 'captured') {
         <div class="captured-overlay">
-          <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
+          <i class="fa fa-check" aria-hidden="true"></i>
         </div>
       }
 
       @if (phase === 'done') {
         <div class="done-overlay">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-          </svg>
+          <i class="fa fa-check" aria-hidden="true"></i>
           <p>Đã lưu thành công!</p>
         </div>
       }
@@ -69,9 +62,10 @@
         </div>
       } @else if (phase === 'captured') {
         <div class="status-badge success">
-          ✓ Đã ghi nhận góc {{ ['thẳng', 'trái', 'phải'][currentStep] }}!
+          <i class="fa fa-check" aria-hidden="true"></i>
+          Đã ghi nhận góc {{ ['thẳng', 'trái', 'phải'][currentStep] }}!
           @if (!isLastStep) {
-            <span class="next-hint">→ Chuẩn bị: {{ ['Quay nhẹ sang TRÁI', 'Quay nhẹ sang PHẢI'][currentStep] }}</span>
+            <span class="next-hint"><i class="fa fa-arrow-right" aria-hidden="true"></i> Chuẩn bị: {{ ['Quay nhẹ sang TRÁI', 'Quay nhẹ sang PHẢI'][currentStep] }}</span>
           }
         </div>
       } @else if (phase === 'countdown') {

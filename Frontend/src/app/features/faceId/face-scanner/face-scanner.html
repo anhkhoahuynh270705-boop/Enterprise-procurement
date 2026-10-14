@@ -11,7 +11,7 @@
         aria-label="Đóng"
         [disabled]="verified"
       >
-        &times;
+        <i class="fa fa-times" aria-hidden="true"></i>
       </button>
     </div>
     <div class="scanner-viewport" [class.verified]="verified" [class.error]="!!cameraError">
@@ -25,37 +25,12 @@
       }
       @if (verified) {
         <div class="success-overlay">
-          <svg
-            width="60"
-            height="60"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-          </svg>
+          <i class="fa fa-check" aria-hidden="true"></i>
         </div>
       }
       @if (cameraError) {
         <div class="error-overlay">
-          <svg
-            width="40"
-            height="40"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
+          <i class="fa fa-exclamation" aria-hidden="true"></i>
         </div>
       }
     </div>

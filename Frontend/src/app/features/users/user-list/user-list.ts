@@ -144,12 +144,14 @@ export class UserList implements OnInit {
         this.users = this.users.filter((u) => u.id !== id);
         this.filteredUsers = this.filteredUsers.filter((u) => u.id !== id);
         this.deletingId = null;
+        this.toast.success('Xóa người dùng thành công');
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Lỗi khi xóa user:', err);
         this.deletingId = null;
         this.loadUsers();
+        this.toast.error(err.error?.message || 'Có lỗi xảy ra khi xóa người dùng.');
       },
     });
   }
@@ -166,7 +168,6 @@ export class UserList implements OnInit {
       if (!confirm(msg)) return;
     }
     this.togglingId = id;
-
     this.userService.toggleUserStatus(id).subscribe({
       next: (updated) => {
         const updateList = (list: Users[]) =>
@@ -175,6 +176,7 @@ export class UserList implements OnInit {
         this.filteredUsers = updateList(this.filteredUsers);
         this.togglingId = null;
         this.cdr.markForCheck();
+        this.toast.success(`Cập nhật trạng thái người dùng "${updated.username}" thành công`);
       },
       error: (err) => {
         console.error('Lỗi khi toggle trạng thái user:', err);

@@ -1,5 +1,4 @@
-import { SensitiveInput } from '../../../shared/sensitive-value/sensitive-input';
-import { SensitiveValue } from '../../../shared/sensitive-value/sensitive-value';
+import { SensitiveValue } from '../../../shared/sensitive/sensitive-value/sensitive-value';
 import { ToastService } from '../../../core/services/toast.service';
 import { ChangeDetectorRef, Component, inject, OnInit, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -9,12 +8,14 @@ import { SupplierProposalService } from '../services/supplier-proposal.service';
 import { ProposalStatus, SupplierProposal } from '../models/supplier-proposal';
 import {
   bankAccountValidator,
+  bankNameValidator,
   bankDetailsValidator,
   contactRequiredValidator,
   phoneValidator,
   supplierNameValidator,
-  trimmed,
+  trimmedValidators,
 } from '../shared/supplier-form.validators';
+import { SensitiveInput } from '../../../shared/sensitive/sensitive-input/sensitive-input';
 
 @Component({
   selector: 'app-supplier-proposals',
@@ -62,30 +63,32 @@ export class SupplierProposals implements OnInit {
         '',
         [
           supplierNameValidator(true),
-          trimmed(Validators.minLength(2)),
-          trimmed(Validators.maxLength(200)),
+          ...trimmedValidators(Validators.minLength(2), Validators.maxLength(200)),
         ],
       ],
       taxCode: [
         '',
-        [trimmed(Validators.required), trimmed(Validators.pattern(/^[0-9]{10}([0-9]{3})?$/))],
+        trimmedValidators(Validators.required, Validators.pattern(/^[0-9]{10}([0-9]{3})?$/)),
       ],
-      contactPerson: ['', [supplierNameValidator(), trimmed(Validators.maxLength(200))]],
-      email: ['', [trimmed(Validators.email), trimmed(Validators.maxLength(254))]],
+      contactPerson: [
+        '',
+        [supplierNameValidator(), ...trimmedValidators(Validators.maxLength(200))],
+      ],
+      email: ['', trimmedValidators(Validators.email, Validators.maxLength(254))],
       phone: ['', phoneValidator()],
-      address: ['', trimmed(Validators.maxLength(255))],
-      city: ['', [supplierNameValidator(), trimmed(Validators.maxLength(255))]],
-      country: ['', [supplierNameValidator(), trimmed(Validators.maxLength(255))]],
-      bankName: ['', [supplierNameValidator(), trimmed(Validators.maxLength(255))]],
+      address: ['', trimmedValidators(Validators.maxLength(255))],
+      city: ['', [supplierNameValidator(), ...trimmedValidators(Validators.maxLength(255))]],
+      country: ['', [supplierNameValidator(), ...trimmedValidators(Validators.maxLength(255))]],
+      bankName: ['', [bankNameValidator(), ...trimmedValidators(Validators.maxLength(255))]],
       bankAccount: ['', bankAccountValidator()],
-      notes: ['', trimmed(Validators.maxLength(2000))],
+      notes: ['', trimmedValidators(Validators.maxLength(2000))],
       reason: [
         '',
-        [
-          trimmed(Validators.required),
-          trimmed(Validators.minLength(10)),
-          trimmed(Validators.maxLength(2000)),
-        ],
+        trimmedValidators(
+          Validators.required,
+          Validators.minLength(10),
+          Validators.maxLength(2000),
+        ),
       ],
     },
     { validators: [contactRequiredValidator, bankDetailsValidator] },
@@ -134,25 +137,6 @@ export class SupplierProposals implements OnInit {
     });
   }
 
-  fieldError(name: keyof typeof this.form.controls): string {
-    if (this.fieldErrors[name]) return this.fieldErrors[name];
-    const field = this.form.controls[name];
-    if (!field.touched || !field.errors) return '';
-    if (field.hasError('required')) return 'Vui lòng nhập thông tin, không chỉ khoảng trắng.';
-    if (field.hasError('minlength'))
-      return `Tối thiểu ${field.errors['minlength'].requiredLength} ký tự.`;
-    if (field.hasError('maxlength'))
-      return `Tối đa ${field.errors['maxlength'].requiredLength} ký tự.`;
-    if (field.hasError('name'))
-      return 'Chỉ nhập chữ và một khoảng trắng giữa các từ, không nhập số.';
-    if (field.hasError('email')) return 'Email không hợp lệ.';
-    if (field.hasError('bankAccount'))
-      return 'Số tài khoản gồm 6–50 chữ số, không có chữ hoặc khoảng trắng.';
-    return name === 'taxCode'
-      ? 'Mã số thuế phải có 10 hoặc 13 chữ số.'
-      : 'Điện thoại gồm 9–15 chữ số, không có chữ hoặc khoảng trắng.';
-  }
-
   submit() {
     if (!this.canSubmit || this.submitting) return;
     this.form.markAllAsTouched();
@@ -160,21 +144,9 @@ export class SupplierProposals implements OnInit {
     this.submitting = true;
     this.fieldErrors = {};
     const raw = this.form.getRawValue();
-    const request = {
-      ...raw,
-      name: raw.name.trim(),
-      taxCode: raw.taxCode.trim(),
-      contactPerson: raw.contactPerson.trim(),
-      email: raw.email.trim(),
-      phone: raw.phone.trim(),
-      address: raw.address.trim(),
-      city: raw.city.trim(),
-      country: raw.country.trim(),
-      bankName: raw.bankName.trim(),
-      bankAccount: raw.bankAccount.trim(),
-      notes: raw.notes.trim(),
-      reason: raw.reason.trim(),
-    };
+    const request = Object.fromEntries(
+      Object.entries(raw).map(([key, value]) => [key, value.trim()]),
+    ) as typeof raw;
     this.service.submit(request).subscribe({
       next: () => {
         this.submitting = false;
@@ -209,6 +181,25 @@ export class SupplierProposals implements OnInit {
     );
   }
 
+  quickApprove(proposal: SupplierProposal) {
+    if (!this.canReviewProposal(proposal) || this.reviewing) return;
+    this.selected = proposal;
+    this.reviewComment = '';
+    this.reviewError = '';
+    this.review(true);
+  }
+
+  openReject(proposal: SupplierProposal) {
+    if (!this.canReviewProposal(proposal) || this.reviewing) return;
+    this.selected = proposal;
+    this.reviewComment = '';
+    this.reviewError = '';
+    // Cuộn đến panel chi tiết để nhập lý do từ chối
+    setTimeout(() => {
+      document.querySelector<HTMLElement>('.details textarea')?.focus();
+    }, 100);
+  }
+
   review(approved: boolean) {
     if (!this.selected || !this.canReviewProposal(this.selected) || this.reviewing) return;
     const comment = this.reviewComment.trim();
@@ -228,8 +219,7 @@ export class SupplierProposals implements OnInit {
         this.reviewing = false;
         this.selected = null;
         this.success = approved ? 'Đã chấp thuận và tạo nhà cung cấp.' : 'Đã từ chối đề xuất.';
-        if (!this.embedded()) 
-          this.toast.success(this.success);
+        if (!this.embedded()) this.toast.success(this.success);
         this.reviewed.emit();
         this.load();
         this.cdr.markForCheck();
@@ -237,10 +227,8 @@ export class SupplierProposals implements OnInit {
       error: (err) => {
         this.reviewing = false;
         this.reviewError = err?.error?.message || 'Không thể xử lý đề xuất.';
-        if (!this.embedded()) 
-          this.toast.error(this.reviewError);
-        if (err.status === 409) 
-          this.load();
+        if (!this.embedded()) this.toast.error(this.reviewError);
+        if (err.status === 409) this.load();
         this.cdr.markForCheck();
       },
     });

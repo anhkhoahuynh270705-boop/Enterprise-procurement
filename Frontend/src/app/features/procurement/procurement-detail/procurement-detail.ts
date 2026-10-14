@@ -71,7 +71,6 @@ export class ProcurementDetail implements OnInit {
   }
 
   reviewForm = this.fb.nonNullable.group({
-    approved: [true, Validators.required],
     comment: ['', Validators.maxLength(500)],
   });
 
@@ -109,7 +108,7 @@ export class ProcurementDetail implements OnInit {
       return;
     }
     const confirmed = confirm(
-      `Bạn có chắc chắn muốn nộp phiếu •••••••• lên cấp quản lý phê duyệt?`,
+      `Bạn có chắc chắn muốn nộp phiếu lên cấp quản lý phê duyệt?`,
     );
     if (!confirmed) {
       return;
@@ -118,7 +117,7 @@ export class ProcurementDetail implements OnInit {
     this.procurementService.submitTicket(this.ticket.id).subscribe({
       next: (res) => {
         this.ticket = res.data;
-        this.toast.success(`Đã nộp duyệt phiếu •••••••• thành công!`);
+        this.toast.success(`Đã nộp duyệt phiếu thành công!`);
         this.isLoading = false;
         this.cdr.markForCheck();
       },
@@ -130,22 +129,33 @@ export class ProcurementDetail implements OnInit {
     });
   }
 
+  toggleReviewPanel(): void {
+    if (this.isReviewModalOpen) {
+      this.closeReviewModal();
+    } else {
+      this.openReviewModal();
+    }
+  }
+
   openReviewModal(): void {
     this.reviewForm.reset({
-      approved: true,
       comment: '',
     });
     this.isReviewModalOpen = true;
+    setTimeout(() => {
+      document
+        .getElementById('review-panel')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
   closeReviewModal(): void {
     this.isReviewModalOpen = false;
     this.reviewForm.reset({
-      approved: true,
       comment: '',
     });
   }
 
-  submitReview(): void {
+  submitReview(approved: boolean): void {
     if (!this.ticket) {
       return;
     }
@@ -154,11 +164,16 @@ export class ProcurementDetail implements OnInit {
       this.toast.error('Không tìm thấy Task ID cho phiếu này.');
       return;
     }
-    if (this.reviewForm.invalid) {
+    const comment = this.reviewForm.controls.comment.value.trim();
+    if (this.reviewForm.controls.comment.invalid) {
       this.reviewForm.markAllAsTouched();
       return;
     }
-    const { approved, comment } = this.reviewForm.getRawValue();
+    if (!approved && !comment) {
+      this.toast.error('Vui lòng nhập nhận xét khi từ chối phiếu.');
+      this.reviewForm.controls.comment.markAsTouched();
+      return;
+    }
     this.isReviewing = true;
     this.procurementService
       .reviewTask(taskId, { approved, comment })
@@ -223,8 +238,29 @@ export class ProcurementDetail implements OnInit {
           this.auth.getCurrentUser()?.username === ticket.makerUsername))
     );
   }
+
+  canDeleteTicket(ticket: ProcurementTicket): boolean {
+    if (ticket.status === 'APPROVED' || ticket.status === 'PENDING_APPROVAL') {
+      return false;
+    }
+    return (
+      (ticket.status === 'DRAFT' || ticket.status === 'REJECTED') &&
+      (this.auth.hasRole('ADMIN') ||
+        (this.auth.hasRole('USER') &&
+          this.auth.getCurrentUser()?.username === ticket.makerUsername))
+    );
+  }
+
   deleteTicket(): void {
-    if (!this.ticket || !this.canModifyTicket(this.ticket)) {
+    if (!this.ticket) {
+      return;
+    }
+    if (this.ticket.status === 'APPROVED') {
+      this.toast.warning('Phiếu đã được duyệt không thể xóa (kể cả quản trị viên).');
+      return;
+    }
+    if (!this.canDeleteTicket(this.ticket)) {
+      this.toast.warning('Bạn không có quyền xóa phiếu này.');
       return;
     }
     const confirmed = confirm(`Xóa vĩnh viễn phiếu ?`);
@@ -233,6 +269,7 @@ export class ProcurementDetail implements OnInit {
     }
     this.procurementService.deleteTicket(this.ticket.id).subscribe({
       next: () => {
+        this.toast.success('Đã xóa phiếu thành công');
         this.router.navigate(['/procurement']);
       },
       error: (err) => {

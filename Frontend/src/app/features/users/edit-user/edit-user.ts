@@ -70,16 +70,21 @@ export class EditUser implements OnInit {
     lastName: ['', Validators.required],
     role: ['', Validators.required],
     enabled: [true, Validators.required],
+    password: ['', Validators.minLength(6)],
   });
   onUpdate(): void {
     if (this.loading || this.Userform.invalid) {
       this.Userform.markAllAsTouched();
       return;
     }
+    const { password, ...profile } = this.Userform.getRawValue();
     const data: UpdateUserRequest = normalizeProfile({
-      ...this.Userform.getRawValue(),
+      ...profile,
       fullName: this.Userform.controls.fullName.value.trim(),
     });
+    if (password.trim()) {
+      data.password = password;
+    }
     if (!this.userId) {
       return;
     }
@@ -87,17 +92,17 @@ export class EditUser implements OnInit {
     if (this.isSelf && data.enabled === false) {
       return;
     }
-
     this.loading = true;
     this.userService.updateUser(this.userId, data).subscribe({
       next: () => {
         this.loading = false;
+        this.toast.success('Cập nhật người dùng thành công');
         this.router.navigate(['/users']);
       },
       error: (err) => {
         this.loading = false;
         const msg = err.error?.message || 'Có lỗi xảy ra khi cập nhật.';
-        this.toast.error(msg);
+        this.toast.error('Cập nhật người dùng thất bại: ' + msg);
       },
     });
   }

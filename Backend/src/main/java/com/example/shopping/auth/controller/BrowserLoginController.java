@@ -7,20 +7,28 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class BrowserLoginController {
 
-    private final BrowserLoginService login;
+    BrowserLoginService login;
 
     @Value("${auth.cookie.secure:true}") 
+    @NonFinal
     private boolean secureCookie = true;
 
     @Value("${auth.oidc.frontend-callback-uri:http://localhost:4200/auth/callback}") 
+    @NonFinal
     private String frontendCallback;
     
     @Value("${auth.oidc.frontend-login-uri:http://localhost:4200/login}") 
+    @NonFinal
     private String frontendLogin;
     
     @GetMapping("/authorize")

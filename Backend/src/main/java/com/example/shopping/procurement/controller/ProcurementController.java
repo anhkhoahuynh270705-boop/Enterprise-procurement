@@ -3,6 +3,7 @@ package com.example.shopping.procurement.controller;
 import java.util.List;
 import java.util.UUID;
 
+import com.example.shopping.admin.auditlog.annotation.Audited;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -21,27 +22,27 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.shopping.common.dto.response.ApiResponse;
-import com.example.shopping.procurement.dto.request.CheckerReviewRequestDto;
 import com.example.shopping.procurement.dto.request.CreateProcurementTicketRequestDto;
 import com.example.shopping.procurement.dto.request.UpdateProcurementTicketRequestDto;
-import com.example.shopping.workflow.camunda.dto.response.CamundaTaskDto;
 import com.example.shopping.procurement.dto.response.ProcurementTicketResponseDto;
 import com.example.shopping.procurement.enums.ProcurementStatus;
 import com.example.shopping.procurement.service.ProcurementService;
-import com.example.shopping.workflow.camunda.service.WorkflowTaskService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/procurement")
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ProcurementController {
 
-    private final ProcurementService procurementService;
-    private final WorkflowTaskService workflowTaskService;
+    ProcurementService procurementService;
 
     private String extractUsername(Jwt jwt) {
         if (jwt == null) {
@@ -55,6 +56,12 @@ public class ProcurementController {
      * Maker tạo phiếu mua sắm mới
      */
     @PostMapping("/tickets")
+    @Audited(
+        action = "Tạo phiếu mua sắm",
+        module = "PROCUREMENT",
+        moduleLabel = "Mua sắm",
+        description = "Maker tạo mới phiếu mua sắm"
+    )
     public ResponseEntity<ApiResponse<ProcurementTicketResponseDto>> createTicket(
             @Valid @RequestBody CreateProcurementTicketRequestDto request,
             @AuthenticationPrincipal Jwt jwt) {
@@ -103,6 +110,12 @@ public class ProcurementController {
      * Cập nhật thông tin phiếu
      */
     @PutMapping("/tickets/{id}")
+    @Audited(
+        action = "Cập nhật phiếu mua sắm",
+        module = "PROCUREMENT",
+        moduleLabel = "Mua sắm",
+        description = "Chỉnh sửa thông tin phiếu mua sắm"
+    )
     public ResponseEntity<ApiResponse<ProcurementTicketResponseDto>> updateTicket(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateProcurementTicketRequestDto request,
@@ -116,6 +129,12 @@ public class ProcurementController {
      * Xóa phiếu mua sắm
      */
     @DeleteMapping("/tickets/{id}")
+    @Audited(
+        action = "Xóa phiếu mua sắm",
+        module = "PROCUREMENT",
+        moduleLabel = "Mua sắm",
+        description = "Hủy bỏ / xóa phiếu mua sắm"
+    )
     public ResponseEntity<ApiResponse<Void>> deleteTicket(
             @PathVariable UUID id,
             @AuthenticationPrincipal Jwt jwt) {
@@ -128,34 +147,17 @@ public class ProcurementController {
      * Maker nộp phiếu mua sắm để Checker duyệt
      */
     @PostMapping("/tickets/{id}/submit")
+    @Audited(
+        action = "Nộp phiếu mua sắm",
+        module = "PROCUREMENT",
+        moduleLabel = "Mua sắm",
+        description = "Maker nộp phiếu mua sắm để Checker duyệt"
+    )
     public ResponseEntity<ApiResponse<ProcurementTicketResponseDto>> submitTicket(
             @PathVariable UUID id,
             @AuthenticationPrincipal Jwt jwt) {
         String username = extractUsername(jwt);
         ProcurementTicketResponseDto dto = procurementService.submitTicket(id, username);
         return ResponseEntity.ok(ApiResponse.success(dto, "Nộp phiếu mua sắm lên Checker thành công"));
-    }
-
-    /**
-     * Lấy danh sách nhiệm vụ đang chờ Checker phê duyệt
-     */
-    @GetMapping("/tasks")
-    public ResponseEntity<ApiResponse<List<CamundaTaskDto>>> getPendingTasks() {
-        List<CamundaTaskDto> tasks = workflowTaskService.getPendingTasksForChecker();
-        return ResponseEntity.ok(ApiResponse.success(tasks, "Lấy danh sách nhiệm vụ chờ duyệt thành công"));
-    }
-
-    /**
-     * Checker hoàn tất phê duyệt hoặc từ chối phiếu mua sắm
-     */
-    @PostMapping("/tasks/{taskId}/review")
-    public ResponseEntity<ApiResponse<Void>> reviewTask(
-            @PathVariable String taskId,
-            @Valid @RequestBody CheckerReviewRequestDto request,
-            @AuthenticationPrincipal Jwt jwt) {
-        String checkerUsername = extractUsername(jwt);
-        workflowTaskService.completeCheckerReview(taskId, checkerUsername, request.getApproved(), request.getComment());
-        String actionText = Boolean.TRUE.equals(request.getApproved()) ? "phê duyệt" : "từ chối";
-        return ResponseEntity.ok(ApiResponse.success(null, "Đã " + actionText + " phiếu mua sắm thành công"));
     }
 }

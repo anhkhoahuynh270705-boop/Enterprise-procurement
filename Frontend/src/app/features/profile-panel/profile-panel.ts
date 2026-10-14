@@ -1,27 +1,13 @@
-import { SensitiveValue } from '../../shared/sensitive-value/sensitive-value';
+import { SensitiveValue } from '../../shared/sensitive/sensitive-value/sensitive-value';
 import { Component, ElementRef, OnDestroy, inject, signal, viewChild } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
-import { environment } from '../../../environments/environment';
 import { Gender, UpdateMyProfileRequest, UserResponse } from '../../features/auth/model/auth';
 import { FaceAuthService } from '../faceId/services/face-auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { FaceEnrollComponent } from '../faceId/face-enroll/face-enroll';
-
-function pastDate(control: AbstractControl) {
-  if (!control.value) return null;
-  const value = control.value as string;
-  const parsed = new Date(value + 'T00:00:00Z');
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-    !isNaN(parsed.getTime()) &&
-    parsed.toISOString().slice(0, 10) === value &&
-    value <= today
-    ? null
-    : { date: true };
-}
+import { UserService } from '../../core/services/user.service';
+import { pastDate } from './helper/profile-panel.helper';
 
 @Component({
   selector: 'app-profile-panel',
@@ -31,9 +17,10 @@ function pastDate(control: AbstractControl) {
   styleUrl: './profile-panel.scss',
 })
 export class ProfilePanel implements OnDestroy {
-  private readonly http = inject(HttpClient);
+  private readonly userService = inject(UserService);
   private readonly faceAuth = inject(FaceAuthService);
   private readonly toast = inject(ToastService);
+  readonly fb = inject(FormBuilder);
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
   private request?: Subscription;
   private faceCheckSub?: Subscription;
@@ -48,7 +35,8 @@ export class ProfilePanel implements OnDestroy {
   readonly saveError = signal('');
   readonly saved = signal(false);
   readonly avatarFailed = signal(false);
-  readonly form = inject(FormBuilder).nonNullable.group({
+
+  form = this.fb.nonNullable.group({
     phone: ['', [Validators.maxLength(30), Validators.pattern(/^[+\d\s().-]*$/)]],
     dateOfBirth: ['', pastDate],
     gender: ['', Validators.pattern(/^(MALE|FEMALE|OTHER|UNDISCLOSED)$/)],
@@ -85,7 +73,6 @@ export class ProfilePanel implements OnDestroy {
     if (this.form.invalid) return;
     const value = this.form.getRawValue();
     const body: UpdateMyProfileRequest = {
-      avatarUrl: this.profile()?.avatarUrl ?? null,
       phone: value.phone.trim() || null,
       dateOfBirth: value.dateOfBirth || null,
       gender: (value.gender || null) as Gender | null,
@@ -93,23 +80,20 @@ export class ProfilePanel implements OnDestroy {
     };
     this.saveError.set('');
     this.saving.set(true);
-    this.request = this.http
-      .put<UserResponse>(environment.apiBaseUrl + '/users/me', body)
-      .subscribe({
-        next: (profile) => {
-          this.profile.set(profile);
-          this.saving.set(false);
-          this.editing.set(false);
-          this.avatarFailed.set(false);
-          this.saved.set(true);
-        },
-        error: () => {
-          this.saving.set(false);
-          this.saveError.set(
-            'Không thể lưu hồ sơ. Thông tin bạn nhập vẫn được giữ lại. Vui lòng thử lại.',
-          );
-        },
-      });
+    this.request = this.userService.updateMyProfile(body).subscribe({
+      next: (profile) => {
+        this.profile.set(profile);
+        this.saving.set(false);
+        this.editing.set(false);
+        this.avatarFailed.set(false);
+        this.saved.set(true);
+        this.toast.success('Cập nhật hồ sơ thành công!');
+      },
+      error: () => {
+        this.saving.set(false);
+        this.toast.error('Cập nhật hồ sơ thất bại. Vui lòng thử lại.');
+      },
+    });
   }
 
   onAvatarFileSelected(event: Event): void {
@@ -131,7 +115,7 @@ export class ProfilePanel implements OnDestroy {
     formData.append('file', file);
 
     this.uploadingAvatar.set(true);
-    this.http.post<UserResponse>(environment.apiBaseUrl + '/users/me/avatar', formData).subscribe({
+    this.request = this.userService.uploadMyAvatar(file).subscribe({
       next: (updatedProfile) => {
         this.uploadingAvatar.set(false);
         this.avatarFailed.set(false);
@@ -150,20 +134,8 @@ export class ProfilePanel implements OnDestroy {
   }
 
   avatarUrl(profile: UserResponse): string | null {
-    if (this.avatarFailed() || !profile.avatarUrl) return null;
-    const raw = profile.avatarUrl.trim();
-    if (raw.startsWith('/api/')) {
-      const base = environment.apiBaseUrl.replace(/\/api\/?$/, '');
-      return `${base}${raw}`;
-    }
-    if (
-      raw.startsWith('http://') ||
-      raw.startsWith('https://') ||
-      raw.startsWith('data:image/')
-    ) {
-      return raw;
-    }
-    return null;
+    if (this.avatarFailed()) return null;
+    return this.userService.resolveAvatarUrl(profile.avatarUrl);
   }
 
   initials(profile: UserResponse): string {
@@ -202,23 +174,21 @@ export class ProfilePanel implements OnDestroy {
     this.profile.set(null);
     this.error.set('');
     this.loading.set(true);
-    this.request = this.http
-      .get<UserResponse | null>(environment.apiBaseUrl + '/users/me')
-      .subscribe({
-        next: (profile) => {
-          this.profile.set(profile);
-          this.loading.set(false);
-          if (!profile) {
-            this.error.set('Không tìm thấy hồ sơ của bạn.');
-          } else if (profile.username) {
-            this.checkFaceEnrollment(profile.username);
-          }
-        },
-        error: () => {
-          this.loading.set(false);
-          this.error.set('Không thể tải hồ sơ. Vui lòng thử lại.');
-        },
-      });
+    this.request = this.userService.getMyProfile().subscribe({
+      next: (profile) => {
+        this.profile.set(profile);
+        this.loading.set(false);
+        if (!profile) {
+          this.error.set('Không tìm thấy hồ sơ của bạn.');
+        } else if (profile.username) {
+          this.checkFaceEnrollment(profile.username);
+        }
+      },
+      error: () => {
+        this.loading.set(false);
+        this.error.set('Không thể tải hồ sơ. Vui lòng thử lại.');
+      },
+    });
   }
 
   checkFaceEnrollment(username: string): void {

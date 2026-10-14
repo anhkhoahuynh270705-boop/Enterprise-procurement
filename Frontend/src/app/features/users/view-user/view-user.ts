@@ -1,4 +1,4 @@
-import { SensitiveValue } from '../../../shared/sensitive-value/sensitive-value';
+import { SensitiveValue } from '../../../shared/sensitive/sensitive-value/sensitive-value';
 import { Component, HostListener, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Users } from '../models/user';

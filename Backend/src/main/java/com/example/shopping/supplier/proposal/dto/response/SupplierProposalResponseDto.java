@@ -28,4 +28,5 @@ public class SupplierProposalResponseDto {
     private LocalDateTime reviewedAt;
     private String reviewComment;
     private UUID supplierId;
+    private String camundaProcessInstanceId;
 }

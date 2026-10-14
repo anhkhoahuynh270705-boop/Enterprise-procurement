@@ -12,11 +12,15 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+
 @RestController 
 @RequestMapping("/api/company-documents") 
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class CompanyDocumentController {
-    private final CompanyDocumentService service;
+    CompanyDocumentService service;
 
     @GetMapping public List<CompanyDocumentDto> list() { 
         return service.list(); 

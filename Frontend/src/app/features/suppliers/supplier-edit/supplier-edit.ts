@@ -1,5 +1,4 @@
-import { SensitiveInput } from '../../../shared/sensitive-value/sensitive-input';
-import { SensitiveValue } from '../../../shared/sensitive-value/sensitive-value';
+import { SensitiveValue } from '../../../shared/sensitive/sensitive-value/sensitive-value';
 import { ToastService } from '../../../core/services/toast.service';
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -7,6 +6,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { SupplierService } from '../services/supplier.service';
 import { SupplierStatus, UpdateSupplierRequest } from '../models/supplier';
+import { SensitiveInput } from '../../../shared/sensitive/sensitive-input/sensitive-input';
 
 @Component({
   imports: [SensitiveInput, SensitiveValue, CommonModule, ReactiveFormsModule, RouterLink],
@@ -113,6 +113,7 @@ export class SupplierEdit implements OnInit {
     this.supplierService.updateSupplier(this.supplierId, updateData).subscribe({
       next: () => {
         this.loading = false;
+        this.toast.success('Cập nhật nhà cung cấp thành công');
         this.router.navigate(['/suppliers']);
       },
       error: (err) => {

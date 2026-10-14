@@ -1,0 +1,175 @@
+@if (isOpen && order) {
+  <section
+    class="panel details po-view-panel"
+    aria-label="Chi tiết đơn đặt hàng"
+  >
+    <div class="list-header">
+      <div class="title-wrap">
+        <h2>
+          {{ order.status === 'RECEIVED' ? 'Chi tiết đơn hàng' : 'Đơn đặt hàng' }} {{ order.orderCode }}
+        </h2>
+      </div>
+      <button
+        type="button"
+        class="secondary"
+        (click)="close()"
+        [disabled]="isSubmitting"
+        title="Đóng chi tiết"
+      >
+        <i class="fa fa-times" aria-hidden="true"></i> Đóng
+      </button>
+    </div>
+
+    <dl>
+      <div>
+        <dt>Phiếu mua sắm</dt>
+        <dd>
+          <strong>{{ order.ticketCode }}</strong> - {{ order.ticketTitle }}
+        </dd>
+      </div>
+      <div>
+        <dt>Nhà cung cấp</dt>
+        <dd>
+          <strong>{{ order.supplierName }}</strong> ({{ order.supplierCode }})
+        </dd>
+      </div>
+      <div>
+        <dt>Người tạo</dt>
+        <dd>{{ order.createdBy }}</dd>
+      </div>
+      <div>
+        <dt>Ngày tạo</dt>
+        <dd>{{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
+      </div>
+      @if (order.expectedDeliveryDate) {
+        <div>
+          <dt>Giao dự kiến</dt>
+          <dd>{{ order.expectedDeliveryDate | date: 'dd/MM/yyyy' }}</dd>
+        </div>
+      }
+      @if (order.reviewedBy) {
+        <div>
+          <dt>Người duyệt</dt>
+          <dd>{{ order.reviewedBy }}</dd>
+        </div>
+      }
+      @if (order.reviewedAt) {
+        <div>
+          <dt>Ngày duyệt</dt>
+          <dd>{{ order.reviewedAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
+        </div>
+      }
+      <div>
+        <dt>Tổng giá trị</dt>
+        <dd class="total-amount">
+          <strong>{{ (order.totalAmount || 0) | number: '1.0-0' }} {{ order.currency }}</strong>
+        </dd>
+      </div>
+      @if (order.reviewComment) {
+        <div class="wide">
+          <dt>Nhận xét của người duyệt</dt>
+          <dd class="multiline">{{ order.reviewComment }}</dd>
+        </div>
+      }
+      <div class="wide">
+        <dt>Ghi chú</dt>
+        <dd class="multiline">{{ order.notes || '—' }}</dd>
+      </div>
+      <div>
+        <dt>Trạng thái</dt>
+        <dd>
+          <span class="badge-status" [ngClass]="'status-' + order.status">
+            {{ statusLabel(order.status) }}
+          </span>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="items-section">
+      <h3>Danh sách hạng mục ({{ (order.items || []).length }})</h3>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Hạng mục</th>
+              <th>Số lượng</th>
+              <th>Đơn giá</th>
+              <th class="amount-col">Thành tiền</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of (order.items || []); track item.id || $index) {
+              <tr>
+                <td>
+                  <strong>{{ item.itemName }}</strong>
+                  @if (item.itemCode) {
+                    <small class="item-code">{{ item.itemCode }}</small>
+                  }
+                </td>
+                <td>{{ item.quantity }} {{ item.unit || 'đơn vị' }}</td>
+                <td>{{ (item.unitPrice || 0) | number: '1.0-0' }} {{ order.currency }}</td>
+                <td class="amount-col">
+                  <strong>{{ (item.totalPrice || 0) | number: '1.0-0' }} {{ order.currency }}</strong>
+                </td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" class="total-label">Tổng giá trị đơn hàng:</td>
+              <td class="total-amount amount-col">
+                <strong>{{ (order.totalAmount || 0) | number: '1.0-0' }} {{ order.currency }}</strong>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    @if (auth.hasRole('ADMIN', 'CHECKER') && (order.status === 'PENDING_APPROVAL' || order.status === 'DRAFT')) {
+      <div class="review-block" [formGroup]="reviewForm">
+        <label>
+          Nhận xét duyệt <small>(bắt buộc khi từ chối)</small>
+          <textarea
+            formControlName="comment"
+            rows="3"
+            maxlength="2000"
+            [readonly]="isSubmitting"
+            placeholder="Nhập nhận xét hoặc lý do từ chối..."
+          ></textarea>
+        </label>
+        @if (reviewError) {
+          <p class="error" role="alert">{{ reviewError }}</p>
+        }
+
+        <div class="actions review-actions">
+          <button
+            type="button"
+            (click)="submitReview(true)"
+            [disabled]="isSubmitting"
+            title="Duyệt đơn"
+          >
+            <i
+              class="fa"
+              [class.fa-spinner]="isSubmitting"
+              [class.fa-spin]="isSubmitting"
+              [class.fa-check-circle]="!isSubmitting"
+              aria-hidden="true"
+            ></i>
+            {{ isSubmitting ? 'Đang xử lý...' : 'Duyệt đơn' }}
+          </button>
+          <button
+            type="button"
+            class="danger"
+            (click)="submitReview(false)"
+            [disabled]="isSubmitting"
+            title="Từ chối đơn"
+          >
+            <i class="fa fa-ban" aria-hidden="true"></i>
+            Từ chối đơn
+          </button>
+        </div>
+      </div>
+    }
+  </section>
+}

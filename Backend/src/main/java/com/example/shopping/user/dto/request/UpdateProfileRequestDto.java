@@ -1,7 +1,6 @@
 package com.example.shopping.user.dto.request;
 
-import org.hibernate.validator.constraints.URL;
-
+import com.example.shopping.common.enums.ErrorEnum;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 
 import jakarta.validation.constraints.PastOrPresent;
@@ -11,9 +10,6 @@ import lombok.Data;
 
 @Data
 public class UpdateProfileRequestDto {
-    @Size(max = 2048)
-    private String avatarUrl;
-
     @Size(max = 30)
     @Pattern(regexp = "[+0-9().\\s-]*", message = "Invalid phone number")
     private String phone;
@@ -29,6 +25,6 @@ public class UpdateProfileRequestDto {
 
     @JsonAnySetter
     public void rejectUnsupportedField(String name, Object value) {
-        throw new IllegalArgumentException("Field is not editable in your profile: " + name);
+        throw ErrorEnum.FIELD_NOT_EDITABLE.ex("Field is not editable in your profile: " + name);
     }
 }

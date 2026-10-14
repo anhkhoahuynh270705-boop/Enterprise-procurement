@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  id="Definitions_SupplierProposal"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="supplier-proposal-maker-checker"
+                name="Supplier Proposal Maker Checker"
+                isExecutable="true"
+                camunda:historyTimeToLive="P30D">
+    <bpmn:startEvent id="StartEvent_SubmitProposal" name="User submits supplier proposal">
+      <bpmn:outgoing>Flow_SubmitToChecker</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="UserTask_CheckerReviewProposal"
+                   name="Checker Review Supplier Proposal"
+                   camunda:candidateGroups="CHECKER">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="approved" label="Kết quả duyệt" type="enum">
+            <camunda:validation>
+              <camunda:constraint name="required" />
+            </camunda:validation>
+            <camunda:value id="true" name="Duyệt" />
+            <camunda:value id="false" name="Từ chối" />
+          </camunda:formField>
+          <camunda:formField id="reviewComment" label="Nhận xét / lý do từ chối" type="string">
+            <camunda:validation>
+              <camunda:constraint name="maxlength" config="2000" />
+            </camunda:validation>
+          </camunda:formField>
+        </camunda:formData>
+        <camunda:taskListener
+            event="complete"
+            delegateExpression="${supplierProposalReviewTaskListener}" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_SubmitToChecker</bpmn:incoming>
+      <bpmn:outgoing>Flow_CheckerToDecision</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_ProposalDecision">
+      <bpmn:incoming>Flow_CheckerToDecision</bpmn:incoming>
+      <bpmn:outgoing>Flow_ProposalApproved</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ProposalRejected</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="EndEvent_ProposalApproved" name="Supplier proposal approved">
+      <bpmn:incoming>Flow_ProposalApproved</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="EndEvent_ProposalRejected" name="Supplier proposal rejected">
+      <bpmn:incoming>Flow_ProposalRejected</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="ServiceTask_ApproveProposal"
+                      name="Approve Supplier Proposal"
+                      camunda:delegateExpression="${approveSupplierProposalDelegate}">
+      <bpmn:incoming>Flow_ProposalApproved</bpmn:incoming>
+      <bpmn:outgoing>Flow_ApproveProposalToEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="ServiceTask_RejectProposal"
+                      name="Reject Supplier Proposal"
+                      camunda:delegateExpression="${rejectSupplierProposalDelegate}">
+      <bpmn:incoming>Flow_ProposalRejected</bpmn:incoming>
+      <bpmn:outgoing>Flow_RejectProposalToEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_SubmitToChecker"
+                       sourceRef="StartEvent_SubmitProposal"
+                       targetRef="UserTask_CheckerReviewProposal" />
+    <bpmn:sequenceFlow id="Flow_CheckerToDecision"
+                       sourceRef="UserTask_CheckerReviewProposal"
+                       targetRef="Gateway_ProposalDecision" />
+    <bpmn:sequenceFlow id="Flow_ProposalApproved"
+                       name="Approved"
+                       sourceRef="Gateway_ProposalDecision"
+                       targetRef="ServiceTask_ApproveProposal">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approved == true || approved == 'true'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ProposalRejected"
+                       name="Rejected"
+                       sourceRef="Gateway_ProposalDecision"
+                       targetRef="ServiceTask_RejectProposal">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approved == false || approved == 'false'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ApproveProposalToEnd"
+                       sourceRef="ServiceTask_ApproveProposal"
+                       targetRef="EndEvent_ProposalApproved" />
+    <bpmn:sequenceFlow id="Flow_RejectProposalToEnd"
+                       sourceRef="ServiceTask_RejectProposal"
+                       targetRef="EndEvent_ProposalRejected" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_SupplierProposal">
+    <bpmndi:BPMNPlane id="BPMNPlane_SupplierProposal"
+                      bpmnElement="supplier-proposal-maker-checker">
+      <bpmndi:BPMNShape id="StartEvent_SubmitProposal_di"
+                        bpmnElement="StartEvent_SubmitProposal">
+        <dc:Bounds x="160" y="162" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="137" y="205" width="82" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_CheckerReviewProposal_di"
+                        bpmnElement="UserTask_CheckerReviewProposal">
+        <dc:Bounds x="270" y="140" width="150" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_ProposalDecision_di"
+                        bpmnElement="Gateway_ProposalDecision"
+                        isMarkerVisible="true">
+        <dc:Bounds x="500" y="155" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_ApproveProposal_di"
+                        bpmnElement="ServiceTask_ApproveProposal">
+        <dc:Bounds x="630" y="70" width="150" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_RejectProposal_di"
+                        bpmnElement="ServiceTask_RejectProposal">
+        <dc:Bounds x="630" y="210" width="150" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_ProposalApproved_di"
+                        bpmnElement="EndEvent_ProposalApproved">
+        <dc:Bounds x="850" y="92" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="829" y="135" width="78" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_ProposalRejected_di"
+                        bpmnElement="EndEvent_ProposalRejected">
+        <dc:Bounds x="850" y="232" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="829" y="275" width="78" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_SubmitToChecker_di"
+                       bpmnElement="Flow_SubmitToChecker">
+        <di:waypoint x="196" y="180" />
+        <di:waypoint x="270" y="180" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_CheckerToDecision_di"
+                       bpmnElement="Flow_CheckerToDecision">
+        <di:waypoint x="420" y="180" />
+        <di:waypoint x="500" y="180" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ProposalApproved_di"
+                       bpmnElement="Flow_ProposalApproved">
+        <di:waypoint x="525" y="155" />
+        <di:waypoint x="525" y="120" />
+        <di:waypoint x="630" y="120" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="550" y="93" width="62" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ProposalRejected_di"
+                       bpmnElement="Flow_ProposalRejected">
+        <di:waypoint x="525" y="205" />
+        <di:waypoint x="525" y="260" />
+        <di:waypoint x="630" y="260" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="550" y="266" width="62" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ApproveProposalToEnd_di"
+                       bpmnElement="Flow_ApproveProposalToEnd">
+        <di:waypoint x="780" y="110" />
+        <di:waypoint x="850" y="110" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_RejectProposalToEnd_di"
+                       bpmnElement="Flow_RejectProposalToEnd">
+        <di:waypoint x="780" y="250" />
+        <di:waypoint x="850" y="250" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

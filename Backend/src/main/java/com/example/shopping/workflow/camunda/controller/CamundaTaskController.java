@@ -21,13 +21,17 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/workflow/camunda")
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class CamundaTaskController {
 
-    private final WorkflowTaskService workflowTaskService;
+    WorkflowTaskService workflowTaskService;
 
     private String extractUsername(Jwt jwt) {
         if (jwt == null) {

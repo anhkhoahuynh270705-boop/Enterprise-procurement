@@ -1,25 +1,10 @@
 <div class="supplier-container">
   <div class="page-title-bar">
-    <h2>Supplier Management</h2>
+    <h2>Quản lý nhà cung cấp</h2>
     <span class="sub-breadcrumb">Danh sách đối tác &amp; thông tin liên hệ</span>
   </div>
 
   <div class="tabs-container">
-    <div class="left-actions">
-      <button
-        type="button"
-        class="btn btn-primary"
-        (click)="openProposals()"
-        aria-haspopup="dialog"
-      >
-        <i class="fa fa-check-square-o" aria-hidden="true"></i>
-        Duyệt đề xuất
-        @if (pendingProposalCount !== null) {
-          ({{ pendingProposalCount }})
-        }
-      </button>
-    </div>
-
     <div class="action-buttons">
       <button type="button" class="btn btn-outline" (click)="importExcel()">
         <i class="fa fa-upload" aria-hidden="true"></i>
@@ -61,7 +46,7 @@
   <section class="table-card" aria-labelledby="list-title">
     <div class="card-header">
       <h3 id="list-title">Danh sách nhà cung cấp</h3>
-      <p>Tổng số {{ filteredSuppliers.length }} nhà cung cấp</p>
+      <p>Tổng số {{ filteredSuppliers.length }} nhà cung cấp · Trang {{ currentPage + 1 }}/{{ totalPages || 1 }}</p>
     </div>
 
     <div class="table-responsive">
@@ -97,7 +82,7 @@
         </thead>
 
         <tbody>
-          @for (supplier of filteredSuppliers; track supplier.id) {
+          @for (supplier of pagedSuppliers; track supplier.id) {
             <tr>
               <td class="id-cell">
                 <div class="id-content">
@@ -220,6 +205,30 @@
       </table>
     </div>
   </section>
+
+  @if (totalPages > 1) {
+    <div class="supplier-pagination">
+      <button
+        type="button"
+        class="btn btn-outline"
+        (click)="goToPage(currentPage - 1)"
+        [disabled]="currentPage === 0"
+      >
+        Trang trước
+      </button>
+
+      <span class="supplier-pagination__info"> Trang {{ currentPage + 1 }} / {{ totalPages }} </span>
+
+      <button
+        type="button"
+        class="btn btn-outline"
+        (click)="goToPage(currentPage + 1)"
+        [disabled]="currentPage >= totalPages - 1"
+      >
+        Trang sau
+      </button>
+    </div>
+  }
 
   <dialog
     #proposalDialog

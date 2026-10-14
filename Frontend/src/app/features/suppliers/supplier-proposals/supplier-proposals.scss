@@ -190,6 +190,54 @@ button:disabled {
   color: #000 !important;
 }
 
+.btn-approve {
+  color: #226b3e !important;
+}
+
+.btn-approve:hover:not(:disabled) {
+  background: #eaf7ee !important;
+  color: #145c2e !important;
+}
+
+.btn-reject {
+  color: #b42318 !important;
+}
+
+.btn-reject:hover:not(:disabled) {
+  background: #fff1f2 !important;
+  color: #8c1a10 !important;
+}
+
+.badge-status {
+  color: #fff;
+  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.status-PENDING {
+  background: #f59e0b;
+}
+
+.status-APPROVED {
+  background: #226b3e;
+}
+
+.status-REJECTED {
+  background: #dc2626;
+}
+
+.status-DRAFT {
+  background: #6b7280;
+}
+
+.action-cell {
+  white-space: nowrap;
+  width: 1%;
+}
+
 button:focus-visible,
 a:focus-visible {
   outline: 3px solid #8db7e4;
@@ -199,6 +247,17 @@ a:focus-visible {
 form button[type=submit],
 .review-actions {
   margin-top: 18px;
+}
+
+.submit-proposal {
+  background: #226b3e;
+  border-color: #145c2e;
+  color: #ffffff;
+}
+
+.submit-proposal:hover:not(:disabled) {
+  background: #145c2e;
+  color: #ffffff;
 }
 
 .filter {

@@ -28,37 +28,37 @@
 		<element kind="staticText" uuid="1a2b3c4d-0001-4000-8000-000000000001" x="0" y="0" width="802" height="20" forecolor="#475569" fontName="DejaVu Sans" fontSize="9.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
 			<text><![CDATA[ENTERPRISE PROCUREMENT MANAGEMENT SYSTEM]]></text>
 		</element>
-		<element kind="staticText" uuid="1a2b3c4d-0002-4000-8000-000000000002" x="0" y="20" width="802" height="28" forecolor="#1E3A8A" fontName="DejaVu Sans" fontSize="16.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+		<element kind="staticText" uuid="1a2b3c4d-0002-4000-8000-000000000002" x="0" y="20" width="802" height="28" forecolor="#1D4ED8" fontName="DejaVu Sans" fontSize="16.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
 			<text><![CDATA[BẢNG CHI TIẾT PHIẾU MUA SẮM (ENTERPRISE PROCUREMENT DETAIL)]]></text>
 		</element>
 		<element kind="staticText" uuid="1a2b3c4d-0003-4000-8000-000000000003" x="0" y="48" width="802" height="16" forecolor="#64748B" fontName="DejaVu Sans" fontSize="8.0" hTextAlign="Center" vTextAlign="Middle">
 			<text><![CDATA[TÀI LIỆU CHI TIẾT HÀNG HÓA, ĐỊNH MỨC KINH PHÍ & QUY TRÌNH PHÊ DUYỆT]]></text>
 		</element>
-		<element kind="textField" uuid="1a2b3c4d-0004-4000-8000-000000000004" x="0" y="70" width="220" height="24" forecolor="#0F172A" backcolor="#E2E8F0" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
+		<element kind="textField" uuid="1a2b3c4d-0004-4000-8000-000000000004" x="0" y="70" width="220" height="24" forecolor="#0F172A" backcolor="#EFF4F9" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
 			<box leftPadding="5" rightPadding="5">
 				<pen lineWidth="0.5" lineColor="#CBD5E1"/>
 			</box>
 			<expression><![CDATA[" MÃ PHIẾU: " + ($P{TICKET_CODE} != null ? $P{TICKET_CODE} : "—")]]></expression>
 		</element>
-		<element kind="textField" uuid="1a2b3c4d-0005-4000-8000-000000000005" x="220" y="70" width="200" height="24" forecolor="#0F172A" backcolor="#E2E8F0" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
+		<element kind="textField" uuid="1a2b3c4d-0005-4000-8000-000000000005" x="220" y="70" width="200" height="24" forecolor="#0F172A" backcolor="#EFF4F9" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
 			<box leftPadding="5" rightPadding="5">
 				<pen lineWidth="0.5" lineColor="#CBD5E1"/>
 			</box>
 			<expression><![CDATA[" TRẠNG THÁI: " + ($P{STATUS} != null ? $P{STATUS} : "—")]]></expression>
 		</element>
-		<element kind="textField" uuid="1a2b3c4d-0006-4000-8000-000000000006" x="420" y="70" width="182" height="24" forecolor="#0F172A" backcolor="#E2E8F0" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
+		<element kind="textField" uuid="1a2b3c4d-0006-4000-8000-000000000006" x="420" y="70" width="182" height="24" forecolor="#0F172A" backcolor="#EFF4F9" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
 			<box leftPadding="5" rightPadding="5">
 				<pen lineWidth="0.5" lineColor="#CBD5E1"/>
 			</box>
 			<expression><![CDATA[" ĐỘ ƯU TIÊN: " + ($P{PRIORITY} != null ? $P{PRIORITY} : "—")]]></expression>
 		</element>
-		<element kind="textField" uuid="1a2b3c4d-0007-4000-8000-000000000007" x="602" y="70" width="200" height="24" forecolor="#0F172A" backcolor="#E2E8F0" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
+		<element kind="textField" uuid="1a2b3c4d-0007-4000-8000-000000000007" x="602" y="70" width="200" height="24" forecolor="#0F172A" backcolor="#EFF4F9" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
 			<box leftPadding="5" rightPadding="5">
 				<pen lineWidth="0.5" lineColor="#CBD5E1"/>
 			</box>
 			<expression><![CDATA[" NGÀY TẠO: " + ($P{CREATED_AT} != null ? $P{CREATED_AT} : "—")]]></expression>
 		</element>
-		<element kind="staticText" uuid="1a2b3c4d-0008-4000-8000-000000000008" x="0" y="100" width="396" height="20" forecolor="#FFFFFF" backcolor="#1E3A8A" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" hTextAlign="Left" vTextAlign="Middle">
+		<element kind="staticText" uuid="1a2b3c4d-0008-4000-8000-000000000008" x="0" y="100" width="396" height="20" forecolor="#FFFFFF" backcolor="#1D4ED8" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" hTextAlign="Left" vTextAlign="Middle">
 			<text><![CDATA[  01. THÔNG TIN ĐỀ NGHỊ MUA SẮM]]></text>
 		</element>
 		<element kind="staticText" uuid="1a2b3c4d-0009-4000-8000-000000000009" x="0" y="120" width="80" height="22" forecolor="#334155" backcolor="#F8FAFC" mode="Opaque" fontName="DejaVu Sans" fontSize="8.0" bold="true" hTextAlign="Left" vTextAlign="Middle">
@@ -109,7 +109,7 @@
 			</box>
 			<expression><![CDATA[($P{REASON} != null ? $P{REASON} : "—")]]></expression>
 		</element>
-		<element kind="staticText" uuid="1a2b3c4d-0017-4000-8000-000000000017" x="406" y="100" width="396" height="20" forecolor="#FFFFFF" backcolor="#1E3A8A" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" hTextAlign="Left" vTextAlign="Middle">
+		<element kind="staticText" uuid="1a2b3c4d-0017-4000-8000-000000000017" x="406" y="100" width="396" height="20" forecolor="#FFFFFF" backcolor="#1D4ED8" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" hTextAlign="Left" vTextAlign="Middle">
 			<text><![CDATA[  02. THÔNG TIN PHÊ DUYỆT & QUY TRÌNH]]></text>
 		</element>
 		<element kind="staticText" uuid="1a2b3c4d-0018-4000-8000-000000000018" x="406" y="120" width="85" height="22" forecolor="#334155" backcolor="#F8FAFC" mode="Opaque" fontName="DejaVu Sans" fontSize="8.0" bold="true" hTextAlign="Left" vTextAlign="Middle">
@@ -291,18 +291,18 @@
 		<element kind="textField" uuid="4a2b3c4d-0001-4000-8000-000000000001" x="0" y="4" width="500" height="20" forecolor="#64748B" fontName="DejaVu Sans" fontSize="8.0" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
 			<expression><![CDATA["Enterprise Procurement Detail  •  Mã: " + ($P{TICKET_CODE} != null ? $P{TICKET_CODE} : "—")]]></expression>
 		</element>
-		<element kind="textField" uuid="4a2b3c4d-0002-4000-8000-000000000002" x="502" y="4" width="300" height="20" forecolor="#64748B" fontName="DejaVu Sans" fontSize="8.0" blankWhenNull="true" hTextAlign="Right" vTextAlign="Middle">
-			<expression><![CDATA["Trang " + $V{PAGE_NUMBER}]]></expression>
+		<element kind="textField" uuid="4a2b3c4d-0002-4000-8000-000000000002" x="502" y="4" width="300" height="20" forecolor="#64748B" fontName="DejaVu Sans" fontSize="8.0" blankWhenNull="true" evaluationTime="Report" hTextAlign="Right" vTextAlign="Middle">
+			<expression><![CDATA["Trang " + $V{PAGE_NUMBER} + " / " + $V{PAGE_COUNT}]]></expression>
 		</element>
 	</pageFooter>
 	<summary height="140" splitType="Prevent">
-		<element kind="staticText" uuid="5a2b3c4d-0001-4000-8000-000000000001" x="0" y="0" width="532" height="28" forecolor="#0F172A" backcolor="#E2E8F0" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" hTextAlign="Right" vTextAlign="Middle">
+		<element kind="staticText" uuid="5a2b3c4d-0001-4000-8000-000000000001" x="0" y="0" width="532" height="28" forecolor="#0F172A" backcolor="#EFF4F9" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" hTextAlign="Right" vTextAlign="Middle">
 			<box rightPadding="6">
 				<pen lineWidth="0.5" lineColor="#CBD5E1"/>
 			</box>
 			<text><![CDATA[TỔNG CỘNG KINH PHÍ:  ]]></text>
 		</element>
-		<element kind="textField" uuid="5a2b3c4d-0002-4000-8000-000000000002" x="532" y="0" width="270" height="28" forecolor="#1E3A8A" backcolor="#E2E8F0" mode="Opaque" fontName="DejaVu Sans" fontSize="11.0" bold="true" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
+		<element kind="textField" uuid="5a2b3c4d-0002-4000-8000-000000000002" x="532" y="0" width="270" height="28" forecolor="#1D4ED8" backcolor="#EFF4F9" mode="Opaque" fontName="DejaVu Sans" fontSize="11.0" bold="true" blankWhenNull="true" hTextAlign="Left" vTextAlign="Middle">
 			<box leftPadding="6">
 				<pen lineWidth="0.5" lineColor="#CBD5E1"/>
 			</box>
