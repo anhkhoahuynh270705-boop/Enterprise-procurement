@@ -6,10 +6,10 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
+
+import com.example.shopping.common.enums.ErrorEnum;
 
 import com.example.shopping.supplier.dto.request.CreateSupplierRequestDto;
 import com.example.shopping.supplier.dto.request.UpdateSupplierRequestDto;
@@ -23,14 +23,18 @@ import com.example.shopping.supplier.document.repository.SupplierDocumentReposit
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SupplierServiceImpl implements SupplierService {
 
-    private final SupplierRepository supplierRepository;
-    private final SupplierMapper supplierMapper;
-    private final SupplierDocumentRepository documents;
+    SupplierRepository supplierRepository;
+    SupplierMapper supplierMapper;
+    SupplierDocumentRepository documents;
 
     /**
      * Sinh mã nhà cung cấp tự động: SUP-YYYY-XXXX
@@ -76,7 +80,7 @@ public class SupplierServiceImpl implements SupplierService {
     public SupplierResponseDto createSupplier(CreateSupplierRequestDto request) {
         if (request.getTaxCode() != null && !request.getTaxCode().isBlank()
                 && supplierRepository.existsByTaxCode(request.getTaxCode())) {
-            throw new IllegalArgumentException("Mã số thuế đã tồn tại: " + request.getTaxCode());
+            throw ErrorEnum.SUPPLIER_TAX_CODE_EXISTS.ex("Mã số thuế đã tồn tại: " + request.getTaxCode());
         }
 
         String code = generateNextCode();
@@ -90,12 +94,12 @@ public class SupplierServiceImpl implements SupplierService {
     @Transactional
     public SupplierResponseDto updateSupplier(UUID id, UpdateSupplierRequestDto request) {
         SupplierEntity entity = supplierRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy nhà cung cấp với id: " + id));
+                .orElseThrow(() -> ErrorEnum.SUPPLIER_NOT_FOUND.ex("Không tìm thấy nhà cung cấp với id: " + id));
 
         if (request.getTaxCode() != null && !request.getTaxCode().isBlank()
                 && !request.getTaxCode().equals(entity.getTaxCode())
                 && supplierRepository.existsByTaxCode(request.getTaxCode())) {
-            throw new IllegalArgumentException("Mã số thuế đã tồn tại: " + request.getTaxCode());
+            throw ErrorEnum.SUPPLIER_TAX_CODE_EXISTS.ex("Mã số thuế đã tồn tại: " + request.getTaxCode());
         }
 
         supplierMapper.updateEntity(entity, request);
@@ -113,7 +117,7 @@ public class SupplierServiceImpl implements SupplierService {
             return;
         }
         if (documents.existsBySupplier_Id(id)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
+            throw ErrorEnum.DATA_CONFLICT.ex(
                     "Nhà cung cấp đang có tài liệu. Hãy chuyển sang trạng thái INACTIVE thay vì xóa.");
         }
         supplierRepository.deleteById(id);

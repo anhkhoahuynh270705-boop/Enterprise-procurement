@@ -8,8 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
 
+import com.example.shopping.common.enums.ErrorEnum;
 import com.example.shopping.auth.dto.response.LoginResponseDto;
 
 @Component
@@ -20,62 +20,30 @@ public class AuthHttpHelper {
     @Value("${auth.cookie.secure:true}")
     private boolean secureCookie;
 
-    public ResponseEntity<LoginResponseDto> tokenResponse(
-            LoginResponseDto tokens) {
-
-        if (tokens == null
-                || tokens.getAccessToken() == null
-                || tokens.getRefreshToken() == null) {
-
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_GATEWAY,
-                    "Invalid authentication response"
-            );
+    public ResponseEntity<LoginResponseDto> tokenResponse( LoginResponseDto tokens) {
+        if (tokens == null || tokens.getAccessToken() == null || tokens.getRefreshToken() == null) {
+            throw ErrorEnum.AUTH_INVALID_BROWSER_RESPONSE.ex();
         }
-
-        long lifetime =
-                tokens.getRefreshExpiresIn() != null
-                && tokens.getRefreshExpiresIn() > 0
-                        ? tokens.getRefreshExpiresIn()
-                        : -1;
+        long lifetime = tokens.getRefreshExpiresIn() != null && tokens.getRefreshExpiresIn() > 0
+                ? tokens.getRefreshExpiresIn()
+                : -1;
 
         return ResponseEntity.ok()
-                .header(
-                        HttpHeaders.CACHE_CONTROL,
-                        "no-store"
-                )
-                .header(
-                        HttpHeaders.PRAGMA,
-                        "no-cache"
-                )
-                .header(
-                        HttpHeaders.SET_COOKIE,
-                        refreshCookie(
-                                tokens.getRefreshToken(),
-                                lifetime
-                        )
-                )
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .header(HttpHeaders.PRAGMA, "no-cache")
+                .header(HttpHeaders.SET_COOKIE, refreshCookie(tokens.getRefreshToken(), lifetime))
                 .body(tokens);
     }
 
     public ResponseEntity<LoginResponseDto> unauthorized() {
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .header(
-                        HttpHeaders.CACHE_CONTROL,
-                        "no-store"
-                )
-                .header(
-                        HttpHeaders.SET_COOKIE,
-                        refreshCookie("", 0)
-                )
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .header(HttpHeaders.SET_COOKIE, refreshCookie("", 0))
                 .build();
     }
 
-    public String refreshCookie(
-            String value,
-            long maxAge) {
-
+    public String refreshCookie(String value, long maxAge) {
         return ResponseCookie
                 .from(REFRESH_COOKIE, value)
                 .httpOnly(true)
@@ -87,13 +55,9 @@ public class AuthHttpHelper {
                 .toString();
     }
 
-    public void requireBrowserHeader(
-            String requestedWith) {
+    public void requireBrowserHeader(String requestedWith) {
         if (!"XMLHttpRequest".equals(requestedWith)) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "Missing browser request header"
-            );
+            throw ErrorEnum.AUTH_BROWSER_HEADER_REQUIRED.ex();
         }
     }
 }

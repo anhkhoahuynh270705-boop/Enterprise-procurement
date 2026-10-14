@@ -47,8 +47,8 @@ public class CreateSupplierRequestDto {
     @Pattern(regexp = "^$|[0-9]{6,50}", message = "Số tài khoản gồm 6–50 chữ số, không có chữ hoặc khoảng trắng")
     private String bankAccount;
 
-    @Pattern(regexp = "^$|\\p{L}+(?: \\p{L}+)*", message = "Tên ngân hàng chỉ được chứa chữ và một khoảng trắng giữa các từ")
-    @Size(max = 50, message = "Tên ngân hàng tối đa 50 ký tự")
+    @Pattern(regexp = "^$|\\p{L}+(?: \\p{L}+)*(?: \\(\\p{L}+(?: \\p{L}+)*\\))?", message = "Tên ngân hàng chỉ được chứa chữ.")
+    @Size(max = 255, message = "Tên ngân hàng tối đa 255 ký tự")
     private String bankName;
 
     @Size(max = 2000, message = "Ghi chú tối đa 2000 ký tự")

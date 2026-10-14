@@ -1,0 +1,307 @@
+<section class="purchase-orders-page">
+  <header class="page-header">
+    <div>
+      <h1>Đơn đặt hàng</h1>
+      <p>Tạo đơn từ phiếu mua sắm đã duyệt và theo dõi việc gửi, nhận hàng.</p>
+    </div>
+    @if (auth.hasRole('USER', 'ADMIN')) {
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="isCreateFormOpen ? closeCreateForm() : openCreateForm()"
+        [disabled]="loading"
+      >
+        <i class="fa" [ngClass]="isCreateFormOpen ? 'fa-times' : 'fa-plus'" aria-hidden="true"></i>
+        {{ isCreateFormOpen ? 'Đóng biểu mẫu' : 'Tạo đơn đặt hàng' }}
+      </button>
+    }
+  </header>
+
+  @if (isCreateFormOpen && auth.hasRole('USER', 'ADMIN')) {
+    <section class="create-form-card" aria-labelledby="create-order-title">
+      <header class="create-form-header">
+        <div>
+          <h2 id="create-order-title">Tạo đơn đặt hàng</h2>
+        </div>
+      </header>
+
+      <form class="create-form" [formGroup]="createForm" (ngSubmit)="createOrder()">
+        <div class="create-form-body">
+          @if (loadingSources) {
+            <p class="inline-state">
+              <span class="spinner" aria-hidden="true"></span> Đang tải phiếu đã duyệt...
+            </p>
+          } @else if (!approvedTickets.length) {
+            <div class="inline-state empty-source">
+              <i class="fa fa-info-circle" aria-hidden="true"></i>
+              Hiện chưa có phiếu mua sắm nào được duyệt để tạo đơn.
+            </div>
+          } @else if (!activeSuppliers.length) {
+            <div class="inline-state empty-source">
+              <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+              Chưa có nhà cung cấp ACTIVE. Hãy thêm hoặc kích hoạt nhà cung cấp trước.
+            </div>
+          } @else {
+            <div class="create-form-fields">
+              <label class="form-field">
+                <span>Phiếu mua sắm đã duyệt <b>*</b></span>
+                <select formControlName="ticketId" (change)="onTicketSelected()">
+                  <option value="">Chọn phiếu</option>
+                  @for (ticket of approvedTickets; track ticket.id) {
+                    <option [value]="ticket.id">
+                      {{ ticket.ticketCode }} — {{ ticket.title }}
+                    </option>
+                  }
+                </select>
+              </label>
+
+              <label class="form-field">
+                <span>Nhà cung cấp <b>*</b></span>
+                <select formControlName="supplierId">
+                  <option value="">Chọn nhà cung cấp</option>
+                  @for (supplier of activeSuppliers; track supplier.id) {
+                    <option [value]="supplier.id">{{ supplier.name }} ({{ supplier.code }})</option>
+                  }
+                </select>
+              </label>
+
+              @if (createForm.controls.ticketId.value) {
+                <fieldset class="item-selection">
+                  <legend>Hạng mục đặt trong đơn <b>*</b></legend>
+                  @if (!availableItems.length) {
+                    <p class="no-items">Tất cả hạng mục của phiếu này đã được đưa vào đơn hàng.</p>
+                  } @else {
+                    @for (item of availableItems; track item.id) {
+                      <label class="item-option">
+                        <input
+                          type="checkbox"
+                          [checked]="
+                            createForm.controls.procurementItemIds.value.includes(item.id!)
+                          "
+                          (change)="toggleItem(item.id!, $any($event.target).checked)"
+                        />
+                        <span class="item-description">
+                          <strong>{{ item.itemName }}</strong>
+                          <small
+                            >{{ item.quantity }} {{ item.unit || 'đơn vị' }} ×
+                            {{ item.unitPrice | number: '1.0-0' }}
+                            {{ selectedTicket?.currency }}</small
+                          >
+                        </span>
+                        <strong
+                          >{{ item.totalPrice ?? item.quantity * item.unitPrice | number: '1.0-0' }}
+                          {{ selectedTicket?.currency }}</strong
+                        >
+                      </label>
+                    }
+                  }
+                </fieldset>
+              }
+
+              <label class="form-field">
+                <span>Ngày giao dự kiến</span>
+                <input type="date" formControlName="expectedDeliveryDate" />
+              </label>
+              <label class="form-field notes-field">
+                <span>Ghi chú</span>
+                <textarea
+                  formControlName="notes"
+                  rows="3"
+                  maxlength="1000"
+                  placeholder="Điều khoản giao hàng hoặc ghi chú nội bộ"
+                ></textarea>
+              </label>
+            </div>
+          }
+        </div>
+
+        <footer class="create-form-footer">
+          <button
+            type="button"
+            class="btn btn-outline"
+            (click)="closeCreateForm()"
+            [disabled]="creating"
+          >
+            Đóng
+          </button>
+          @if (!loadingSources && approvedTickets.length && activeSuppliers.length) {
+            <button
+              type="submit"
+              class="btn btn-primary btn-submit"
+              [disabled]="creating || !availableItems.length"
+            >
+              <i
+                class="fa"
+                [class.fa-spinner]="creating"
+                [class.fa-spin]="creating"
+                [class.fa-paper-plane]="!creating"
+                aria-hidden="true"
+              ></i>
+              {{ creating ? 'Đang tạo...' : 'Nộp duyệt' }}
+            </button>
+          }
+        </footer>
+      </form>
+    </section>
+  }
+
+  <form class="toolbar" [formGroup]="filterForm">
+    <label class="search-box">
+      <i class="fa fa-search" aria-hidden="true"></i>
+      <input
+        type="search"
+        formControlName="searchQuery"
+        placeholder="Tìm mã đơn, phiếu hoặc nhà cung cấp..."
+        aria-label="Tìm đơn đặt hàng"
+      />
+    </label>
+    <label class="status-filter">
+      <span>Trạng thái</span>
+      <select formControlName="selectedStatus">
+        <option value="">Tất cả</option>
+        @if (auth.hasRole('ADMIN', 'CHECKER')) {
+          <option value="PENDING_APPROVAL">Chờ duyệt</option>
+          <option value="DRAFT">Chờ duyệt (Nháp)</option>
+        }
+        <option value="SENT">Đã duyệt (Gửi nhà cung cấp)</option>
+        <option value="RECEIVED">Đã nhận hàng</option>
+        @if (auth.hasRole('ADMIN', 'CHECKER')) {
+          <option value="CANCELLED">Đã hủy</option>
+          <option value="REJECTED">Đã từ chối</option>
+        }
+      </select>
+    </label>
+  </form>
+
+  <div class="table-card">
+    @if (loading) {
+      <div class="state-panel" role="status">
+        <span class="spinner" aria-hidden="true"></span>
+        Đang tải đơn đặt hàng...
+      </div>
+    } @else if (!filteredOrders.length) {
+      <div class="state-panel empty-state">
+        <i class="fa fa-shopping-basket" aria-hidden="true"></i>
+        <h2>Chưa có đơn đặt hàng</h2>
+        <p>Tạo đơn từ một phiếu đã duyệt để bắt đầu theo dõi giao dịch với nhà cung cấp.</p>
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Mã đơn</th>
+              <th>Phiếu mua sắm</th>
+              <th>Nhà cung cấp</th>
+              <th>Hạng mục</th>
+              <th>Tổng giá trị</th>
+              <th>Giao dự kiến</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (order of filteredOrders; track trackByOrderId($index, order)) {
+              <tr>
+                <td>
+                  <strong>{{ order.orderCode }}</strong>
+                </td>
+                <td>
+                  @if (auth.hasRole('ADMIN', 'USER')) {
+                    <a [routerLink]="['/procurement', order.ticketId]">{{ order.ticketCode }}</a>
+                  } @else {
+                    <span>{{ order.ticketCode }}</span>
+                  }
+                  <small>{{ order.ticketTitle }}</small>
+                </td>
+                <td>
+                  <strong>{{ order.supplierName }}</strong>
+                  <small>{{ order.supplierCode }}</small>
+                </td>
+                <td>
+                  <details class="order-items">
+                    <summary>{{ order.items.length }} hạng mục</summary>
+                    <ul>
+                      @for (item of order.items; track item.id) {
+                        <li>
+                          {{ item.itemName }} — {{ item.quantity }} {{ item.unit || '' }}
+                          <span>{{ item.totalPrice | number: '1.0-0' }} {{ order.currency }}</span>
+                        </li>
+                      }
+                    </ul>
+                  </details>
+                </td>
+                <td class="amount">
+                  {{ order.totalAmount | number: '1.0-0' }} {{ order.currency }}
+                </td>
+                <td>
+                  {{
+                    order.expectedDeliveryDate
+                      ? (order.expectedDeliveryDate | date: 'dd/MM/yyyy')
+                      : '—'
+                  }}
+                </td>
+                <td>
+                  <span class="status-badge" [ngClass]="statusClass(order.status)">{{
+                    statusLabel(order.status)
+                  }}</span>
+                </td>
+                <td class="actions">
+                  @if (
+                    auth.hasRole('ADMIN', 'CHECKER') ||
+                    order.status === 'SENT' ||
+                    order.status === 'RECEIVED'
+                  ) {
+                    <button
+                      type="button"
+                      class="btn-action btn-view"
+                      [disabled]="updatingOrderId === order.id"
+                      (click)="poView.open(order); openView(order)"
+                      [title]="
+                        (order.status === 'PENDING_APPROVAL' || order.status === 'DRAFT') &&
+                        auth.hasRole('ADMIN', 'CHECKER')
+                          ? 'Xem và duyệt đơn'
+                          : 'Xem chi tiết đơn hàng'
+                      "
+                      [attr.aria-label]="
+                        (order.status === 'PENDING_APPROVAL' || order.status === 'DRAFT') &&
+                        auth.hasRole('ADMIN', 'CHECKER')
+                          ? 'Xem và duyệt đơn'
+                          : 'Xem chi tiết đơn hàng'
+                      "
+                    >
+                      <i class="fa fa-eye" aria-hidden="true"></i>
+                    </button>
+                  }
+
+                  @if (auth.hasRole('ADMIN', 'CHECKER') && order.status === 'SENT') {
+                    <button
+                      type="button"
+                      class="btn-action receive"
+                      [disabled]="updatingOrderId === order.id"
+                      (click)="updateStatus(order, 'RECEIVED')"
+                      title="Xác nhận nhận hàng"
+                    >
+                      <i class="fa fa-check" aria-hidden="true"></i> Xác nhận nhận hàng
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-action cancel"
+                      [disabled]="updatingOrderId === order.id"
+                      (click)="updateStatus(order, 'CANCELLED')"
+                      title="Hủy đơn đặt hàng"
+                    >
+                      <i class="fa fa-times" aria-hidden="true"></i> Hủy
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <app-purchase-order-view #poView (reviewed)="onOrderReviewed($event)"></app-purchase-order-view>
+</section>

@@ -2,8 +2,8 @@ package com.example.shopping.dashboard.service.impl;
 
 import com.example.shopping.dashboard.service.DashboardService;
 
-import com.example.shopping.dashboard.dto.response.DashboardPointDto;
 import com.example.shopping.dashboard.dto.response.DashboardReportDto;
+import com.example.shopping.dashboard.mapper.DashboardMapper;
 
 import java.math.BigDecimal;
 import java.time.YearMonth;
@@ -18,12 +18,17 @@ import com.example.shopping.procurement.mapper.ProcurementMapper;
 import com.example.shopping.procurement.dto.response.ProcurementTicketResponseDto;
 import com.example.shopping.user.repository.UserRepository;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class DashboardServiceImpl implements DashboardService {
-    private final ProcurementTicketRepository tickets;
-    private final UserRepository users;
-    private final ProcurementMapper mapper;
+    ProcurementTicketRepository tickets;
+    UserRepository users;
+    ProcurementMapper mapper;
+    DashboardMapper dashboardMapper;
 
 
     @Transactional(readOnly = true)
@@ -73,15 +78,11 @@ public class DashboardServiceImpl implements DashboardService {
                 .map(s -> matching.stream().filter(t -> t.getStatus() == s).count()).toList();
         matching.sort(Comparator.comparing(ProcurementTicketResponseDto::getCreatedAt,
                 Comparator.nullsLast(Comparator.reverseOrder())));
-        return new DashboardReportDto(users.count(), users.countByEnabledTrue(), matching.size(), counts.get(1),
+        return dashboardMapper.toReportDto(users.count(), users.countByEnabledTrue(), matching.size(), counts.get(1),
                 counts.get(0), counts.get(2), total,
                 matching.isEmpty() ? 0 : Math.round(counts.get(0) * 100.0 / matching.size()), counts,
-                points(departments), points(months), points(suppliers),
+                departments, months, suppliers,
                 matching.stream().limit(50).toList(), currencies);
-    }
-
-    private static List<DashboardPointDto> points(Map<String, BigDecimal> values) {
-        return values.entrySet().stream().map(e -> new DashboardPointDto(e.getKey(), e.getKey(), e.getValue())).toList();
     }
 
     private static boolean present(String value) { 

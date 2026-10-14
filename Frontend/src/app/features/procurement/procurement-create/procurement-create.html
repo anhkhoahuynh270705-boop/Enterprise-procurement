@@ -1,22 +1,11 @@
 <div class="create-container">
   <div class="header-section">
     <div class="title-meta">
-      <a type="button" routerLink="/procurement" class="btn btn-outline">&larr; Back</a>
-      <h2>
-        @if (isEditMode) {
-          Chỉnh Sửa Phiếu: <app-sensitive-value [value]="editingTicketCode" label="mã phiếu" />
-        } @else {
-          Create Ticket
-        }
-      </h2>
-      <p>
-        {{
-          isEditMode
-            ? 'Cập nhật lại thông tin chung và danh mục vật tư của phiếu đề xuất mua sắm.'
-            : 'Lập danh sách
-        vật tư / trang thiết bị cần mua sắm.'
-        }}    
-      </p>
+      <a type="button" routerLink="/procurement" class="btn btn-outline"
+        ><i class="fa fa-arrow-left" aria-hidden="true"></i> Back</a
+      >
+      <h2>Create Ticket</h2>
+      <p>Lập danh sách vật tư / trang thiết bị cần mua sắm.</p>
     </div>
   </div>
 
@@ -99,16 +88,16 @@
         <table class="items-form-table">
           <thead>
             <tr>
-              <th style="width: 40px">STT</th>
-              <th style="width: 120px">Mã SKU</th>
+              <th>STT</th>
+              <th>Mã SKU</th>
               <th>Tên hàng hóa / Thiết bị <span class="req">*</span></th>
-              <th style="width: 140px">Danh mục</th>
-              <th style="width: 80px">SL <span class="req">*</span></th>
-              <th style="width: 80px">ĐVT</th>
-              <th style="width: 150px">Đơn giá (VND) <span class="req">*</span></th>
-              <th style="width: 160px">Thành tiền</th>
-              <th style="width: 160px">Nhà cung cấp dự kiến</th>
-              <th style="width: 50px"></th>
+              <th>Danh mục</th>
+              <th>SL <span class="req">*</span></th>
+              <th>ĐVT</th>
+              <th>Đơn giá (VND) <span class="req">*</span></th>
+              <th>Thành tiền</th>
+              <th>Nhà cung cấp dự kiến</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -116,18 +105,13 @@
               <tr [formGroupName]="i">
                 <td class="text-center">{{ i + 1 }}</td>
                 <td>
-                  <app-sensitive-input label="mã hàng"
-                    ><input
-                      #sensitiveInput
-                      type="password"
-                      formControlName="itemCode"
-                      placeholder="SKU-..."
-                  /></app-sensitive-input>
+                  <input type="text" formControlName="itemCode" placeholder="SKU-###" readonly />
                 </td>
                 <td>
                   <input
                     type="text"
                     formControlName="itemName"
+                    2
                     placeholder="Tên sản phẩm..."
                     [class.invalid]="
                       itemGroup.get('itemName')?.invalid &&
@@ -139,7 +123,9 @@
                       <span class="error-msg">Vui lòng nhập tên hàng hóa/thiết bị</span>
                     }
                     @if (itemGroup.get('itemName')?.hasError('pattern')) {
-                      <span class="error-msg">Tên hàng hóa/thiết bị chỉ được chứa chữ cái</span>
+                      <span class="error-msg"
+                        >Tên hàng hóa/thiết bị chỉ được chứa chữ cái, chữ số và khoảng trắng</span
+                      >
                     }
                   }
                 </td>
@@ -163,13 +149,19 @@
                   />
                 </td>
                 <td>
-                  <input type="text" formControlName="unit" placeholder="Cái" />
+                  <select
+                    formControlName="unit"
+                    [class.invalid]="
+                      itemGroup.get('unit')?.invalid && itemGroup.get('unit')?.touched
+                    "
+                  >
+                    @for (u of unitOptions; track u) {
+                      <option [value]="u">{{ u }}</option>
+                    }
+                  </select>
                   @if (itemGroup.get('unit')?.touched || itemGroup.get('unit')?.dirty) {
                     @if (itemGroup.get('unit')?.hasError('required')) {
-                      <span class="error-msg">Vui lòng nhập đơn vị tính</span>
-                    }
-                    @if (itemGroup.get('unit')?.hasError('pattern')) {
-                      <span class="error-msg">Đơn vị tính chỉ được chứa chữ cái</span>
+                      <span class="error-msg">Vui lòng chọn đơn vị tính</span>
                     }
                   }
                 </td>
@@ -214,7 +206,7 @@
                     title="Xóa dòng"
                     (click)="removeItem(i)"
                   >
-                    &times;
+                    <i class="fa fa-times" aria-hidden="true"></i>
                   </button>
                 </td>
               </tr>
@@ -228,33 +220,29 @@
       </div>
     </div>
     <div class="form-actions">
-      @if (isEditMode) {
-        <button
-          type="button"
-          class="btn btn-primary"
-          (click)="onSubmit(false)"
-          [disabled]="isLoading"
-        >
-          {{ isLoading ? 'Đang lưu...' : 'Lưu cập nhật phiếu' }}
-        </button>
-      } @else {
-        <button
-          type="button"
-          class="btn btn-secondary"
-          (click)="onSubmit(false)"
-          [disabled]="isLoading"
-        >
-          Lưu bản nháp
-        </button>
-        <button
-          type="button"
-          class="btn btn-primary"
-          (click)="onSubmit(true)"
-          [disabled]="isLoading"
-        >
-          {{ isLoading ? 'Đang xử lý...' : 'Nộp duyệt lên ngay' }}
-        </button>
-      }
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="onSubmit(false)"
+        [disabled]="isLoading"
+      >
+        Lưu bản nháp
+      </button>
+      <button
+        type="button"
+        class="btn btn-submit"
+        (click)="onSubmit(true)"
+        [disabled]="isLoading"
+      >
+        <i
+          class="fa"
+          [class.fa-spinner]="isLoading"
+          [class.fa-spin]="isLoading"
+          [class.fa-paper-plane]="!isLoading"
+          aria-hidden="true"
+        ></i>
+        {{ isLoading ? 'Đang xử lý...' : 'Nộp duyệt' }}
+      </button>
     </div>
   </form>
 </div>

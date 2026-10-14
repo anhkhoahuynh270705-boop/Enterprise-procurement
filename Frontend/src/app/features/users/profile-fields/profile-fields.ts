@@ -1,7 +1,7 @@
 import { Component, input } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { profileTextFields, todayDate } from './profile-form';
-import { SensitiveInput } from '../../../shared/sensitive-value/sensitive-input';
+import { SensitiveInput } from '../../../shared/sensitive/sensitive-input/sensitive-input';
 
 @Component({
   selector: 'app-user-profile-fields',

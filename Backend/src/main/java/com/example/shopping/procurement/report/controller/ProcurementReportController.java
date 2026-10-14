@@ -5,7 +5,7 @@ import java.util.UUID;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,13 +24,17 @@ import com.example.shopping.procurement.report.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/procurement")
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ProcurementReportController {
 
-    private final ReportService reportService;
+    ReportService reportService;
 
     private String extractUsername(Jwt jwt) {
         if (jwt == null) {
@@ -53,7 +57,7 @@ public class ProcurementReportController {
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + report.filename() + "\"")
                     .contentType(MediaType.parseMediaType(report.contentType()))
                     .body(report.bytes());
-        } catch (AccessDeniedException e) {
+        } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
             log.error("Lỗi khi xuất báo cáo phiếu mua sắm [{}]: {}", format, e.getMessage(), e);
@@ -74,7 +78,7 @@ public class ProcurementReportController {
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + report.filename() + "\"")
                     .contentType(MediaType.parseMediaType(report.contentType()))
                     .body(report.bytes());
-        } catch (AccessDeniedException e) {
+        } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
             log.error("Lỗi khi xuất báo cáo Enterprise Procurement Detail [{}]: {}", format, e.getMessage(), e);
@@ -91,7 +95,7 @@ public class ProcurementReportController {
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + report.filename() + "\"")
                     .contentType(MediaType.parseMediaType(report.contentType()))
                     .body(report.bytes());
-        } catch (AccessDeniedException e) {
+        } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
             log.error("Lỗi khi xuất tổng hợp phiếu mua sắm: {}", e.getMessage(), e);
@@ -123,7 +127,7 @@ public class ProcurementReportController {
 
             ImportResultDto result = reportService.importTickets(file, username);
             return ResponseEntity.ok(ApiResponse.success(result, "Nhập dữ liệu thành công"));
-        } catch (AccessDeniedException e) {
+        } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
             log.error("Lỗi khi import file Excel:", e.getMessage(), e);

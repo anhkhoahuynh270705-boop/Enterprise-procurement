@@ -1,7 +1,9 @@
 package com.example.shopping.security;
 
 import java.util.List;
+import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,6 +20,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 
+import com.example.shopping.ratelimiting.filter.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -32,6 +35,9 @@ public class SecurityConfig {
     private final JwtDecoder jwtDecoder;
     private final JwtAuthenticationConverter jwtAuthenticationConverter;
     private final UserStatusFilter userStatusFilter;
+
+    @Autowired(required = false)
+    private RateLimitFilter rateLimitFilter;
     
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -39,6 +45,7 @@ public class SecurityConfig {
         config.setAllowedOrigins(List.of("http://localhost:4200"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("Retry-After", "X-RateLimit-Limit", "X-RateLimit-Remaining"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -74,10 +81,18 @@ public class SecurityConfig {
                 .requestMatchers("/api/supplier-proposals/**").hasAnyRole("ADMIN", "CHECKER")
                 .requestMatchers(HttpMethod.POST, "/api/supplier-documents/*/review").hasAnyRole("ADMIN", "CHECKER")
                 .requestMatchers("/api/supplier-documents/**").hasAnyRole("ADMIN", "USER", "CHECKER")
+                .requestMatchers(HttpMethod.GET, "/api/supplier-contracts", "/api/supplier-contracts/*/download").hasAnyRole("ADMIN", "CHECKER")
+                .requestMatchers(HttpMethod.POST, "/api/supplier-contracts").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/supplier-contracts/*").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/supplier-contracts/*").hasRole("ADMIN")
 
                 /* PROCUREMENT TICKETS & TASKS & WORKFLOW */
                 .requestMatchers(HttpMethod.GET, "/api/procurement/tasks", "/api/workflow/camunda/tasks").hasAnyRole("ADMIN", "CHECKER")
                 .requestMatchers(HttpMethod.POST, "/api/procurement/tasks/*/review", "/api/workflow/camunda/tasks/*/review").hasAnyRole("ADMIN", "CHECKER")
+                .requestMatchers(HttpMethod.GET, "/api/purchase-orders").hasAnyRole("ADMIN", "USER", "CHECKER")
+                .requestMatchers(HttpMethod.POST, "/api/purchase-orders").hasAnyRole("USER", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/purchase-orders/*/review").hasAnyRole("ADMIN", "CHECKER")
+                .requestMatchers(HttpMethod.PATCH, "/api/purchase-orders/*/status").hasAnyRole("ADMIN", "CHECKER")
                 .requestMatchers(HttpMethod.POST, "/api/procurement/import").hasAnyRole("ADMIN", "USER")
                 .requestMatchers(HttpMethod.POST, "/api/procurement/tickets", "/api/procurement/tickets/*/submit").hasAnyRole("ADMIN", "USER")
                 .requestMatchers(HttpMethod.GET, "/api/procurement/tickets", "/api/procurement/tickets/page", "/api/procurement/tickets/*").hasAnyRole("ADMIN", "USER", "CHECKER")
@@ -89,6 +104,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/company-documents", "/api/company-documents/*/download").hasAnyRole("ADMIN", "USER", "CHECKER")
 
                 /* ADMIN WILDCARDS & SYSTEM */
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/camunda/**", "/engine-rest/**", "/actuator/**").hasRole("ADMIN")
                 .requestMatchers("/api/users/**").hasRole("ADMIN")
                 .requestMatchers("/api/suppliers/**").hasRole("ADMIN")
@@ -103,6 +119,11 @@ public class SecurityConfig {
                 )
                 )
                 .addFilterAfter(userStatusFilter, BearerTokenAuthenticationFilter.class);
+        
+        /* Register RateLimitFilter if bean exists */
+        if (rateLimitFilter != null) {
+            http.addFilterBefore(rateLimitFilter, BearerTokenAuthenticationFilter.class);
+        }
 
         return http.build();
     }

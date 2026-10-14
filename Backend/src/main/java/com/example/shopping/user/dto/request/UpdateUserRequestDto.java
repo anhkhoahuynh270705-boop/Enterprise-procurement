@@ -1,7 +1,5 @@
 package com.example.shopping.user.dto.request;
 
-import org.hibernate.validator.constraints.URL;
-
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PastOrPresent;
@@ -37,11 +35,8 @@ public class UpdateUserRequestDto {
 
     private Boolean enabled;
 
+    @Pattern(regexp = "(?s)^(?:\\s*|.{6,})$", message = "Password phải từ 6 ký tự trở lên")
     private String password;
-
-    @Size(max = 2048)
-    @URL(protocol = "https")
-    private String avatarUrl;
 
     @Size(max = 30)
     @Pattern(regexp = "[+0-9().\\s-]*", message = "Invalid phone number")

@@ -13,5 +13,7 @@ public interface ProcurementItemRepository extends JpaRepository<ProcurementItem
 
     List<ProcurementItem> findByTicketId(UUID ticketId);
 
+    boolean existsByItemCodeIgnoreCase(String itemCode);
+
     void deleteByTicketId(UUID ticketId);
 }

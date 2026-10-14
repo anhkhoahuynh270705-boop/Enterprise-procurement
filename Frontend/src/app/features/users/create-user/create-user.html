@@ -1,6 +1,6 @@
-<a type="button" class="btn btn-outline" routerLink="/users">&larr; Back</a>
+<a type="button" class="btn btn-outline" routerLink="/users"><i class="fa fa-arrow-left" aria-hidden="true"></i> Back</a>
 
-<p>Create User</p>
+<p>Tạo người dùng mới</p>
 <form [formGroup]="form" (ngSubmit)="Submit()">
   <div>
     <label for="create-fullname">Họ tên đầy đủ</label>
@@ -67,5 +67,14 @@
     <input type="checkbox" formControlName="enabled" />
   </div>
   <app-user-profile-fields [form]="form" />
-  <button type="submit" [disabled]="form.invalid || loading">Submit</button>
+  <button type="submit" [disabled]="form.invalid || loading">
+    <i
+      class="fa"
+      [class.fa-spinner]="loading"
+      [class.fa-spin]="loading"
+      [class.fa-paper-plane]="!loading"
+      aria-hidden="true"
+    ></i>
+    {{ loading ? 'Đang gửi...' : 'Tạo mới' }}
+  </button>
 </form>

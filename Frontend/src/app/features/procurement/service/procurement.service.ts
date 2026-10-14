@@ -17,6 +17,7 @@ import {
 })
 export class ProcurementService {
   private readonly apiUrl = environment.apiBaseUrl + '/procurement';
+  private readonly workflowUrl = environment.apiBaseUrl + '/workflow/camunda';
   private http = inject(HttpClient);
 
   getAllTickets(status?: string, maker?: string): Observable<ApiResponse<ProcurementTicket[]>> {
@@ -55,11 +56,11 @@ export class ProcurementService {
   }
 
   getPendingCheckerTasks(): Observable<ApiResponse<CamundaTask[]>> {
-    return this.http.get<ApiResponse<CamundaTask[]>>(`${this.apiUrl}/tasks`);
+    return this.http.get<ApiResponse<CamundaTask[]>>(`${this.workflowUrl}/tasks`);
   }
 
   reviewTask(taskId: string, review: CheckerReviewRequest): Observable<ApiResponse<void>> {
-    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/tasks/${taskId}/review`, review);
+    return this.http.post<ApiResponse<void>>(`${this.workflowUrl}/tasks/${taskId}/review`, review);
   }
 
   exportTicket(id: string, format: 'PDF' | 'EXCEL' = 'PDF'): Observable<Blob> {

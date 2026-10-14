@@ -1,5 +1,6 @@
 package com.example.shopping.auth.service.impl;
 
+import com.example.shopping.common.enums.ErrorEnum;
 import com.example.shopping.auth.service.AuthorizationTransactions;
 import com.example.shopping.auth.model.AuthorizationTransaction;
 
@@ -12,13 +13,18 @@ import java.util.HashMap;
 import java.util.Map;
 import org.springframework.stereotype.Service;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+
 @Service
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthorizationTransactionsImpl implements AuthorizationTransactions {
-    private final SecureRandom random = new SecureRandom();
-    private final Clock clock;
-    private final Map<String, AuthorizationTransaction> pending = new HashMap<>();
-    public AuthorizationTransactionsImpl() { 
-        this(Clock.systemUTC()); 
+    SecureRandom random = new SecureRandom();
+    Clock clock;
+    Map<String, AuthorizationTransaction> pending = new HashMap<>();
+
+    public AuthorizationTransactionsImpl() {
+        this(Clock.systemUTC());
     }
 
     AuthorizationTransactionsImpl(Clock clock) { 
@@ -28,8 +34,7 @@ public class AuthorizationTransactionsImpl implements AuthorizationTransactions 
     public synchronized AuthorizationTransaction create() {
         pending.values().removeIf(tx -> !tx.expiresAt().isAfter(clock.instant()));
         if (pending.size() >= 10000) 
-            throw new IllegalStateException("Too many pending logins"
-        );
+            throw ErrorEnum.AUTH_PENDING_LIMIT_REACHED.ex();
         var tx = new AuthorizationTransaction(secret(), secret(), secret(), secret(), clock.instant().plusSeconds(600));
         pending.put(tx.state(), tx);
         return tx;
@@ -40,10 +45,10 @@ public class AuthorizationTransactionsImpl implements AuthorizationTransactions 
         if (tx == null || browserToken == null || !MessageDigest.isEqual(
                 tx.browserToken().getBytes(StandardCharsets.UTF_8), 
                 browserToken.getBytes(StandardCharsets.UTF_8)))
-            throw new IllegalArgumentException("Invalid login transaction");
+            throw ErrorEnum.INVALID_LOGIN_TRANSACTION.ex();
         pending.remove(state);
         if (!tx.expiresAt().isAfter(clock.instant())) 
-            throw new IllegalArgumentException("Expired login transaction");
+            throw ErrorEnum.EXPIRED_LOGIN_TRANSACTION.ex();
         return tx;
     }
 

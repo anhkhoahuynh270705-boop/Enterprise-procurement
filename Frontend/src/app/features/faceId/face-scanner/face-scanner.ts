@@ -11,7 +11,6 @@ import {
   inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FaceAuthService } from '../services/face-auth.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -24,7 +23,7 @@ const SCAN_INTERVAL_MS = 400;
 @Component({
   selector: 'app-face-scanner',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule],
   templateUrl: './face-scanner.html',
   styleUrl: './face-scanner.scss',
 })
@@ -139,7 +138,7 @@ export class FaceScannerComponent implements OnInit, OnDestroy {
               this.zone.run(() => {
                 this.phase = 'matched';
                 this.cleanup();
-                this.toast.success('Đăng nhập Face ID thành công!');
+                this.toast.success('Đăng nhập ID thành công!');
                 setTimeout(() => {
                   this.zone.run(() => {
                     this.loginSuccess.emit();

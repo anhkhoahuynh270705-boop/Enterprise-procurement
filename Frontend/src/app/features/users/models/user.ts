@@ -1,5 +1,4 @@
 export interface UserProfileFields {
-    avatarUrl?: string | null,
     phone?: string | null,
     dateOfBirth?: string | null,
     gender?: string | null,
@@ -13,6 +12,7 @@ export interface UserProfileFields {
 }
 
 export interface Users extends UserProfileFields {
+    avatarUrl?: string | null,
     fullName?: string,
     id: string | number,
     username: string,

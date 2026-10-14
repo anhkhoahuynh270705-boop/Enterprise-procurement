@@ -2,13 +2,6 @@ import { FormBuilder, ValidatorFn, Validators } from '@angular/forms';
 
 export const profileTextFields = [
   {
-    name: 'avatarUrl',
-    label: 'Avatar URL',
-    max: 2048,
-    type: 'url',
-    error: 'Enter a valid HTTPS URL (maximum 2048 characters).',
-  },
-  {
     name: 'phone',
     label: 'Phone',
     max: 30,
@@ -57,17 +50,6 @@ export function todayDate(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
-const httpsUrl: ValidatorFn = (control) => {
-  const value = control.value?.trim();
-  if (!value) return null;
-  try {
-    const url = new URL(value);
-    return url.protocol === 'https:' && !!url.hostname ? null : { httpsUrl: true };
-  } catch {
-    return { httpsUrl: true };
-  }
-};
-
 const birthday: ValidatorFn = (control) => {
   const value = control.value;
   if (!value) return null;
@@ -82,7 +64,6 @@ const birthday: ValidatorFn = (control) => {
 
 export function profileControls(fb: FormBuilder) {
   return {
-    avatarUrl: fb.control('', [Validators.maxLength(2048), httpsUrl]),
     phone: fb.control('', [Validators.maxLength(30), Validators.pattern(/^[+\d\s().-]*$/)]),
     dateOfBirth: fb.control('', birthday),
     gender: fb.control<string | null>(

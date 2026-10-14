@@ -23,12 +23,16 @@ import com.example.shopping.supplier.service.SupplierService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+
 @RestController
 @RequestMapping("/api/suppliers")
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SupplierController {
 
-    private final SupplierService supplierService;
+    SupplierService supplierService;
 
     @GetMapping
     public ResponseEntity<List<SupplierResponseDto>> getAllSuppliers(

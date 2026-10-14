@@ -1,4 +1,4 @@
-import { SensitiveInput } from '../../../shared/sensitive-value/sensitive-input';
+import { SensitiveInput } from '../../../shared/sensitive/sensitive-input/sensitive-input';
 import { ToastService } from '../../../core/services/toast.service';
 import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -8,6 +8,7 @@ import { SupplierService } from '../services/supplier.service';
 import { CreateSupplierRequest } from '../models/supplier';
 import {
   bankAccountValidator,
+  bankNameValidator,
   bankDetailsValidator,
   contactRequiredValidator,
   phoneValidator,
@@ -41,7 +42,7 @@ export class SupplierCreate {
     country: ['', [supplierNameValidator(), trimmed(Validators.maxLength(255))]],
     taxCode: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$|^[0-9]{13}$/)]],
     bankAccount: ['', bankAccountValidator()],
-    bankName: ['', [supplierNameValidator(), trimmed(Validators.maxLength(255))]],
+    bankName: ['', [bankNameValidator(), trimmed(Validators.maxLength(255))]],
     notes: ['', trimmed(Validators.maxLength(2000))]
   }, { validators: [contactRequiredValidator, bankDetailsValidator] });
 
@@ -56,6 +57,8 @@ export class SupplierCreate {
       return `Tối đa ${field.errors['maxlength'].requiredLength} ký tự.`;
     if (field.hasError('name')) 
       return 'Chỉ nhập chữ và một khoảng trắng giữa các từ, không nhập số.';
+    if (field.hasError('bankName'))
+      return 'Tên ngân hàng chỉ nhập chữ; tên viết tắt có thể đặt trong ngoặc, ví dụ: Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank).';
     if (field.hasError('email')) 
       return 'Email không hợp lệ.';
     if (field.hasError('bankAccount'))
@@ -91,6 +94,7 @@ export class SupplierCreate {
     this.supplierService.createSupplier(createData).subscribe({
       next: () => {
         this.loading = false;
+        this.toast.success('Tạo nhà cung cấp thành công');
         this.router.navigate(['/suppliers']);
       },
       error: (err) => {

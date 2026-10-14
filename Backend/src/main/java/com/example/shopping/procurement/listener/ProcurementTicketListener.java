@@ -13,5 +13,7 @@ public class ProcurementTicketListener {
     }
 
     @PreUpdate
-    public void onUpdate(ProcurementTicket ticket) { ticket.setUpdatedAt(LocalDateTime.now()); }
+    public void onUpdate(ProcurementTicket ticket) {
+        ticket.setUpdatedAt(LocalDateTime.now());
+    }
 }

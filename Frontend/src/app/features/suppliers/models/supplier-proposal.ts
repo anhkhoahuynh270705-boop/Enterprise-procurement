@@ -24,4 +24,5 @@ export interface SupplierProposal extends SupplierProposalRequest {
   reviewedAt?: string;
   reviewComment?: string;
   supplierId?: string;
+  camundaProcessInstanceId?: string;
 }

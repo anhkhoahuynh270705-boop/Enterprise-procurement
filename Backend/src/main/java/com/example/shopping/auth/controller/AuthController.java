@@ -20,103 +20,56 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+import org.springframework.web.server.ResponseStatusException;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+
 public class AuthController {
 
-    private final AuthService authService;
-    private final AuthHttpHelper authHttpHelper;
+    AuthService authService;
+    AuthHttpHelper authHttpHelper;
 
     @PostMapping("/refresh")
-    public ResponseEntity<LoginResponseDto> refresh( @CookieValue(value = AuthHttpHelper.REFRESH_COOKIE, required = false ) String refreshToken,
-            @RequestHeader(
-                    value = "X-Requested-With",
-                    required = false
-            )
-            String requestedWith) {
-
-        authHttpHelper.requireBrowserHeader(
-                requestedWith
-        );
-
-        if (refreshToken == null
-                || refreshToken.isBlank()) {
-
+    public ResponseEntity<LoginResponseDto> refresh( @CookieValue(value = AuthHttpHelper.REFRESH_COOKIE, required = false ) String refreshToken, @RequestHeader( value = "X-Requested-With", required = false)
+    String requestedWith) {
+        authHttpHelper.requireBrowserHeader(requestedWith);
+        if (refreshToken == null || refreshToken.isBlank()) {
             return authHttpHelper.unauthorized();
         }
-
         try {
-
-            LoginResponseDto tokens =
-                    authService.refreshToken(
-                            refreshToken
-                    );
-
-            return authHttpHelper.tokenResponse(
-                    tokens
-            );
-
-        } catch (IllegalArgumentException ex) {
-
+            LoginResponseDto tokens = authService.refreshToken( refreshToken );
+            return authHttpHelper.tokenResponse(tokens);
+        } catch (ResponseStatusException ex) {
             return authHttpHelper.unauthorized();
         }
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<MessageResponseDto> logout(
-            @CookieValue(
-                    value = AuthHttpHelper.REFRESH_COOKIE,
-                    required = false
-            )
-            String refreshToken,
-
-            @RequestHeader(
+    public ResponseEntity<MessageResponseDto> logout( @CookieValue( value = AuthHttpHelper.REFRESH_COOKIE, required = false) String refreshToken, @RequestHeader(
                     value = "X-Requested-With",
                     required = false
             )
-            String requestedWith,
+            String requestedWith, HttpServletResponse response) {
+        authHttpHelper.requireBrowserHeader(requestedWith);
+        response.addHeader( HttpHeaders.SET_COOKIE, authHttpHelper.refreshCookie("", 0));
+        response.setHeader( HttpHeaders.CACHE_CONTROL,  "no-store" );
 
-            HttpServletResponse response) {
-
-        authHttpHelper.requireBrowserHeader(
-                requestedWith
-        );
-
-        response.addHeader(
-                HttpHeaders.SET_COOKIE,
-                authHttpHelper.refreshCookie("", 0)
-        );
-
-        response.setHeader(
-                HttpHeaders.CACHE_CONTROL,
-                "no-store"
-        );
-
-        if (refreshToken != null
-                && !refreshToken.isBlank()) {
-
-            authService.logout(
-                    refreshToken
-            );
+        if (refreshToken != null && !refreshToken.isBlank()) {
+            authService.logout( refreshToken );
         }
-
-        return ResponseEntity.ok(
-                new MessageResponseDto("Logged out")
+        return ResponseEntity.ok( new MessageResponseDto("Logged out")
         );
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<MessageResponseDto> forgotPassword(
-            @Valid
-            @RequestBody
-            ForgotPasswordRequestDto request) {
-
-        authService.forgotPassword(
-                request
-        );
-        return ResponseEntity.ok(
-                new MessageResponseDto("Nếu email tồn tại, link đặt lại mật khẩu đã được gửi.")
+    public ResponseEntity<MessageResponseDto> forgotPassword( @Valid @RequestBody ForgotPasswordRequestDto request) {
+        authService.forgotPassword(request);
+        return ResponseEntity.ok(new MessageResponseDto("Nếu email tồn tại, link đặt lại mật khẩu đã được gửi.")
         );
     }
 }

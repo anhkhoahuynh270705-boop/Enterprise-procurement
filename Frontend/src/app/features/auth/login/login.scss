@@ -65,6 +65,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  width: 100%;
 }
 
 .form-group {
@@ -91,7 +92,6 @@
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s;
-
 }
 
 .forgot-link:hover {
@@ -148,7 +148,6 @@
 
 .form-group input:focus {
   border-color: #2872da;
-
 }
 
 .form-group input.error {
@@ -172,6 +171,8 @@
 
 .btn-login {
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 15px;
   background: #3677d2;
   color: white;
@@ -200,7 +201,9 @@
 
 .btn-face-login {
   width: 100%;
-  padding: 14px;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 16px 14px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 12px;
@@ -224,8 +227,6 @@
   &:hover {
     background: rgba(255, 255, 255, 0.2);
     border-color: rgba(56, 189, 248, 0.6);
-    box-shadow: 0 8px 25px rgba(14, 165, 233, 0.25);
-    transform: translateY(-2px);
 
     .face-icon {
       transform: scale(1.1);

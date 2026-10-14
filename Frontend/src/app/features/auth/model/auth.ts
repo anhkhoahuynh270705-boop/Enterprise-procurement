@@ -41,7 +41,6 @@ export interface UserResponse {
 
 export type Gender = 'MALE' | 'FEMALE' | 'OTHER' | 'UNDISCLOSED';
 export interface UpdateMyProfileRequest {
-    avatarUrl: string | null;
     phone: string | null;
     dateOfBirth: string | null;
     gender: Gender | null;

@@ -9,6 +9,25 @@
       <bpmn:outgoing>Flow_2</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:userTask id="UserTask_CheckerReview" name="Checker Review Ticket" camunda:candidateGroups="CHECKER">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="approved" label="Kết quả duyệt" type="enum">
+            <camunda:validation>
+              <camunda:constraint name="required" />
+            </camunda:validation>
+            <camunda:value id="true" name="Duyệt" />
+            <camunda:value id="false" name="Từ chối" />
+          </camunda:formField>
+          <camunda:formField id="checkerComment" label="Nhận xét / lý do từ chối" type="string">
+            <camunda:validation>
+              <camunda:constraint name="maxlength" config="1000" />
+            </camunda:validation>
+          </camunda:formField>
+        </camunda:formData>
+        <camunda:taskListener
+            event="complete"
+            delegateExpression="${procurementCheckerReviewTaskListener}" />
+      </bpmn:extensionElements>
       <bpmn:incoming>Flow_2</bpmn:incoming>
       <bpmn:outgoing>Flow_3</bpmn:outgoing>
     </bpmn:userTask>
@@ -35,10 +54,10 @@
     <bpmn:sequenceFlow id="Flow_2" sourceRef="ServiceTask_BudgetCheck" targetRef="UserTask_CheckerReview" />
     <bpmn:sequenceFlow id="Flow_3" sourceRef="UserTask_CheckerReview" targetRef="Gateway_Decision" />
     <bpmn:sequenceFlow id="Flow_Approved" name="Đồng ý (approved = true)" sourceRef="Gateway_Decision" targetRef="ServiceTask_ApproveNotification">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approved == true}</bpmn:conditionExpression>
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approved == true || approved == 'true'}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_Rejected" name="Từ chối (approved = false)" sourceRef="Gateway_Decision" targetRef="ServiceTask_RejectNotification">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approved == false}</bpmn:conditionExpression>
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approved == false || approved == 'false'}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_4" sourceRef="ServiceTask_ApproveNotification" targetRef="EndEvent_Approved" />
     <bpmn:sequenceFlow id="Flow_5" sourceRef="ServiceTask_RejectNotification" targetRef="EndEvent_Rejected" />

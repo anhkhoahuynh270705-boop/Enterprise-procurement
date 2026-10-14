@@ -92,8 +92,10 @@
 
     .action-buttons {
         display: flex;
+        justify-content: flex-end;
         gap: 8px;
         flex-wrap: wrap;
+        margin-left: auto;
     }
 }
 
@@ -587,7 +589,6 @@
     border-radius: 12px;
     background: #f7f9fc;
     color: #222222;
-    box-shadow: 0 24px 64px rgb(0 0 0 / 25%);
     overflow: auto;
     overscroll-behavior: contain;
 
@@ -605,4 +606,34 @@
     padding: 12px 20px;
     background: #f7f9fc;
     border-bottom: 1px solid #dce1e7;
+}
+
+.supplier-pagination {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    width: 100%;
+    margin-top: 16px;
+    margin-bottom: 20px;
+    padding: 4px 0;
+
+    &__info {
+        font-size: 14px;
+        font-weight: 500;
+        color: #444444;
+        white-space: nowrap;
+    }
+
+    .btn,
+    button {
+        font-size: 13px;
+        padding: 6px 14px;
+
+        &:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+    }
 }

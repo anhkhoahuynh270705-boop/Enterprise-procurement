@@ -24,7 +24,8 @@
     </label>
     @for (filter of activeFilters; track filter[0]) {
       <button type="button" class="filter-chip" (click)="selectFilter(filter[0], filter[1]!)">
-        {{ filterNames[filter[0]] }}: {{ filterLabel(filter[0], filter[1]!) }} ×
+        {{ filterNames[filter[0]] }}: {{ filterLabel(filter[0], filter[1]!) }}
+        <i class="fa fa-times" aria-hidden="true"></i>
       </button>
     }
     @if (activeFilters.length) {
@@ -47,7 +48,7 @@
           <i class="fa fa-money" aria-hidden="true"></i>
         </div>
         <strong>{{ isLoading ? '—' : (totalProcurementAmount | number: '1.0-0') }}</strong>
-        <p>{{ currency }} · Theo bộ lọc hiện tại</p>
+        <p>{{ currency }}</p>
       </article>
 
       <article class="kpi-card accent-cyan">

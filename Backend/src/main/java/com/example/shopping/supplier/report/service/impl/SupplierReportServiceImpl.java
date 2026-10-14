@@ -2,6 +2,7 @@ package com.example.shopping.supplier.report.service.impl;
 
 import com.example.shopping.supplier.report.service.SupplierReportService;
 import com.example.shopping.common.dto.response.ReportFileResponse;
+import com.example.shopping.common.enums.ErrorEnum;
 import com.example.shopping.common.enums.ReportFormat;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,15 +33,19 @@ import com.example.shopping.supplier.service.SupplierService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SupplierReportServiceImpl implements SupplierReportService {
 
-    private final SupplierRepository supplierRepository;
-    private final SupplierService supplierService;
-    private final SupplierExcelExporter supplierExcelExporter;
-    private final SupplierPdfExporter supplierPdfExporter;
+    SupplierRepository supplierRepository;
+    SupplierService supplierService;
+    SupplierExcelExporter supplierExcelExporter;
+    SupplierPdfExporter supplierPdfExporter;
 
     @Override
     public ReportFileResponse exportSupplier(UUID id, String format) throws Exception {
@@ -58,13 +63,13 @@ public class SupplierReportServiceImpl implements SupplierReportService {
 
     public byte[] exportSupplierPdf(UUID id) throws Exception {
         SupplierEntity supplier = supplierRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy nhà cung cấp với id: " + id));
+                .orElseThrow(() -> ErrorEnum.SUPPLIER_NOT_FOUND.ex());
         return supplierPdfExporter.exportSupplier(supplier);
     }
 
     public byte[] exportSupplierExcel(UUID id) throws Exception {
         SupplierEntity supplier = supplierRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy nhà cung cấp với id: " + id));
+                .orElseThrow(() -> ErrorEnum.SUPPLIER_NOT_FOUND.ex());
         return supplierExcelExporter.exportSupplier(supplier);
     }
 
@@ -84,17 +89,19 @@ public class SupplierReportServiceImpl implements SupplierReportService {
 
         try (Workbook workbook = ImportWorkbookValidator.open(inputStream)) {
             Sheet sheet = workbook.getSheetAt(0);
-            ImportWorkbookValidator.validateSupplierHeaders(sheet);
-            int totalRows = sheet.getLastRowNum();
+            var headers = ImportWorkbookValidator.validateSupplierHeaders(sheet);
+            int totalRows = 0;
+            int firstRow = headers.isProfile() ? headers.rowIndex() : headers.rowIndex() + 1;
+            int lastRow = headers.isProfile() ? headers.rowIndex() : sheet.getLastRowNum();
 
-            for (int i = 1; i <= totalRows; i++) {
+            for (int i = firstRow; i <= lastRow; i++) {
                 Row row = sheet.getRow(i);
-                if (row == null) {
+                if (!headers.isProfile() && (row == null || isBlankRow(row))) {
                     continue;
                 }
+                totalRows++;
 
-                Cell nameCell = row.getCell(0);
-                String name = getCellStringValue(nameCell);
+                String name = getCellStringValue(sheet, i, headers, "Tên nhà cung cấp");
                 if (name == null || name.isBlank()) {
                     errors.add(SupplierImportRowErrorDto.builder()
                             .rowNumber(i + 1)
@@ -104,16 +111,16 @@ public class SupplierReportServiceImpl implements SupplierReportService {
                     continue;
                 }
 
-                String contactPerson = getCellStringValue(row.getCell(1));
-                String email = getCellStringValue(row.getCell(2));
-                String phone = getCellStringValue(row.getCell(3));
-                String taxCode = getCellStringValue(row.getCell(4));
-                String address = getCellStringValue(row.getCell(5));
-                String city = getCellStringValue(row.getCell(6));
-                String country = getCellStringValue(row.getCell(7));
-                String bankName = getCellStringValue(row.getCell(8));
-                String bankAccount = getCellStringValue(row.getCell(9));
-                String notes = getCellStringValue(row.getCell(10));
+                String contactPerson = getCellStringValue(sheet, i, headers, "Người liên hệ");
+                String email = getCellStringValue(sheet, i, headers, "Email");
+                String phone = getCellStringValue(sheet, i, headers, "Số điện thoại");
+                String taxCode = getCellStringValue(sheet, i, headers, "Mã số thuế");
+                String address = getCellStringValue(sheet, i, headers, "Địa chỉ");
+                String city = getCellStringValue(sheet, i, headers, "Thành phố");
+                String country = getCellStringValue(sheet, i, headers, "Quốc gia");
+                String bankName = getCellStringValue(sheet, i, headers, "Ngân hàng");
+                String bankAccount = getCellStringValue(sheet, i, headers, "Số tài khoản");
+                String notes = getCellStringValue(sheet, i, headers, "Ghi chú");
 
                 if (taxCode != null && !taxCode.isBlank() && supplierRepository.existsByTaxCode(taxCode)) {
                     errors.add(SupplierImportRowErrorDto.builder()
@@ -161,6 +168,27 @@ public class SupplierReportServiceImpl implements SupplierReportService {
                     .errors(errors)
                     .build();
         }
+    }
+
+    private boolean isBlankRow(Row row) {
+        for (Cell cell : row) {
+            if (getCellStringValue(cell) != null && !getCellStringValue(cell).isBlank()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private String getCellStringValue(Sheet sheet, int rowIndex,
+            ImportWorkbookValidator.SupplierHeaders headers, String column) {
+        if (headers.isProfile()) {
+            var position = headers.profileValues().get(column);
+            return position == null ? null
+                    : getCellStringValue(sheet.getRow(position.rowIndex()).getCell(position.columnIndex()));
+        }
+        Integer index = headers.columns().get(column);
+        Row row = sheet.getRow(rowIndex);
+        return index == null || row == null ? null : getCellStringValue(row.getCell(index));
     }
 
     private String getCellStringValue(Cell cell) {

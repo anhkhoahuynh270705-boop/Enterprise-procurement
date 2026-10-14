@@ -7,7 +7,11 @@ export interface DashboardFilters {
   status?: string;
   month?: string;
 }
-interface Point { key: string; label: string; value: number; }
+interface Point {
+  key: string;
+  label: string;
+  value: number;
+}
 
 export interface DashboardReport {
   totalUsers: number;

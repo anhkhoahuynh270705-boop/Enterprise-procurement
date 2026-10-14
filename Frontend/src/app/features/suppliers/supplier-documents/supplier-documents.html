@@ -64,10 +64,11 @@
           class="fa"
           [class.fa-spinner]="uploading"
           [class.fa-spin]="uploading"
-          [class.fa-upload]="!uploading"
+          [class.fa-paper-plane]="!uploading"
+          aria-hidden="true"
         >
         </i>
-        {{ uploading ? 'Đang tải lên…' : isAdmin ? 'Upload tài liệu' : 'Gửi đề xuất' }}
+        {{ uploading ? 'Đang tải lên…' : isAdmin ? 'Upload tài liệu' : 'Nộp đề xuất' }}
       </button>
     </fieldset>
   </form>
@@ -140,20 +141,22 @@
                 </td>
                 <td>
                   <div class="actions">
-                    <button
-                      type="button"
-                      class="btn-icon"
-                      (click)="view(document)"
-                      [disabled]="!!viewingId || !!downloadingId"
-                      title="Xem tài liệu"
-                    >
-                      <i
-                        class="fa"
-                        [class.fa-spinner]="viewingId === document.id"
-                        [class.fa-spin]="viewingId === document.id"
-                        [class.fa-eye]="viewingId !== document.id"
-                      ></i>
-                    </button>
+                    @if (canPreview(document)) {
+                      <button
+                        type="button"
+                        class="btn-icon"
+                        (click)="view(document)"
+                        [disabled]="!!viewingId || !!downloadingId"
+                        title="Xem tài liệu"
+                      >
+                        <i
+                          class="fa"
+                          [class.fa-spinner]="viewingId === document.id"
+                          [class.fa-spin]="viewingId === document.id"
+                          [class.fa-eye]="viewingId !== document.id"
+                        ></i>
+                      </button>
+                    }
                     <button
                       type="button"
                       class="btn-icon"
@@ -254,3 +257,30 @@
     </section>
   }
 </section>
+
+<dialog
+  #previewDialog
+  class="preview-dialog"
+  (cancel)="closePreview()"
+  aria-label="Xem tài liệu nhà cung cấp"
+>
+  @if (preview; as document) {
+    <header>
+      <h2>{{ document.filename }}</h2>
+      <button type="button" (click)="closePreview()" autofocus>Đóng</button>
+    </header>
+    @if (previewUrl; as url) {
+      <iframe [src]="url" [title]="document.filename"></iframe>
+    }
+    <footer>
+      <span>{{ document.filename }} · {{ document.supplierName }}</span>
+      <button
+        type="button"
+        (click)="download(document)"
+        [disabled]="!!downloadingId || !!viewingId"
+      >
+        Tải xuống
+      </button>
+    </footer>
+  }
+</dialog>

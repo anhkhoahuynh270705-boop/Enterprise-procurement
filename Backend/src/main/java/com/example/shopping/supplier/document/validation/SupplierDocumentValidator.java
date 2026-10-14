@@ -7,9 +7,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.zip.*;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.springframework.http.HttpStatus;
+import com.example.shopping.common.enums.ErrorEnum;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 
 public final class SupplierDocumentValidator {
     public static final int MAX_BYTES = 10 * 1024 * 1024;
@@ -19,7 +18,7 @@ public final class SupplierDocumentValidator {
         if (file == null || file.isEmpty()) 
             throw invalid("Vui lòng chọn file có nội dung.");
         if (file.getSize() > MAX_BYTES) 
-            throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "File tối đa 10 MB.");
+            throw ErrorEnum.SUPPLIER_DOCUMENT_TOO_LARGE.ex();
         String name = Objects.toString(file.getOriginalFilename(), "").replace('\\', '/');
         name = name.substring(name.lastIndexOf('/') + 1).replaceAll("[\\p{Cntrl}]", "").strip();
         if (name.isBlank() || name.length() > 200) 
@@ -28,7 +27,7 @@ public final class SupplierDocumentValidator {
         byte[] bytes;
         try (var stream = file.getInputStream()) { bytes = stream.readNBytes(MAX_BYTES + 1); }
         if (bytes.length > MAX_BYTES) 
-            throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "File tối đa 10 MB.");
+            throw ErrorEnum.SUPPLIER_DOCUMENT_TOO_LARGE.ex();
         String mime = switch (extension) {
             case "pdf" -> starts(bytes, "%PDF-") ? "application/pdf" : null;
             case "png" -> starts(bytes, new byte[]{(byte)137,80,78,71,13,10,26,10}) ? "image/png" : null;
@@ -80,7 +79,7 @@ public final class SupplierDocumentValidator {
             return false; 
         }
     }
-    private static ResponseStatusException invalid(String message) { 
-        return new ResponseStatusException(HttpStatus.BAD_REQUEST, message); 
+    private static org.springframework.web.server.ResponseStatusException invalid(String message) {
+        return ErrorEnum.SUPPLIER_DOCUMENT_INVALID.ex(message);
     }
 }

@@ -1,0 +1,368 @@
+<section class="contracts-page">
+  <header class="page-header">
+    <div>
+      <h1>Hợp đồng nhà cung cấp</h1>
+      <p>Quản lý thời hạn, giá trị và hồ sơ hợp đồng với nhà cung cấp.</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn btn-outline" (click)="loadContracts()" [disabled]="loading">
+        <i class="fa fa-refresh" [class.fa-spin]="loading" aria-hidden="true"></i>
+        Tải lại
+      </button>
+      @if (isAdmin) {
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="isFormOpen ? closeForm() : openCreate()"
+          [disabled]="loading || loadingSuppliers"
+        >
+          <i class="fa" [class.fa-plus]="!isFormOpen" [class.fa-times]="isFormOpen" aria-hidden="true"></i>
+          {{ isFormOpen ? 'Đóng biểu mẫu' : 'Tạo hợp đồng' }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (isFormOpen && isAdmin) {
+    <section class="contract-form-panel">
+      <div class="form-heading">
+        <div>
+          <h2>{{ editingContract ? 'Sửa hợp đồng' : 'Tạo hợp đồng' }}</h2>
+        </div>
+      </div>
+      <form [formGroup]="contractForm" (ngSubmit)="save()">
+        <div class="form-grid">
+          <label class="form-field">
+            <span>Mã hợp đồng</span>
+            <input
+              [value]="editingContract?.contractNumber || contractNumberPreview"
+              readonly
+              aria-readonly="true"
+            />
+            @if (!editingContract) {
+              <small>Mã được hệ thống tự cấp khi lưu hợp đồng.</small>
+            }
+          </label>
+          <label class="form-field">
+            <span>Tên hợp đồng <b>*</b></span>
+            <input formControlName="title" maxlength="255" [attr.aria-invalid]="!!fieldError('title')" />
+            @if (fieldError('title')) {
+              <small class="field-error" role="alert">{{ fieldError('title') }}</small>
+            }
+          </label>
+          <label class="form-field">
+            <span>Nhà cung cấp <b>*</b></span>
+            <select formControlName="supplierId" [attr.aria-invalid]="!!fieldError('supplierId')">
+              <option value="">Chọn nhà cung cấp</option>
+              @for (supplier of suppliers; track supplier.id) {
+                <option [value]="supplier.id">{{ supplier.name }} ({{ supplier.code }})</option>
+              }
+            </select>
+            @if (fieldError('supplierId')) {
+              <small class="field-error" role="alert">{{ fieldError('supplierId') }}</small>
+            }
+          </label>
+          <label class="form-field">
+            <span>Trạng thái <b>*</b></span>
+            <select formControlName="status" [attr.aria-invalid]="!!fieldError('status')">
+              @for (status of editableStatuses; track status.value) {
+                <option [value]="status.value">{{ status.label }}</option>
+              }
+            </select>
+            @if (editingContract?.status === 'EXPIRED') {
+              <small>Ngày kết thúc đã qua; trạng thái hết hạn được tính tự động.</small>
+            }
+            @if (fieldError('status')) {
+              <small class="field-error" role="alert">{{ fieldError('status') }}</small>
+            }
+          </label>
+          <label class="form-field">
+            <span>Ngày ký</span>
+            <input
+              type="date"
+              formControlName="signedDate"
+              [attr.aria-invalid]="
+                contractForm.hasError('contractSignedDate') &&
+                (contractForm.controls.signedDate.touched ||
+                  contractForm.controls.startDate.touched ||
+                  submitAttempted)
+              "
+            />
+            @if (
+              contractForm.hasError('contractSignedDate') &&
+              (contractForm.controls.signedDate.touched ||
+                contractForm.controls.startDate.touched ||
+                submitAttempted)
+            ) {
+              <small class="field-error" role="alert">Ngày ký không được sau ngày bắt đầu hợp đồng.</small>
+            }
+          </label>
+          <label class="form-field">
+            <span>Ngày bắt đầu <b>*</b></span>
+            <input type="date" formControlName="startDate" [attr.aria-invalid]="!!fieldError('startDate')" />
+            @if (fieldError('startDate')) {
+              <small class="field-error" role="alert">{{ fieldError('startDate') }}</small>
+            }
+          </label>
+          <label class="form-field">
+            <span>Ngày kết thúc <b>*</b></span>
+            <input
+              type="date"
+              formControlName="endDate"
+              [attr.aria-invalid]="
+                !!fieldError('endDate') ||
+                (contractForm.hasError('contractDateRange') &&
+                  (contractForm.controls.startDate.touched ||
+                    contractForm.controls.endDate.touched ||
+                    submitAttempted))
+              "
+            />
+            @if (fieldError('endDate')) {
+              <small class="field-error" role="alert">{{ fieldError('endDate') }}</small>
+            } @else if (
+              contractForm.hasError('contractDateRange') &&
+              (contractForm.controls.startDate.touched ||
+                contractForm.controls.endDate.touched ||
+                submitAttempted)
+            ) {
+              <small class="field-error" role="alert">Ngày kết thúc phải bằng hoặc sau ngày bắt đầu.</small>
+            }
+          </label>
+          <div class="form-field amount-field">
+            <label for="contract-amount">Giá trị hợp đồng <b>*</b></label>
+            <div class="amount-input">
+              <input
+                id="contract-amount"
+                type="number"
+                min="0"
+                max="9999999999999.99"
+                step="0.01"
+                formControlName="amount"
+                [attr.aria-invalid]="!!fieldError('amount')"
+              />
+              <input
+                class="currency-input"
+                formControlName="currency"
+                maxlength="3"
+                aria-label="Mã tiền tệ"
+                (blur)="normalizeCurrency()"
+                [attr.aria-invalid]="!!fieldError('currency')"
+              />
+            </div>
+            @if (fieldError('amount')) {
+              <small class="field-error" role="alert">{{ fieldError('amount') }}</small>
+            }
+            @if (fieldError('currency')) {
+              <small class="field-error" role="alert">{{ fieldError('currency') }}</small>
+            }
+          </div>
+          <label class="form-field full-width">
+            <span>File hợp đồng {{ editingContract?.attachmentName ? '(chọn file mới để thay thế)' : '' }}</span>
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.bmp,.webp"
+              (change)="onFileSelected($event)"
+            />
+            @if (selectedFile) {
+              <small>File mới: {{ selectedFile.name }}</small>
+            } @else if (editingContract?.attachmentName) {
+              <small>File hiện tại: {{ editingContract?.attachmentName }}</small>
+            }
+            @if (fileInputError) {
+              <small class="field-error" role="alert">{{ fileInputError }}</small>
+            }
+          </label>
+          <label class="form-field full-width">
+            <span>Ghi chú</span>
+            <textarea formControlName="notes" maxlength="5000" rows="3" [attr.aria-invalid]="!!fieldError('notes')"></textarea>
+            @if (fieldError('notes')) {
+              <small class="field-error" role="alert">{{ fieldError('notes') }}</small>
+            }
+          </label>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-submit" [disabled]="saving || loadingSuppliers">
+            <i
+              class="fa"
+              [class.fa-spinner]="saving"
+              [class.fa-spin]="saving"
+              [class.fa-paper-plane]="!saving && !editingContract"
+              [class.fa-floppy-o]="!saving && editingContract"
+              aria-hidden="true"
+            ></i>
+            {{ saving ? 'Đang lưu...' : editingContract ? 'Lưu thay đổi' : 'Tạo hợp đồng' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  <form class="toolbar" [formGroup]="filterForm">
+    <label class="search-box">
+      <i class="fa fa-search" aria-hidden="true"></i>
+      <input
+        type="search"
+        formControlName="query"
+        placeholder="Tìm mã, tên hợp đồng hoặc nhà cung cấp..."
+      />
+    </label>
+    <label class="filter-field">
+      <span>Nhà cung cấp</span>
+      <select formControlName="supplierId">
+        <option value="">Tất cả</option>
+        @for (supplier of suppliers; track supplier.id) {
+          <option [value]="supplier.id">{{ supplier.name }}</option>
+        }
+      </select>
+    </label>
+    <label class="filter-field">
+      <span>Trạng thái</span>
+      <select formControlName="status">
+        <option value="">Tất cả</option>
+        @for (status of statuses; track status.value) {
+          <option [value]="status.value">{{ status.label }}</option>
+        }
+      </select>
+    </label>
+  </form>
+
+  <section class="table-card" aria-label="Danh sách hợp đồng nhà cung cấp">
+    @if (loading) {
+      <div class="state-panel" role="status">
+        <span class="spinner" aria-hidden="true"></span>
+        Đang tải hợp đồng...
+      </div>
+    } @else if (!filteredContracts.length) {
+      <div class="state-panel empty-state">
+        <i class="fa fa-file-text-o" aria-hidden="true"></i>
+        <h2>Chưa có hợp đồng phù hợp</h2>
+        @if (isAdmin && !isFormOpen) {
+        }
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Mã / tên hợp đồng</th>
+              <th>Nhà cung cấp</th>
+              <th>Thời hạn</th>
+              <th>Giá trị</th>
+              <th>Trạng thái</th>
+              <th>File</th>
+              @if (isAdmin) {
+                <th>Thao tác</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (contract of filteredContracts; track contract.id) {
+              <tr>
+                <td>
+                  <strong>{{ contract.contractNumber }}</strong>
+                  <small>{{ contract.title }}</small>
+                </td>
+                <td>
+                  <strong>{{ contract.supplierName }}</strong>
+                  <small>{{ contract.supplierCode }}</small>
+                </td>
+                <td>
+                  <span
+                    >{{ contract.startDate | date: 'dd/MM/yyyy' }} –
+                    {{ contract.endDate | date: 'dd/MM/yyyy' }}</span
+                  >
+                  @if (contract.signedDate) {
+                    <small>Ký ngày {{ contract.signedDate | date: 'dd/MM/yyyy' }}</small>
+                  }
+                </td>
+                <td class="amount">
+                  {{ contract.amount | number: '1.0-0' }} {{ contract.currency }}
+                </td>
+                <td>
+                  <span class="status-badge" [ngClass]="statusClass(contract.status)">
+                    {{ statusLabel(contract.status) }}
+                  </span>
+                </td>
+                <td>
+                  @if (contract.attachmentName) {
+                    @if (!isAdmin) {
+                      <button
+                        type="button"
+                        class="file-button"
+                        (click)="download(contract)"
+                        [disabled]="downloadingId === contract.id"
+                        [title]="contract.attachmentName"
+                      >
+                        <i
+                          class="fa"
+                          [class.fa-spinner]="downloadingId === contract.id"
+                          [class.fa-spin]="downloadingId === contract.id"
+                          [class.fa-download]="downloadingId !== contract.id"
+                          aria-hidden="true"
+                        ></i>
+                        Tải file
+                      </button>
+                    }
+                    <small>{{ contract.attachmentName }}</small>
+                  } @else {
+                    <span class="muted">Chưa đính kèm</span>
+                  }
+                </td>
+                @if (isAdmin) {
+                  <td class="row-actions">
+                    <div class="row-actions-content">
+                      @if (contract.attachmentName) {
+                        <button
+                          type="button"
+                          class="file-button"
+                          (click)="download(contract)"
+                          [disabled]="downloadingId === contract.id"
+                          [title]="contract.attachmentName"
+                        >
+                          <i
+                            class="fa"
+                            [class.fa-spinner]="downloadingId === contract.id"
+                            [class.fa-spin]="downloadingId === contract.id"
+                            [class.fa-download]="downloadingId !== contract.id"
+                            aria-hidden="true"
+                          ></i>
+                        </button>
+                      }
+                      <div class="row-actions-buttons">
+                        <button
+                          type="button"
+                          class="icon-button"
+                          (click)="openEdit(contract)"
+                          title="Sửa hợp đồng"
+                          aria-label="Sửa hợp đồng"
+                        >
+                          <i class="fa fa-pencil" aria-hidden="true"></i>
+                        </button>
+                        <button
+                          type="button"
+                          class="icon-button danger"
+                          (click)="delete(contract)"
+                          [disabled]="deletingId === contract.id"
+                          title="Xóa hợp đồng"
+                          aria-label="Xóa hợp đồng"
+                        >
+                          <i
+                            class="fa"
+                            [class.fa-spinner]="deletingId === contract.id"
+                            [class.fa-spin]="deletingId === contract.id"
+                            [class.fa-trash-o]="deletingId !== contract.id"
+                            aria-hidden="true"
+                          ></i>
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</section>

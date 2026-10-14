@@ -1,10 +1,20 @@
-import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { forkJoin } from 'rxjs';
 import { AuthService } from '../../auth/services/auth.service';
 import { SupplierDocumentService } from '../services/supplier-document.service';
 import { SupplierDocument, SupplierOption, DocumentStatus } from '../models/supplier-document';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-supplier-documents',
@@ -12,11 +22,13 @@ import { SupplierDocument, SupplierOption, DocumentStatus } from '../models/supp
   templateUrl: './supplier-documents.html',
   styleUrl: './supplier-documents.scss',
 })
-export class SupplierDocuments implements OnInit {
+export class SupplierDocuments implements OnInit, OnDestroy {
   readonly auth = inject(AuthService);
+  private readonly toast = inject(ToastService);
   private readonly service = inject(SupplierDocumentService);
   private readonly fb = inject(FormBuilder);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly sanitizer = inject(DomSanitizer);
   readonly isAdmin = this.auth.hasRole('ADMIN');
   readonly isReviewer = this.auth.hasRole('ADMIN', 'CHECKER');
   readonly labels: Record<DocumentStatus, string> = {
@@ -27,6 +39,8 @@ export class SupplierDocuments implements OnInit {
   readonly accept = '.pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.bmp,.webp';
   @ViewChild('fileInput')
   fileInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('previewDialog')
+  previewDialog?: ElementRef<HTMLDialogElement>;
 
   readonly uploadForm = this.fb.nonNullable.group({
     supplierId: ['', Validators.required],
@@ -52,9 +66,16 @@ export class SupplierDocuments implements OnInit {
   reviewing = false;
   downloadingId = '';
   viewingId = '';
+  preview: SupplierDocument | null = null;
+  previewUrl: SafeResourceUrl | null = null;
+  private objectUrl = '';
 
   ngOnInit() {
     this.load();
+  }
+
+  ngOnDestroy() {
+    this.releasePreview();
   }
 
   get filtered() {
@@ -112,7 +133,7 @@ export class SupplierDocuments implements OnInit {
     if (this.uploading) return;
     const supplierId = this.uploadForm.controls.supplierId.value;
     if (!supplierId || !this.file) {
-      this.error = 'Vui lòng chọn nhà cung cấp và file hợp lệ.';
+      this.toast.error('Vui lòng chọn nhà cung cấp và file hợp lệ trước khi tải lên.');
       return;
     }
     this.uploading = true;
@@ -132,7 +153,7 @@ export class SupplierDocuments implements OnInit {
       },
       error: (err) => {
         this.uploading = false;
-        this.fail(err, 'Upload thất bại. Vui lòng thử lại.');
+        this.toast.error('Upload thất bại. Vui lòng thử lại.');
       },
     });
   }
@@ -154,28 +175,51 @@ export class SupplierDocuments implements OnInit {
       },
       error: (err) => {
         this.downloadingId = '';
-        this.fail(err, 'Không tải được file. Vui lòng thử lại.');
+        this.toast.error('Không tải được file. Vui lòng thử lại.');
       },
     });
   }
 
   view(document: SupplierDocument) {
-    if (this.viewingId) return;
+    if (this.viewingId || !this.canPreview(document)) return;
     this.viewingId = document.id;
     this.error = '';
     this.service.download(document.id).subscribe({
       next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
-        setTimeout(() => URL.revokeObjectURL(url), 30000);
+        this.releasePreview();
+        this.objectUrl = URL.createObjectURL(new Blob([blob], { type: document.contentType }));
+        this.preview = document;
+        this.previewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.objectUrl);
+        this.previewDialog?.nativeElement.showModal();
         this.viewingId = '';
         this.cdr.markForCheck();
       },
       error: (err) => {
         this.viewingId = '';
-        this.fail(err, 'Không xem được file. Vui lòng thử lại.');
+        this.toast.error('Không xem được file. Vui lòng thử lại.');
       },
     });
+  }
+
+  canPreview(document: SupplierDocument): boolean {
+    return (
+      document.contentType === 'application/pdf' ||
+      /^image\/(png|jpeg|gif|bmp|webp)$/.test(document.contentType)
+    );
+  }
+
+  closePreview(): void {
+    this.previewDialog?.nativeElement.close();
+    this.releasePreview();
+  }
+
+  private releasePreview(): void {
+    this.preview = null;
+    this.previewUrl = null;
+    if (this.objectUrl) {
+      URL.revokeObjectURL(this.objectUrl);
+      this.objectUrl = '';
+    }
   }
 
   openReview(document: SupplierDocument) {
@@ -213,7 +257,7 @@ export class SupplierDocuments implements OnInit {
           this.selected = null;
           this.load();
         }
-        this.fail(err, 'Không thể duyệt tài liệu.');
+        this.toast.error('Không thể duyệt tài liệu.');
       },
     });
   }

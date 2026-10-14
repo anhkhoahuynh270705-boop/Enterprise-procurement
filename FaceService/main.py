@@ -35,7 +35,7 @@ log = logging.getLogger("face-service")
 
 # Config
 DB_URL = os.getenv("DATABASE_URL", "postgresql+psycopg2://postgres:Khoa123@localhost:5432/shopping_db")
-SIMILARITY_THRESHOLD = float(os.getenv("FACE_THRESHOLD", "0.38"))
+SIMILARITY_THRESHOLD = float(os.getenv("FACE_THRESHOLD", "0.5"))
 LIVENESS_THRESHOLD = float(os.getenv("LIVENESS_TEXTURE", "30.0"))
 QUALITY_THRESHOLD = float(os.getenv("QUALITY_BLUR", "25.0"))
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:4200,http://localhost:8080").split(",")
@@ -235,11 +235,12 @@ def run_pipeline(img: np.ndarray):
     Runs YuNet detection + SFace feature extraction.
     Returns: (face_box, feature_128d, quality_score, liveness_score)
     """
-    img = resize_if_needed(img, 640)
+    img = resize_if_needed(img, 640) # Can change down to 320 or up to 1280
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     liveness = blur_score(gray)
 
     h, w, _ = img.shape
+    # Yunet detect
     detector = get_detector()
     detector.setInputSize((w, h))
     _, faces = detector.detect(img)

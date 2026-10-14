@@ -1,4 +1,4 @@
-import { SensitiveValue } from '../../../shared/sensitive-value/sensitive-value';
+import { SensitiveValue } from '../../../shared/sensitive/sensitive-value/sensitive-value';
 import {
   AfterViewInit,
   ChangeDetectorRef,

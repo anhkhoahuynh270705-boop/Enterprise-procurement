@@ -5,6 +5,7 @@ import {
   OnDestroy,
   OnInit,
   computed,
+  effect,
   inject,
   signal,
   viewChild,
@@ -16,6 +17,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../auth/services/auth.service';
 import { CompanyDocumentService } from '../services/company-document.service';
 import { CompanyDocument } from '../model/company.model';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-company-documents',
@@ -25,6 +27,7 @@ import { CompanyDocument } from '../model/company.model';
 })
 export class CompanyDocuments implements OnInit, OnDestroy {
   private readonly service = inject(CompanyDocumentService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly sanitizer = inject(DomSanitizer);
   readonly isAdmin = inject(AuthService).hasRole('ADMIN');
@@ -38,7 +41,6 @@ export class CompanyDocuments implements OnInit, OnDestroy {
   readonly documents = signal<CompanyDocument[]>([]);
   readonly search = signal('');
   readonly category = signal('');
-  readonly page = signal(1);
   readonly loading = signal(false);
   readonly uploading = signal(false);
   readonly busy = signal('');
@@ -49,10 +51,11 @@ export class CompanyDocuments implements OnInit, OnDestroy {
   readonly preview = signal<CompanyDocument | null>(null);
   readonly previewUrl = signal<SafeResourceUrl | null>(null);
   private objectUrl = '';
+  private readonly fb = inject(FormBuilder);
   private readonly previewDialog = viewChild<ElementRef<HTMLDialogElement>>('previewDialog');
   private readonly fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
 
-  readonly form = inject(FormBuilder).nonNullable.group({
+  readonly form = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.maxLength(200)]],
     category: ['POLICY', Validators.required],
     description: ['', Validators.maxLength(2000)],
@@ -65,11 +68,32 @@ export class CompanyDocuments implements OnInit, OnDestroy {
         `${doc.title} ${doc.filename} ${doc.description}`.toLocaleLowerCase('vi').includes(query),
     );
   });
-  readonly pageCount = computed(() => Math.max(1, Math.ceil(this.filtered().length / 10)));
-  readonly currentPage = computed(() => Math.min(this.page(), this.pageCount()));
-  readonly rows = computed(() =>
-    this.filtered().slice((this.currentPage() - 1) * 10, this.currentPage() * 10),
-  );
+
+  // Pagination
+  currentPage = 0;
+  pageSize = 10;
+  totalPages = 0;
+  rows: CompanyDocument[] = [];
+
+  constructor() {
+    effect(() => {
+      const _ = this.filtered();
+      this.currentPage = 0;
+      this.updatePaging();
+    });
+  }
+
+  updatePaging(): void {
+    this.totalPages = Math.max(1, Math.ceil(this.filtered().length / this.pageSize));
+    const start = this.currentPage * this.pageSize;
+    this.rows = this.filtered().slice(start, start + this.pageSize);
+  }
+
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages) return;
+    this.currentPage = page;
+    this.updatePaging();
+  }
 
   ngOnInit(): void {
     this.load();
@@ -140,7 +164,7 @@ export class CompanyDocuments implements OnInit, OnDestroy {
     const value = this.form.getRawValue(),
       file = this.file();
     if (this.form.invalid || !value.title.trim() || !file) {
-      this.error.set('Nhập tiêu đề, chọn danh mục và file tài liệu hợp lệ.');
+      this.toast.error('Vui lòng điền đầy đủ thông tin và chọn file hợp lệ trước khi đăng.');
       return;
     }
     this.uploading.set(true);
@@ -155,19 +179,15 @@ export class CompanyDocuments implements OnInit, OnDestroy {
           this.uploading.set(false);
           this.form.reset({ title: '', category: 'POLICY', description: '' });
           this.file.set(null);
-          if (this.fileInput()) 
-            this.fileInput()!.nativeElement.value = '';
+          if (this.fileInput()) this.fileInput()!.nativeElement.value = '';
           this.showUpload.set(false);
-          this.page.set(1);
           this.search.set('');
           this.category.set('');
-          this.success.set('Đã đăng tài liệu công ty.');
+          this.toast.success('Đăng tài liệu thành công');
         },
         error: (err) => {
           this.uploading.set(false);
-          this.error.set(
-            err?.error?.message || 'Không thể đăng tài liệu. Kiểm tra định dạng file và thử lại.',
-          );
+          this.toast.error(err?.error?.message || 'Đăng tài liệu thất bại. Vui lòng thử lại.');
         },
       });
   }
@@ -200,7 +220,7 @@ export class CompanyDocuments implements OnInit, OnDestroy {
         },
         error: () => {
           this.busy.set('');
-          this.error.set(
+          this.toast.error(
             'Không lấy được file. Tài liệu có thể đã được gỡ hoặc bạn không còn quyền truy cập.',
           );
         },

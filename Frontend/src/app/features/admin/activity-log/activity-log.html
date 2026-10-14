@@ -1,0 +1,323 @@
+<div class="activity-log-page">
+  <div class="page-header">
+    <div class="header-left">
+      <h1>Nhật ký hoạt động</h1>
+      <p>
+        Theo dõi, kiểm toán và giám sát toàn diện các sự kiện, phiên truy cập và cảnh báo bảo mật hệ
+        thống
+      </p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn btn-outline" (click)="exportCsv()">
+        <i class="fa fa-download" aria-hidden="true"></i> Xuất CSV
+      </button>
+      <button type="button" class="btn btn-primary" (click)="refreshLogs()" [disabled]="isLoading">
+        <i class="fa fa-refresh" [class.fa-spin]="isLoading" aria-hidden="true"></i>
+        <span>Làm mới</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon icon-total">
+        <i class="fa fa-history" aria-hidden="true"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Tổng sự kiện ghi nhận</span>
+        <span class="stat-value">{{ statTotal }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon icon-auth">
+        <i class="fa fa-shield" aria-hidden="true"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Xác thực & Face ID</span>
+        <span class="stat-value">{{ statAuth }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon icon-procurement">
+        <i class="fa fa-shopping-cart" aria-hidden="true"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Nghiệp vụ mua sắm & HĐ</span>
+        <span class="stat-value">{{ statProcurement }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon icon-alert">
+        <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Cảnh báo & Lỗi bảo mật</span>
+        <span class="stat-value text-danger">{{ statAlerts }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs-container">
+    <div class="tabs">
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeCategory === 'ALL'"
+        (click)="setCategory('ALL')"
+      >
+        <i class="fa fa-list" aria-hidden="true"></i> Tất cả
+        <span class="count-badge">{{ totalElements }}</span>
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeCategory === 'AUTH'"
+        (click)="setCategory('AUTH')"
+      >
+        <i class="fa fa-user-circle-o" aria-hidden="true"></i> Xác thực & Login
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeCategory === 'PROCUREMENT'"
+        (click)="setCategory('PROCUREMENT')"
+      >
+        <i class="fa fa-file-text-o" aria-hidden="true"></i> Phiếu & Đơn hàng
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeCategory === 'CONTRACT'"
+        (click)="setCategory('CONTRACT')"
+      >
+        <i class="fa fa-handshake-o" aria-hidden="true"></i> Hợp đồng NCC
+      </button>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-field">
+      <i class="fa fa-search" aria-hidden="true"></i>
+      <input
+        type="search"
+        placeholder="Tìm theo mã log, hành động, username..."
+        [(ngModel)]="searchKeyword"
+      />
+    </div>
+
+    <div class="filter-controls">
+      <div class="select-wrapper">
+        <label for="filter-status" class="sr-only">Trạng thái</label>
+        <select id="filter-status" [(ngModel)]="levelFilter" (ngModelChange)="onFilterChange()">
+          <option value="ALL">Mọi trạng thái</option>
+          <option value="SUCCESS">Thành công (Success)</option>
+          <option value="WARNING">Cảnh báo (Warning)</option>
+          <option value="FAILED">Thất bại (Failed)</option>
+        </select>
+      </div>
+
+      <div class="select-wrapper">
+        <label for="filter-date" class="sr-only">Thời gian</label>
+        <select id="filter-date" [(ngModel)]="dateFilter" (ngModelChange)="onFilterChange()">
+          <option value="TODAY">Hôm nay</option>
+          <option value="WEEK">7 ngày gần nhất</option>
+          <option value="MONTH">30 ngày gần nhất</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <section class="table-card" aria-label="Bảng nhật ký hoạt động">
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col" style="width: 140px">
+              Mã Log
+              <button
+                type="button"
+                class="btn-eye-toggle"
+                (click)="toggleAllIds()"
+                [title]="allVisibleIdsShown ? 'Ẩn tất cả mã' : 'Hiện tất cả mã'"
+              >
+                <i class="fa" [ngClass]="allVisibleIdsShown ? 'fa-eye-slash' : 'fa-eye'"></i>
+              </button>
+            </th>
+            <th scope="col" style="width: 170px">Thời gian</th>
+            <th scope="col" style="width: 180px">Người thực hiện</th>
+            <th scope="col" style="width: 140px">Phân hệ</th>
+            <th scope="col">Hành động & Chi tiết</th>
+            <th scope="col" style="width: 130px; text-align: center">Trạng thái</th>
+            <th scope="col" style="width: 100px; text-align: right">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (isLoading) {
+            <tr>
+              <td colspan="7" class="empty-state">
+                <i class="fa fa-spinner fa-spin empty-icon" aria-hidden="true"></i>
+                <p>Đang tải dữ liệu...</p>
+              </td>
+            </tr>
+          } @else if (logs.length === 0) {
+            <tr>
+              <td colspan="7" class="empty-state">
+                <i class="fa fa-inbox empty-icon" aria-hidden="true"></i>
+                <p>Không tìm thấy bản ghi nhật ký nào phù hợp với bộ lọc</p>
+              </td>
+            </tr>
+          } @else {
+            @for (log of logs; track log.id) {
+              <tr class="log-row" (click)="openDetails(log)">
+                <td class="font-mono id-cell">
+                  <div class="id-content">
+                    <span class="masked-code">
+                      {{ isIdVisible(log.id) ? log.logCode : '••••••••' }}
+                    </span>
+                    <button
+                      type="button"
+                      class="btn-eye-toggle"
+                      (click)="toggleIdVisibility(log.id, $event)"
+                      [title]="isIdVisible(log.id) ? 'Ẩn mã' : 'Hiện mã'"
+                    >
+                      <i class="fa" [ngClass]="isIdVisible(log.id) ? 'fa-eye-slash' : 'fa-eye'"></i>
+                    </button>
+                  </div>
+                </td>
+                <td class="time-cell">{{ log.occurredAt | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                <td>
+                  <div class="user-cell">
+                    <strong>{{ log.userFullName }}</strong>
+                    <span class="sub-user">{{ log.username }}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="module-tag module-{{ log.module.toLowerCase() }}">
+                    {{ log.moduleLabel }}
+                  </span>
+                </td>
+                <td>
+                  <div class="action-cell">
+                    <span class="action-title">{{ log.action }}</span>
+                    <span class="action-desc">{{ log.description }}</span>
+                  </div>
+                </td>
+                <td style="text-align: center">
+                  @if (log.status === 'SUCCESS') {
+                    <span class="badge badge-success">Success</span>
+                  } @else if (log.status === 'WARNING') {
+                    <span class="badge badge-warning">Warning</span>
+                  } @else {
+                    <span class="badge badge-danger">Failed</span>
+                  }
+                </td>
+                <td style="text-align: right">
+                  <button
+                    type="button"
+                    class="btn-icon"
+                    title="Xem chi tiết"
+                    (click)="$event.stopPropagation(); openDetails(log, $event)"
+                  >
+                    <i class="fa fa-eye" aria-hidden="true"></i>
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-footer">
+      <span class="result-count">
+        Hiển thị <strong>{{ logs.length }}</strong> / <strong>{{ totalElements }}</strong> sự kiện
+      </span>
+      <div class="pagination">
+        <button type="button" class="btn-page" [disabled]="currentPage === 0" (click)="prevPage()">
+          <i class="fa fa-chevron-left" aria-hidden="true"></i> Trước
+        </button>
+        <span class="page-indicator">Trang {{ currentPage + 1 }} / {{ totalPages }}</span>
+        <button
+          type="button"
+          class="btn-page"
+          [disabled]="currentPage >= totalPages - 1"
+          (click)="nextPage()"
+        >
+          Sau <i class="fa fa-chevron-right" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  @if (isDetailModalOpen && selectedLog) {
+    <div class="popover-backdrop" (click)="closeDetails()"></div>
+    <div
+      class="detail-popover"
+      [class.flipped-below]="isFlippedBelow"
+      [ngStyle]="popoverPosition"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="popover-header">
+        <div class="header-content">
+          <h3>
+            Chi tiết sự kiện ·
+            <span class="font-mono">
+              {{ isIdVisible(selectedLog.id) ? selectedLog.logCode : '••••••••' }}
+            </span>
+            <button
+              type="button"
+              class="btn-eye-toggle"
+              (click)="toggleIdVisibility(selectedLog.id, $event)"
+              [title]="isIdVisible(selectedLog.id) ? 'Ẩn mã' : 'Hiện mã'"
+            >
+              <i class="fa" [ngClass]="isIdVisible(selectedLog.id) ? 'fa-eye-slash' : 'fa-eye'"></i>
+            </button>
+          </h3>
+          <span class="sub-time">{{ selectedLog.occurredAt | date: 'dd/MM/yyyy HH:mm:ss' }}</span>
+        </div>
+        <button type="button" class="btn-close" (click)="closeDetails()" aria-label="Đóng">
+          <i class="fa fa-times" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <div class="popover-body">
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="label">Người thực hiện</span>
+            <span class="value">{{ selectedLog.userFullName }} ({{ selectedLog.username }})</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Phân hệ nghiệp vụ</span>
+            <span class="value">{{ selectedLog.moduleLabel }} ({{ selectedLog.module }})</span>
+          </div>
+          <div class="detail-item full-width">
+            <span class="label">Trạng thái xử lý</span>
+            <span class="value">
+              <span
+                class="badge"
+                [ngClass]="{
+                  'badge-success': selectedLog.status === 'SUCCESS',
+                  'badge-warning': selectedLog.status === 'WARNING',
+                  'badge-danger': selectedLog.status === 'FAILED',
+                }"
+              >
+                {{ selectedLog.status }}
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <span class="label">Hành động & Diễn giải</span>
+          <div class="content-box">
+            <strong>{{ selectedLog.action }}</strong>
+            <p>{{ selectedLog.description }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

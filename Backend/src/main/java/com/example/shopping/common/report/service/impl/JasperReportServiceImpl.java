@@ -1,5 +1,6 @@
 package com.example.shopping.common.report.service.impl;
 
+import com.example.shopping.common.enums.ErrorEnum;
 import com.example.shopping.common.report.service.JasperReportService;
 
 import java.io.InputStream;
@@ -18,8 +19,12 @@ import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+
 @Slf4j
 @Service
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class JasperReportServiceImpl implements JasperReportService {
 
     @Override
@@ -29,7 +34,8 @@ public class JasperReportServiceImpl implements JasperReportService {
         InputStream reportStream = getClass().getResourceAsStream(templatePath);
         if (reportStream == null) {
             log.error("Không tìm thấy file template: {}", templatePath);
-            throw new IllegalStateException("Không tìm thấy template JasperReports: " + templatePath);
+            throw ErrorEnum.JASPER_TEMPLATE_NOT_FOUND.ex(
+                    "Không tìm thấy template JasperReports: " + templatePath);
         }
 
         JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);

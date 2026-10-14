@@ -42,6 +42,32 @@
         Cần ít nhất email hoặc số điện thoại. Các trường tên chỉ nhận chữ và khoảng trắng giữa các
         từ.
       </p>
+      <ng-template #fieldError let-name let-control="control">
+        @if (fieldErrors[name]) {
+          {{ fieldErrors[name] }}
+        } @else if (control.touched && control.errors) {
+          @if (control.hasError('required')) {
+            Vui lòng nhập thông tin, không chỉ khoảng trắng.
+          } @else if (control.hasError('minlength')) {
+            Tối thiểu {{ control.errors['minlength'].requiredLength }} ký tự.
+          } @else if (control.hasError('maxlength')) {
+            Tối đa {{ control.errors['maxlength'].requiredLength }} ký tự.
+          } @else if (control.hasError('name')) {
+            Chỉ nhập chữ và một khoảng trắng giữa các từ, không nhập số.
+          } @else if (control.hasError('bankName')) {
+            Tên ngân hàng chỉ nhập chữ; tên viết tắt có thể đặt trong ngoặc, ví dụ: Ngân hàng TMCP
+            Ngoại thương Việt Nam (Vietcombank).
+          } @else if (control.hasError('email')) {
+            Email không hợp lệ.
+          } @else if (control.hasError('bankAccount')) {
+            Số tài khoản gồm 6–50 chữ số, không có chữ hoặc khoảng trắng.
+          } @else if (name === 'taxCode') {
+            Mã số thuế phải có 10 hoặc 13 chữ số.
+          } @else {
+            Điện thoại gồm 9–15 chữ số, không có chữ hoặc khoảng trắng.
+          }
+        }
+      </ng-template>
       <fieldset [disabled]="submitting">
         <div class="form-grid">
           <label
@@ -50,9 +76,16 @@
               formControlName="name"
               maxlength="200"
               autocomplete="organization"
-              [attr.aria-invalid]="!!fieldError('name')"
+              [attr.aria-invalid]="
+                !!fieldErrors['name'] || (form.controls.name.touched && form.controls.name.invalid)
+              "
             />
-            <span class="error">{{ fieldError('name') }} </span>
+            <span class="error">
+              <ng-container
+                [ngTemplateOutlet]="fieldError"
+                [ngTemplateOutletContext]="{ $implicit: 'name', control: form.controls.name }"
+              />
+            </span>
           </label>
           <label
             >Mã số thuế *
@@ -63,22 +96,41 @@
                 formControlName="taxCode"
                 maxlength="13"
                 inputmode="numeric"
-                [attr.aria-invalid]="!!fieldError('taxCode')"
+                [attr.aria-invalid]="
+                  !!fieldErrors['taxCode'] ||
+                  (form.controls.taxCode.touched && form.controls.taxCode.invalid)
+                "
             /></app-sensitive-input>
             <span class="hint">10 hoặc 13 chữ số</span>
             <span class="error">
-              {{ fieldError('taxCode') }}
+              <ng-container
+                [ngTemplateOutlet]="fieldError"
+                [ngTemplateOutletContext]="{ $implicit: 'taxCode', control: form.controls.taxCode }"
+              />
             </span>
           </label>
           <label
             >Người liên hệ
             <input formControlName="contactPerson" maxlength="200" />
-            <span class="error">{{ fieldError('contactPerson') }}</span>
+            <span class="error">
+              <ng-container
+                [ngTemplateOutlet]="fieldError"
+                [ngTemplateOutletContext]="{
+                  $implicit: 'contactPerson',
+                  control: form.controls.contactPerson,
+                }"
+              />
+            </span>
           </label>
           <label
             >Email
             <input formControlName="email" type="email" maxlength="254" autocomplete="email" />
-            <span class="error">{{ fieldError('email') }}</span>
+            <span class="error">
+              <ng-container
+                [ngTemplateOutlet]="fieldError"
+                [ngTemplateOutletContext]="{ $implicit: 'email', control: form.controls.email }"
+              />
+            </span>
           </label>
           <label
             >Số điện thoại
@@ -89,12 +141,22 @@
               inputmode="numeric"
               autocomplete="tel"
             />
-            <span class="error">{{ fieldError('phone') }}</span>
+            <span class="error">
+              <ng-container
+                [ngTemplateOutlet]="fieldError"
+                [ngTemplateOutletContext]="{ $implicit: 'phone', control: form.controls.phone }"
+              />
+            </span>
           </label>
           <label
             >Địa chỉ
             <input formControlName="address" maxlength="255" />
-            <span class="error">{{ fieldError('address') }}</span>
+            <span class="error">
+              <ng-container
+                [ngTemplateOutlet]="fieldError"
+                [ngTemplateOutletContext]="{ $implicit: 'address', control: form.controls.address }"
+              />
+            </span>
           </label>
           <label
             >Tỉnh / Thành phố
@@ -104,7 +166,12 @@
               autocomplete="address-level1"
               placeholder="Ví dụ: Hồ Chí Minh"
             />
-            <span class="error">{{ fieldError('city') }}</span>
+            <span class="error">
+              <ng-container
+                [ngTemplateOutlet]="fieldError"
+                [ngTemplateOutletContext]="{ $implicit: 'city', control: form.controls.city }"
+              />
+            </span>
           </label>
           <label
             >Quốc gia
@@ -114,16 +181,29 @@
               autocomplete="country-name"
               placeholder="Ví dụ: Việt Nam"
             />
-            <span class="error">{{ fieldError('country') }}</span>
+            <span class="error">
+              <ng-container
+                [ngTemplateOutlet]="fieldError"
+                [ngTemplateOutletContext]="{ $implicit: 'country', control: form.controls.country }"
+              />
+            </span>
           </label>
           <label
             >Tên ngân hàng
             <input
               formControlName="bankName"
               maxlength="255"
-              placeholder="Ví dụ: Ngân hàng Ngoại thương"
+              placeholder="Ví dụ: Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)"
             />
-            <span class="error">{{ fieldError('bankName') }}</span>
+            <span class="error">
+              <ng-container
+                [ngTemplateOutlet]="fieldError"
+                [ngTemplateOutletContext]="{
+                  $implicit: 'bankName',
+                  control: form.controls.bankName,
+                }"
+              />
+            </span>
           </label>
           <label
             >Số tài khoản
@@ -132,11 +212,19 @@
                 #sensitiveInput
                 formControlName="bankAccount"
                 type="password"
-                maxlength="50"
+                maxlength="255"
                 inputmode="numeric"
                 placeholder="Ví dụ: 0011001234567"
             /></app-sensitive-input>
-            <span class="error">{{ fieldError('bankAccount') }}</span>
+            <span class="error">
+              <ng-container
+                [ngTemplateOutlet]="fieldError"
+                [ngTemplateOutletContext]="{
+                  $implicit: 'bankAccount',
+                  control: form.controls.bankAccount,
+                }"
+              />
+            </span>
           </label>
           <label class="wide"
             >Ghi chú thêm
@@ -145,12 +233,22 @@
               rows="3"
               placeholder="Thông tin điều khoản thanh toán, chính sách chiết khấu..."
             ></textarea>
-            <span class="error">{{ fieldError('notes') }}</span>
+            <span class="error">
+              <ng-container
+                [ngTemplateOutlet]="fieldError"
+                [ngTemplateOutletContext]="{ $implicit: 'notes', control: form.controls.notes }"
+              />
+            </span>
           </label>
           <label class="wide"
             >Lý do đề xuất *
             <textarea formControlName="reason" maxlength="2000" rows="3"></textarea>
-            <span class="error">{{ fieldError('reason') }}</span>
+            <span class="error">
+              <ng-container
+                [ngTemplateOutlet]="fieldError"
+                [ngTemplateOutletContext]="{ $implicit: 'reason', control: form.controls.reason }"
+              />
+            </span>
           </label>
         </div>
         @if (form.touched && form.hasError('contactRequired')) {
@@ -159,14 +257,14 @@
         @if (form.touched && form.hasError('bankDetailsIncomplete')) {
           <p class="error" role="alert">Tên ngân hàng và số tài khoản phải được nhập cùng nhau.</p>
         }
-        <button type="submit" [disabled]="submitting">
+        <button type="submit" class="submit-proposal" [disabled]="submitting">
           <i
             class="fa"
             [class.fa-spinner]="submitting"
             [class.fa-spin]="submitting"
             [class.fa-paper-plane]="!submitting"
           ></i>
-          {{ submitting ? 'Đang gửi…' : 'Gửi đề xuất' }}
+          {{ submitting ? 'Đang gửi…' : 'Nộp đề xuất' }}
         </button>
       </fieldset>
     </form>
@@ -244,7 +342,7 @@
                     >{{ labels[proposal.status] }}</span
                   >
                 </td>
-                <td>
+                <td class="action-cell">
                   <button
                     type="button"
                     class="btn-icon"
@@ -254,6 +352,31 @@
                   >
                     <i class="fa fa-eye"></i>
                   </button>
+                  @if (canReviewProposal(proposal)) {
+                    <button
+                      type="button"
+                      class="btn-icon btn-approve"
+                      (click)="quickApprove(proposal)"
+                      [disabled]="reviewing"
+                      title="Duyệt nhanh"
+                    >
+                      <i
+                        class="fa"
+                        [class.fa-check-circle]="!reviewing || selected?.id !== proposal.id"
+                        [class.fa-spinner]="reviewing && selected?.id === proposal.id"
+                        [class.fa-spin]="reviewing && selected?.id === proposal.id"
+                      ></i>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-icon btn-reject"
+                      (click)="openReject(proposal)"
+                      [disabled]="reviewing"
+                      title="Từ chối"
+                    >
+                      <i class="fa fa-ban"></i>
+                    </button>
+                  }
                 </td>
               </tr>
             }
@@ -342,7 +465,9 @@
         </div>
         <div>
           <dt>Trạng thái</dt>
-          <dd>{{ labels[proposal.status] }}</dd>
+          <dd class="badge-status" [ngClass]="'status-' + proposal.status">
+            {{ labels[proposal.status] }}
+          </dd>
         </div>
         @if (proposal.reviewedBy) {
           <div>

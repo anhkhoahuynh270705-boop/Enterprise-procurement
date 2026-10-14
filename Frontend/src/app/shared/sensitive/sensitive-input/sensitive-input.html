@@ -1,0 +1,10 @@
+ <ng-content />
+    <button
+      type="button"
+      (click)="toggle($event)"
+      [attr.aria-label]="(visible ? 'Ẩn ' : 'Hiện ') + label"
+      [title]="(visible ? 'Ẩn ' : 'Hiện ') + label"
+      [attr.aria-pressed]="visible"
+    >
+      <i class="fa" [class.fa-eye]="!visible" [class.fa-eye-slash]="visible" aria-hidden="true"></i>
+    </button>

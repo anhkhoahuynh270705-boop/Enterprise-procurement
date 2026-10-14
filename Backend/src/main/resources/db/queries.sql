@@ -1,4 +1,3 @@
--- Active application users.
 SELECT id, username, email, role, enabled, created_at
 FROM app_users
 WHERE deleted = FALSE

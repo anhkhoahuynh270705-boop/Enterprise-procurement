@@ -29,4 +29,7 @@ public interface ProcurementService {
     ProcurementTicketResponseDto updateTicket(UUID id, UpdateProcurementTicketRequestDto request, String username);
 
     void deleteTicket(UUID id, String username);
+
+    void recalculate(ProcurementTicket ticket);
+
 }

@@ -94,6 +94,13 @@
           class="btn btn-primary"
           [disabled]="uploading() || loading() || !!busy() || !file()"
         >
+          <i
+            class="fa"
+            [class.fa-spinner]="uploading()"
+            [class.fa-spin]="uploading()"
+            [class.fa-paper-plane]="!uploading()"
+            aria-hidden="true"
+          ></i>
           {{ uploading() ? 'Đang tải lên…' : 'Đăng tài liệu' }}
         </button>
       </fieldset>
@@ -112,33 +119,28 @@
     </button>
   </div>
 
-  <section class="panel" aria-label="Danh sách tài liệu">
-    <div class="filters">
-      <label class="search">
-        <i class="fa fa-search" aria-hidden="true"></i>
-        Tìm tài liệu
-        <input
-          type="search"
-          placeholder="Tên tài liệu, tên file hoặc mô tả…"
-          [value]="search()"
-          (input)="search.set($any($event.target).value); page.set(1)"
-        />
-      </label>
-      <label
-        >Danh mục
-        <select
-          [value]="category()"
-          (change)="category.set($any($event.target).value); page.set(1)"
-        >
-          <option value="">Tất cả danh mục</option>
-          @for (item of categories; track item.value) {
-            <option [value]="item.value">
-              {{ item.label }}
-            </option>
-          }
-        </select>
-      </label>
+  <div class="toolbar">
+    <div class="search-box">
+      <i class="fa fa-search" aria-hidden="true"></i>
+      <input
+        type="search"
+        placeholder="Tên tài liệu, tên file hoặc mô tả…"
+        [value]="search()"
+        (input)="search.set($any($event.target).value)"
+      />
     </div>
+    <div class="filter-box">
+      <i class="fa fa-filter" aria-hidden="true"></i>
+      <select [value]="category()" (change)="category.set($any($event.target).value)">
+        <option value="">Tất cả danh mục</option>
+        @for (item of categories; track item.value) {
+          <option [value]="item.value">{{ item.label }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <section class="panel" aria-label="Danh sách tài liệu">
     @if (loading()) {
       <p class="empty" role="status">Đang tải tài liệu…</p>
     } @else if (!filtered().length) {
@@ -170,7 +172,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (doc of rows(); track doc.id) {
+            @for (doc of rows; track doc.id) {
               <tr>
                 <td class="document-info">
                   <strong>{{ doc.title }}</strong>
@@ -229,27 +231,34 @@
           </tbody>
         </table>
       </div>
-      <footer class="pagination">
-        <span>{{ filtered().length }} tài liệu · Trang {{ currentPage() }}/{{ pageCount() }}</span>
-        <div class="actions">
-          <button
-            type="button"
-            [disabled]="currentPage() <= 1"
-            (click)="page.set(currentPage() - 1)"
-          >
-            Trước
-          </button>
-          <button
-            type="button"
-            [disabled]="currentPage() >= pageCount()"
-            (click)="page.set(currentPage() + 1)"
-          >
-            Sau
-          </button>
-        </div>
-      </footer>
     }
   </section>
+
+  @if (totalPages > 1) {
+    <div class="doc-pagination">
+      <button
+        type="button"
+        class="btn btn-outline"
+        [disabled]="currentPage === 0"
+        (click)="goToPage(currentPage - 1)"
+      >
+        Trang trước
+      </button>
+
+      <span class="doc-pagination__info">
+        {{ filtered().length }} tài liệu · Trang {{ currentPage + 1 }} / {{ totalPages }}
+      </span>
+
+      <button
+        type="button"
+        class="btn btn-outline"
+        [disabled]="currentPage >= totalPages - 1"
+        (click)="goToPage(currentPage + 1)"
+      >
+        Trang sau
+      </button>
+    </div>
+  }
 </section>
 
 <dialog

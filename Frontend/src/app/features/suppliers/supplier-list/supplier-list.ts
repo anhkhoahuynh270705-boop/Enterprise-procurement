@@ -1,4 +1,4 @@
-import { SensitiveValue } from '../../../shared/sensitive-value/sensitive-value';
+import { SensitiveValue } from '../../../shared/sensitive/sensitive-value/sensitive-value';
 import { ToastService } from '../../../core/services/toast.service';
 import { Component, OnInit, ChangeDetectorRef, inject, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -37,6 +37,13 @@ export class SupplierList implements OnInit {
   private readonly proposalService = inject(SupplierProposalService);
   suppliers: Supplier[] = [];
   filteredSuppliers: Supplier[] = [];
+  pagedSuppliers: Supplier[] = [];
+
+  // Pagination
+  currentPage = 0;
+  pageSize = 10;
+  totalPages = 0;
+
   private readonly fb = inject(FormBuilder);
   readonly filtersForm = this.fb.nonNullable.group({
     searchKeyword: '',
@@ -159,6 +166,20 @@ export class SupplierList implements OnInit {
 
       return matchesKeyword && matchesStatus;
     });
+    this.currentPage = 0;
+    this.updatePaging();
+  }
+
+  updatePaging(): void {
+    this.totalPages = Math.ceil(this.filteredSuppliers.length / this.pageSize);
+    const start = this.currentPage * this.pageSize;
+    this.pagedSuppliers = this.filteredSuppliers.slice(start, start + this.pageSize);
+  }
+
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages) return;
+    this.currentPage = page;
+    this.updatePaging();
   }
 
   addSupplier(): void {
@@ -183,6 +204,7 @@ export class SupplierList implements OnInit {
     this.supplierService.deleteSupplier(id).subscribe({
       next: () => {
         this.suppliers = this.suppliers.filter((s) => s.id !== id);
+        this.toast.success('Xóa nhà cung cấp thành công');
         this.applyFilter();
         this.deletingId = null;
         this.cdr.detectChanges();

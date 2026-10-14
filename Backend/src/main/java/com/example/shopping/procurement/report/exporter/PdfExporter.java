@@ -9,6 +9,7 @@ import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
+import com.example.shopping.common.enums.ErrorEnum;
 import com.example.shopping.procurement.dto.response.ProcurementItemDto;
 import com.example.shopping.procurement.entity.ProcurementTicket;
 import com.example.shopping.procurement.mapper.ProcurementMapper;
@@ -55,7 +56,7 @@ public class PdfExporter {
             reportStream = getClass().getResourceAsStream("/reports/procurement_ticket.jrxml");
         }
         if (reportStream == null) {
-            throw new IllegalStateException("Không tìm thấy template JasperReports:");
+            throw ErrorEnum.JASPER_TEMPLATE_NOT_FOUND.ex();
         }
 
         JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
@@ -96,7 +97,8 @@ public class PdfExporter {
             reportStream = getClass().getResourceAsStream("/reports/procurement-voucher.jrxml");
         }
         if (reportStream == null) {
-            throw new IllegalStateException("Không tìm thấy template JasperReports cho Enterprise Procurement Detail");
+            throw ErrorEnum.JASPER_TEMPLATE_NOT_FOUND.ex(
+                    "Không tìm thấy template JasperReports cho Enterprise Procurement Detail");
         }
 
         JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);

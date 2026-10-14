@@ -12,13 +12,19 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
+
 @Slf4j
 @Service
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class MailServiceImpl implements MailService {
 
-    private final JavaMailSender javaMailSender;
+    JavaMailSender javaMailSender;
 
     @Value("${spring.mail.from:huynhanhkhoa2707@gmail.com}")
+    @NonFinal
     private String fromEmail;
 
     public MailServiceImpl(@Autowired(required = false) JavaMailSender javaMailSender) {
