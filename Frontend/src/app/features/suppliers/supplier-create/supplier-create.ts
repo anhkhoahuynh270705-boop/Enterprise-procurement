@@ -1,9 +1,9 @@
 import { SensitiveInput } from '../../../shared/sensitive/sensitive-input/sensitive-input';
 import { ToastService } from '../../../core/services/toast.service';
-import { Component, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { SupplierService } from '../services/supplier.service';
 import { CreateSupplierRequest } from '../models/supplier';
 import {
@@ -22,15 +22,26 @@ import {
   styleUrl: './supplier-create.scss',
   templateUrl: './supplier-create.html',
 })
-export class SupplierCreate {
+export class SupplierCreate implements OnInit {
   private readonly toast = inject(ToastService);
 
   private readonly fb = inject(FormBuilder);
   private readonly supplierService = inject(SupplierService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly cdr = inject(ChangeDetectorRef);
 
   loading = false;
+  openedFromProcurementWarning = false;
+
+  ngOnInit(): void {
+    const supplierName = this.route.snapshot.queryParamMap.get('name');
+    const ticketId = this.route.snapshot.queryParamMap.get('ticketId');
+    if (supplierName) {
+      this.Createform.controls.name.setValue(supplierName);
+      this.openedFromProcurementWarning = Boolean(ticketId);
+    }
+  }
   
   readonly Createform = this.fb.nonNullable.group({
     name: ['', [supplierNameValidator(true), trimmed(Validators.minLength(2)), trimmed(Validators.maxLength(200))]],
@@ -95,7 +106,8 @@ export class SupplierCreate {
       next: () => {
         this.loading = false;
         this.toast.success('Tạo nhà cung cấp thành công');
-        this.router.navigate(['/suppliers']);
+        const ticketId = this.route.snapshot.queryParamMap.get('ticketId');
+        void this.router.navigate(ticketId ? ['/procurement', ticketId] : ['/suppliers']);
       },
       error: (err) => {
         this.loading = false;

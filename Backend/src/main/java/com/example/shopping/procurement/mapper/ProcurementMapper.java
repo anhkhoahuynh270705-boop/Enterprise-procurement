@@ -22,6 +22,7 @@ public interface ProcurementMapper {
     @Mapping(target = "checkerUsername", ignore = true)
     @Mapping(target = "checkerComment", ignore = true)
     @Mapping(target = "camundaProcessInstanceId", ignore = true)
+    @Mapping(target = "importFingerprint", ignore = true)
     @Mapping(target = "totalAmount", ignore = true)
     @Mapping(target = "currency", source = "dto.currency", defaultValue = "VND")
     @Mapping(target = "status", ignore = true)
@@ -35,6 +36,7 @@ public interface ProcurementMapper {
     ProcurementItem toItemEntity(ProcurementItemRequestDto dto);
 
     @Mapping(target = "camundaTaskId", ignore = true)
+    @Mapping(target = "unregisteredSuppliers", ignore = true)
     ProcurementTicketResponseDto toDto(ProcurementTicket entity);
     ProcurementItemDto toItemDto(ProcurementItem entity);
 

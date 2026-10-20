@@ -74,7 +74,7 @@ public class EmailNotificationServiceImpl implements NotificationService {
         return userRepository.findByUsername(username)
                 .map(UserEntity::getEmail)
                 .filter(email -> email != null && !email.isBlank())
-                .orElse(username + "@company.com");
+                .orElse(username + "@gmail.com");
     }
 
     private String buildSubject(ProcurementEvent event) {

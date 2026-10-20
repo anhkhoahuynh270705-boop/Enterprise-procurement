@@ -181,13 +181,22 @@
                 <td>
                   <select
                     formControlName="supplierName"
+                    [attr.disabled]="isLoadingSuppliers || suppliers.length === 0 ? '' : null"
                     [class.invalid]="
                       itemGroup.get('supplierName')?.invalid &&
                       (itemGroup.get('supplierName')?.touched ||
                         itemGroup.get('supplierName')?.dirty)
                     "
                   >
-                    <option value="">-- Chọn nhà cung cấp --</option>
+                    <option value="">
+                      {{
+                        isLoadingSuppliers
+                          ? 'Đang tải nhà cung cấp...'
+                          : suppliers.length === 0
+                            ? 'Không có nhà cung cấp đang hoạt động'
+                            : '-- Chọn nhà cung cấp --'
+                      }}
+                    </option>
                     @for (s of suppliers; track s.id) {
                       <option [value]="s.name">{{ s.name }}</option>
                     }

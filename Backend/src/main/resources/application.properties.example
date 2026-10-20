@@ -88,6 +88,14 @@ spring.kafka.consumer.properties.spring.json.trusted.packages=com.example.shoppi
 # Nếu consumer chưa có offset thì đọc từ đầu
 spring.kafka.consumer.enable-auto-commit=true
 
+# Redis Cache
+spring.data.redis.host=localhost
+spring.data.redis.port=6379
+spring.data.redis.timeout=2s
+spring.cache.type=redis
+spring.cache.redis.time-to-live=10m
+spring.cache.redis.cache-null-values=false
+
 # Thread Pool (@Async)
 spring.task.execution.pool.core-size=4
 spring.task.execution.pool.max-size=8

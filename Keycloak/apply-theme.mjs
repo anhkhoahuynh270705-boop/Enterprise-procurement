@@ -53,6 +53,7 @@ writeFileSync(
   JSON.stringify(
     {
       loginTheme: current.loginTheme || "",
+      emailTheme: current.emailTheme || "",
       internationalizationEnabled: current.internationalizationEnabled,
       defaultLocale: current.defaultLocale,
       supportedLocales: current.supportedLocales,
@@ -66,6 +67,7 @@ const update = await fetch(url, {
   headers,
   body: JSON.stringify({
     loginTheme: "enterprise",
+    emailTheme: "enterprise",
     internationalizationEnabled: true,
     defaultLocale: "vi",
     supportedLocales: [
@@ -82,6 +84,7 @@ if (after.registrationAllowed !== current.registrationAllowed)
 console.log(
   JSON.stringify({
     loginTheme: after.loginTheme,
+    emailTheme: after.emailTheme,
     defaultLocale: after.defaultLocale,
     smtpUnchanged: true,
     registrationUnchanged: true,

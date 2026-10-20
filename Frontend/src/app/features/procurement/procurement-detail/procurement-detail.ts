@@ -61,11 +61,34 @@ export class ProcurementDetail implements OnInit {
     return this.visibleItemCodes.has(idx);
   }
 
+  get hasUnregisteredSuppliers(): boolean {
+    return Boolean(this.ticket?.unregisteredSuppliers?.length);
+  }
+
+  updateUnregisteredSupplier(): void {
+    const ticket = this.ticket;
+    if (!ticket) return;
+    const supplierName = ticket.unregisteredSuppliers?.[0];
+    if (!supplierName) return;
+    const queryParams = {
+      name: supplierName,
+      ticketCode: ticket.ticketCode,
+      ticketId: ticket.id,
+    };
+    if (this.auth.hasRole('ADMIN')) {
+      void this.router.navigate(['/supplier/create'], { queryParams });
+      return;
+    }
+    void this.router.navigate(['/supplier-proposals'], { queryParams });
+  }
+
   toggleAllItemCodes(): void {
-    if (this.ticket?.items && this.visibleItemCodes.size === this.ticket.items.length) {
+    const ticket = this.ticket;
+    if (!ticket?.items) return;
+    if (this.visibleItemCodes.size === ticket.items.length) {
       this.visibleItemCodes.clear();
-    } else if (this.ticket?.items) {
-      this.ticket.items.forEach((_, idx) => this.visibleItemCodes.add(idx));
+    } else {
+      ticket.items.forEach((_, idx) => this.visibleItemCodes.add(idx));
     }
     this.cdr.markForCheck();
   }
@@ -107,9 +130,7 @@ export class ProcurementDetail implements OnInit {
     if (!this.ticket) {
       return;
     }
-    const confirmed = confirm(
-      `Bạn có chắc chắn muốn nộp phiếu lên cấp quản lý phê duyệt?`,
-    );
+    const confirmed = confirm(`Bạn có chắc chắn muốn nộp phiếu lên cấp quản lý phê duyệt?`);
     if (!confirmed) {
       return;
     }
@@ -118,6 +139,13 @@ export class ProcurementDetail implements OnInit {
       next: (res) => {
         this.ticket = res.data;
         this.toast.success(`Đã nộp duyệt phiếu thành công!`);
+        const unregistered = res.data?.unregisteredSuppliers;
+        if (unregistered && unregistered.length > 0) {
+          this.toast.warning(
+            `Nhà cung cấp chưa có trong hệ thống: ${unregistered.join(', ')}. ` +
+              `Checker sẽ thấy cảnh báo — vui lòng cập nhật đầy đủ thông tin trước khi duyệt.`,
+          );
+        }
         this.isLoading = false;
         this.cdr.markForCheck();
       },
@@ -157,6 +185,10 @@ export class ProcurementDetail implements OnInit {
 
   submitReview(approved: boolean): void {
     if (!this.ticket) {
+      return;
+    }
+    if (approved && this.hasUnregisteredSuppliers) {
+      this.toast.warning('Vui lòng cập nhật và đăng ký đầy đủ nhà cung cấp trước khi duyệt phiếu.');
       return;
     }
     const taskId = this.ticket.camundaTaskId;
@@ -230,7 +262,6 @@ export class ProcurementDetail implements OnInit {
   }
 
   canModifyTicket(ticket: ProcurementTicket): boolean {
-    if (this.auth.hasRole('ADMIN') && ticket.status === 'APPROVED') return true;
     return (
       (ticket.status === 'DRAFT' || ticket.status === 'REJECTED') &&
       (this.auth.hasRole('ADMIN') ||

@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
 
 import com.example.shopping.common.enums.ErrorEnum;
 import com.example.shopping.purchaseorder.entity.PurchaseOrder;
@@ -20,6 +21,7 @@ public class PurchaseOrderReviewServiceImpl {
     private final PurchaseOrderRepository purchaseOrderRepository;
 
     @Transactional
+    @CacheEvict(cacheNames = PurchaseOrderCache.CACHE_NAME, allEntries = true)
     public void completeReview(UUID orderId, boolean approved, String reviewer, String comment) {
         String normalizedComment = comment == null ? "" : comment.trim();
         if (!approved && normalizedComment.isBlank()) {

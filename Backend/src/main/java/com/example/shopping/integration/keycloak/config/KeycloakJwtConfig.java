@@ -13,6 +13,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 
@@ -38,7 +39,7 @@ public class KeycloakJwtConfig {
                 + "/realms/" + keycloakConfig.getRealm()
                 + "/protocol/openid-connect/certs";
         var decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
-        decoder.setJwtValidator(org.springframework.security.oauth2.jwt.JwtValidators.createDefaultWithIssuer(keycloakConfig.getIssuer()));
+        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(keycloakConfig.getIssuer()));
         return decoder;
     }
 

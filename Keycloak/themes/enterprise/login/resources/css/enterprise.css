@@ -344,3 +344,100 @@ html.login-pf {
   padding-left: 0;
   padding-right: 0;
 }
+.enterprise-login.enterprise-reset-password .enterprise-subtitle,
+.enterprise-login.enterprise-reset-password .enterprise-contact {
+  display: none;
+}
+.enterprise-login.enterprise-reset-password .card-pf {
+  max-width: 460px;
+}
+.enterprise-login .enterprise-reset-icon {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 20px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #c4ddff;
+}
+.enterprise-login .enterprise-reset-icon svg {
+  width: 34px;
+  height: 34px;
+}
+.enterprise-login .enterprise-reset-intro {
+  margin: -8px 0 24px;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 14px;
+  line-height: 1.7;
+  text-align: center;
+}
+.enterprise-login #kc-reset-password-form .form-group {
+  margin-bottom: 0;
+}
+.enterprise-login .enterprise-reset-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 24px;
+}
+.enterprise-login .enterprise-reset-actions input[type="submit"] {
+  margin: 0;
+}
+.enterprise-login .enterprise-reset-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+.enterprise-login .enterprise-reset-back:hover {
+  border-color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.1);
+  text-decoration: none;
+}
+.enterprise-login .enterprise-reset-success {
+  padding: 8px 0 4px;
+  text-align: center;
+}
+.enterprise-login .enterprise-reset-success-icon {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 20px;
+  place-items: center;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  border-radius: 20px;
+  background: rgba(16, 185, 129, 0.14);
+  color: #6ee7b7;
+}
+.enterprise-login .enterprise-reset-success-icon svg {
+  width: 34px;
+  height: 34px;
+}
+.enterprise-login .enterprise-reset-success h2 {
+  margin: 0 0 10px;
+  color: #ffffff;
+  font-size: 21px;
+  font-weight: 700;
+}
+.enterprise-login .enterprise-reset-success p {
+  margin: 0 0 24px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.enterprise-login .enterprise-reset-success .enterprise-reset-back {
+  width: 100%;
+  box-sizing: border-box;
+}

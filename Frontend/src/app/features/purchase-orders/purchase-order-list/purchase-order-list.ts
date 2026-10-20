@@ -1,11 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, ChangeDetectorRef, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, ChangeDetectorRef, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { debounceTime } from 'rxjs';
 import { ToastService } from '../../../core/services/toast.service';
 import { AuthService } from '../../auth/services/auth.service';
 import { ProcurementService } from '../../procurement/service/procurement.service';
 import { Supplier } from '../../suppliers/models/supplier';
+import { SupplierOption } from '../../suppliers/models/supplier-document';
+import { SupplierDocumentService } from '../../suppliers/services/supplier-document.service';
 import { SupplierService } from '../../suppliers/services/supplier.service';
 import { PurchaseOrderView } from '../purchase-order-view/purchase-order-view';
 import {
@@ -24,11 +28,13 @@ import { PurchaseOrderService } from '../services/purchase-order.service';
   styleUrl: './purchase-order-list.scss',
 })
 export class PurchaseOrderList implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly toast = inject(ToastService);
   private readonly cdr = inject(ChangeDetectorRef);
   readonly auth = inject(AuthService);
   private readonly purchaseOrderService = inject(PurchaseOrderService);
   private readonly procurementService = inject(ProcurementService);
+  private readonly supplierDocumentService = inject(SupplierDocumentService);
   private readonly supplierService = inject(SupplierService);
   private readonly fb = inject(FormBuilder);
 
@@ -37,6 +43,15 @@ export class PurchaseOrderList implements OnInit {
   readonly filterForm = this.fb.nonNullable.group({
     searchQuery: '',
     selectedStatus: '' as '' | PurchaseOrderStatus,
+    supplierId: '',
+    ticket: '',
+    orderCode: '',
+    minimumAmount: '',
+    maximumAmount: '',
+    createdFrom: '',
+    createdTo: '',
+    deliveryFrom: '',
+    deliveryTo: '',
   });
   readonly createForm = this.fb.nonNullable.group({
     ticketId: ['', Validators.required],
@@ -51,15 +66,27 @@ export class PurchaseOrderList implements OnInit {
 
   orders: PurchaseOrder[] = [];
   approvedTickets: ApprovedTicket[] = [];
+  supplierOptions: SupplierOption[] = [];
   activeSuppliers: Supplier[] = [];
   loading = false;
   loadingSources = false;
+  loadingSuppliers = false;
   creating = false;
   updatingOrderId: string | null = null;
   isCreateFormOpen = false;
+  isAdvancedSearchOpen = false;
+  private supplierOptionsLoaded = false;
+  private appliedFilters = this.filterForm.getRawValue();
 
   ngOnInit(): void {
+    this.filterForm.valueChanges
+      .pipe(debounceTime(250), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.appliedFilters = this.filterForm.getRawValue();
+        this.cdr.markForCheck();
+      });
     this.loadOrders();
+    this.loadSupplierOptions();
     if (this.auth.hasRole('USER', 'ADMIN')) {
       this.loadActiveSuppliers();
       this.loadApprovedTicketPage(0, []);
@@ -67,22 +94,81 @@ export class PurchaseOrderList implements OnInit {
   }
 
   get filteredOrders(): PurchaseOrder[] {
-    const query = this.filterForm.controls.searchQuery.value.trim().toLowerCase();
-    const selectedStatus = this.filterForm.controls.selectedStatus.value;
+    const filters = this.appliedFilters;
+    const query = this.normalizeSearch(filters.searchQuery);
+    const supplierId = filters.supplierId;
+    const ticket = this.normalizeSearch(filters.ticket);
+    const orderCode = this.normalizeSearch(filters.orderCode);
+    const minimumAmount = this.parseAmount(filters.minimumAmount);
+    const maximumAmount = this.parseAmount(filters.maximumAmount);
     const isStaffOrChecker = this.auth.hasRole('ADMIN', 'CHECKER');
     return this.orders.filter((order) => {
       if (!isStaffOrChecker && order.status !== 'SENT' && order.status !== 'RECEIVED') {
         return false;
       }
+      const createdDate = order.createdAt?.slice(0, 10) || '';
+      const deliveryDate = order.expectedDeliveryDate?.slice(0, 10) || '';
+      const normalizedOrder = [
+        order.orderCode,
+        order.ticketCode,
+        order.ticketTitle,
+        order.supplierName,
+        order.supplierCode,
+      ]
+        .map((value) => this.normalizeSearch(value))
+        .join(' ');
+
       return (
-        (!selectedStatus || order.status === selectedStatus) &&
-        (!query ||
-          order.orderCode.toLowerCase().includes(query) ||
-          order.ticketCode.toLowerCase().includes(query) ||
-          order.ticketTitle.toLowerCase().includes(query) ||
-          order.supplierName.toLowerCase().includes(query))
+        (!filters.selectedStatus || order.status === filters.selectedStatus) &&
+        (!query || normalizedOrder.includes(query)) &&
+        (!supplierId || order.supplierId === supplierId) &&
+        (!ticket ||
+          this.normalizeSearch(order.ticketCode).includes(ticket) ||
+          this.normalizeSearch(order.ticketTitle).includes(ticket)) &&
+        (!orderCode || this.normalizeSearch(order.orderCode).includes(orderCode)) &&
+        (minimumAmount === null || order.totalAmount >= minimumAmount) &&
+        (maximumAmount === null || order.totalAmount <= maximumAmount) &&
+        (!filters.createdFrom || createdDate >= filters.createdFrom) &&
+        (!filters.createdTo || createdDate <= filters.createdTo) &&
+        (!filters.deliveryFrom || deliveryDate >= filters.deliveryFrom) &&
+        (!filters.deliveryTo || deliveryDate <= filters.deliveryTo)
       );
     });
+  }
+
+  resetFilters(): void {
+    this.filterForm.reset({
+      searchQuery: '',
+      selectedStatus: '',
+      supplierId: '',
+      ticket: '',
+      orderCode: '',
+      minimumAmount: '',
+      maximumAmount: '',
+      createdFrom: '',
+      createdTo: '',
+      deliveryFrom: '',
+      deliveryTo: '',
+    });
+    this.appliedFilters = this.filterForm.getRawValue();
+    this.cdr.markForCheck();
+  }
+
+  private normalizeSearch(value: string | null | undefined): string {
+    return (value || '').trim().toLocaleLowerCase('vi');
+  }
+
+  private parseAmount(value: string): number | null {
+    if (!value.trim()) return null;
+    const amount = Number(value);
+    return Number.isFinite(amount) ? amount : null;
+  }
+
+  toggleAdvancedSearch(): void {
+    this.isAdvancedSearchOpen = !this.isAdvancedSearchOpen;
+    if (this.isAdvancedSearchOpen && !this.supplierOptionsLoaded && !this.loadingSuppliers) {
+      this.loadSupplierOptions();
+    }
   }
 
   get selectedTicket(): ApprovedTicket | undefined {
@@ -117,14 +203,35 @@ export class PurchaseOrderList implements OnInit {
     });
   }
 
-  private loadActiveSuppliers(): void {
-    this.supplierService.getSuppliers().subscribe({
+  private loadSupplierOptions(): void {
+    this.loadingSuppliers = true;
+    this.supplierDocumentService.suppliers().subscribe({
       next: (suppliers) => {
-        this.activeSuppliers = (suppliers || []).filter((supplier) => supplier.status === 'ACTIVE');
+        this.supplierOptions = [...(suppliers || [])].sort((a, b) =>
+          a.name.localeCompare(b.name, 'vi'),
+        );
+        this.supplierOptionsLoaded = true;
+        this.loadingSuppliers = false;
         this.cdr.detectChanges();
       },
       error: (error) => {
         this.toast.error(error.error?.message || 'Không thể tải danh sách nhà cung cấp.');
+        this.loadingSuppliers = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private loadActiveSuppliers(): void {
+    this.supplierService.getSuppliers().subscribe({
+      next: (suppliers) => {
+        const allSuppliers = suppliers || [];
+        this.activeSuppliers = allSuppliers.filter((supplier) => supplier.status === 'ACTIVE');
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        this.toast.error(error.error?.message || 'Không thể tải danh sách nhà cung cấp.');
+        this.cdr.detectChanges();
       },
     });
   }

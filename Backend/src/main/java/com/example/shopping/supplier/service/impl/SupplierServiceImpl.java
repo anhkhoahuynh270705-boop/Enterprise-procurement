@@ -4,9 +4,9 @@ import java.time.Year;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.shopping.common.enums.ErrorEnum;
@@ -35,6 +35,7 @@ public class SupplierServiceImpl implements SupplierService {
     SupplierRepository supplierRepository;
     SupplierMapper supplierMapper;
     SupplierDocumentRepository documents;
+    SupplierCache supplierCache;
 
     /**
      * Sinh mã nhà cung cấp tự động: SUP-YYYY-XXXX
@@ -48,21 +49,17 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Override
     public List<SupplierResponseDto> getAllSuppliers() {
-        return supplierRepository.findAll().stream()
-                .map(supplierMapper::toDto)
-                .collect(Collectors.toList());
+        return supplierCache.getAll();
     }
 
     @Override
     public Optional<SupplierResponseDto> getSupplierById(UUID id) {
-        return supplierRepository.findById(id)
-                .map(supplierMapper::toDto);
+        return supplierCache.getById(id);
     }
 
     @Override
     public Optional<SupplierResponseDto> getSupplierByCode(String code) {
-        return supplierRepository.findByCode(code)
-                .map(supplierMapper::toDto);
+        return supplierCache.getByCode(code);
     }
 
     @Override
@@ -70,13 +67,12 @@ public class SupplierServiceImpl implements SupplierService {
         if (keyword == null || keyword.isBlank()) {
             return getAllSuppliers();
         }
-        return supplierRepository.searchByKeyword(keyword.trim()).stream()
-                .map(supplierMapper::toDto)
-                .collect(Collectors.toList());
+        return supplierCache.search(keyword.trim());
     }
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = SupplierCache.CACHE_NAME, allEntries = true)
     public SupplierResponseDto createSupplier(CreateSupplierRequestDto request) {
         if (request.getTaxCode() != null && !request.getTaxCode().isBlank()
                 && supplierRepository.existsByTaxCode(request.getTaxCode())) {
@@ -92,6 +88,7 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = SupplierCache.CACHE_NAME, allEntries = true)
     public SupplierResponseDto updateSupplier(UUID id, UpdateSupplierRequestDto request) {
         SupplierEntity entity = supplierRepository.findById(id)
                 .orElseThrow(() -> ErrorEnum.SUPPLIER_NOT_FOUND.ex("Không tìm thấy nhà cung cấp với id: " + id));
@@ -110,6 +107,7 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = SupplierCache.CACHE_NAME, allEntries = true)
     public void deleteSupplier(UUID id) {
         SupplierEntity entity = supplierRepository.findById(id).orElse(null);
         if (entity == null) {

@@ -32,6 +32,13 @@ public interface ProcurementTicketRepository extends JpaRepository<ProcurementTi
 
     Optional<ProcurementTicket> findByTicketCode(String ticketCode);
 
+    boolean existsByImportFingerprint(String importFingerprint);
+
+    @Query("SELECT DISTINCT t FROM ProcurementTicket t LEFT JOIN FETCH t.items "
+            + "WHERE t.reason = :reason AND t.department = :department AND t.importFingerprint IS NULL")
+    List<ProcurementTicket> findImportedTicketsWithItems(
+            @Param("reason") String reason, @Param("department") String department);
+
     List<ProcurementTicket> findByStatus(ProcurementStatus status);
 
     List<ProcurementTicket> findByMakerUsername(String makerUsername);

@@ -10,6 +10,15 @@
         <i class="fa fa-upload" aria-hidden="true"></i>
         Import Excel
       </button>
+      <button
+        type="button"
+        class="btn btn-outline"
+        (click)="downloadTemplate()"
+        [disabled]="downloadingTemplate"
+      >
+        <i class="fa" [ngClass]="downloadingTemplate ? 'fa-spinner fa-spin' : 'fa-file-excel-o'" aria-hidden="true"></i>
+        {{ downloadingTemplate ? 'Đang tải...' : 'Tải template Excel' }}
+      </button>
       <button type="button" class="btn btn-outline" (click)="exportExcel()">
         <i class="fa fa-download" aria-hidden="true"></i>
         Export Excel
@@ -28,19 +37,85 @@
         type="text"
         placeholder="Tìm theo mã NCC, tên nhà cung cấp, người liên hệ, MST..."
         formControlName="searchKeyword"
-        (input)="onSearch()"
       />
     </div>
 
     <div class="filter-box">
       <i class="fa fa-filter" aria-hidden="true"></i>
-      <select formControlName="selectedStatus" (change)="applyFilter()">
+      <select formControlName="selectedStatus">
         <option value="ALL">Tất cả trạng thái</option>
         <option value="ACTIVE">ACTIVE</option>
         <option value="INACTIVE">INACTIVE</option>
         <option value="BLACKLISTED">BLACKLISTED</option>
       </select>
     </div>
+
+    <button
+      type="button"
+      class="btn-advanced-search"
+      [class.active]="isAdvancedSearchOpen"
+      [attr.aria-expanded]="isAdvancedSearchOpen"
+      (click)="toggleAdvancedSearch()"
+    >
+      <i class="fa fa-sliders" aria-hidden="true"></i>
+      Tìm kiếm nâng cao
+    </button>
+
+    @if (isAdvancedSearchOpen) {
+      <div class="advanced-search-panel">
+        <label class="advanced-field">
+          <span>Tên nhà cung cấp</span>
+          <select formControlName="supplierId" [disabled]="loading">
+            <option value="">
+              {{ loading ? 'Đang tải nhà cung cấp...' : 'Tất cả nhà cung cấp' }}
+            </option>
+            @if (!loading && !supplierOptions.length) {
+              <option value="" disabled>Không tìm thấy nhà cung cấp</option>
+            }
+            @for (supplier of supplierOptions; track supplier.id) {
+              <option [value]="supplier.id">{{ supplier.name }} ({{ supplier.code }})</option>
+            }
+          </select>
+        </label>
+        <label class="advanced-field">
+          <span>Mã nhà cung cấp</span>
+          <input type="search" formControlName="supplierCode" placeholder="Ví dụ: SUP-2026-0001" />
+        </label>
+        <label class="advanced-field">
+          <span>Mã số thuế</span>
+          <input type="search" formControlName="taxCode" placeholder="Nhập mã số thuế" />
+        </label>
+        <label class="advanced-field">
+          <span>Người liên hệ</span>
+          <input type="search" formControlName="contactPerson" placeholder="Nhập tên người liên hệ" />
+        </label>
+        <label class="advanced-field">
+          <span>Email</span>
+          <input type="search" formControlName="email" placeholder="Nhập email" />
+        </label>
+        <label class="advanced-field">
+          <span>Số điện thoại</span>
+          <input type="search" formControlName="phone" placeholder="Nhập số điện thoại" />
+        </label>
+        <label class="advanced-field">
+          <span>Tỉnh / Thành phố</span>
+          <select formControlName="city" [disabled]="loading">
+            <option value="">
+              {{ loading ? 'Đang tải thành phố...' : 'Tất cả thành phố' }}
+            </option>
+            @for (city of cityOptions; track city.value) {
+              <option [value]="city.value">{{ city.label }}</option>
+            }
+          </select>
+        </label>
+        <div class="advanced-search-footer">
+          <button type="button" class="btn-reset-filters" (click)="resetFilters()">
+            <i class="fa fa-undo" aria-hidden="true"></i>
+            Xóa bộ lọc
+          </button>
+        </div>
+      </div>
+    }
   </div>
 
   <section class="table-card" aria-labelledby="list-title">
@@ -255,5 +330,94 @@
       ></app-supplier-proposals>
     }
   </dialog>
+
+  @if (isImportModalOpen) {
+    <div class="supplier-import-overlay" (click)="closeImportModal()">
+      <section
+        class="supplier-import-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="supplier-import-title"
+        (click)="$event.stopPropagation()"
+      >
+        <header class="supplier-import-header">
+          <div>
+            <h3 id="supplier-import-title">Kết quả nhập nhà cung cấp</h3>
+            <p>{{ importFileName }}</p>
+          </div>
+          <button
+            type="button"
+            class="supplier-import-close"
+            (click)="closeImportModal()"
+            [disabled]="isImporting"
+            aria-label="Đóng kết quả nhập"
+          >
+            <i class="fa fa-times" aria-hidden="true"></i>
+          </button>
+        </header>
+
+        <div class="supplier-import-body">
+          @if (isImporting) {
+            <div class="supplier-import-loading" role="status">
+              <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>
+              <span>Đang tải lên và xử lý file Excel...</span>
+            </div>
+          } @else if (importError) {
+            <div class="supplier-import-error" role="alert">
+              <i class="fa fa-exclamation-circle" aria-hidden="true"></i>
+              {{ importError }}
+            </div>
+          } @else if (importResult; as result) {
+            <h4>{{ result.message }}</h4>
+            <div class="supplier-import-summary">
+              <div>
+                <span>Đã nhập thành công</span>
+                <strong>{{ result.successRows }}</strong>
+              </div>
+              <div>
+                <span>Số dòng lỗi</span>
+                <strong>{{ result.errorRows }}</strong>
+              </div>
+              <div>
+                <span>Tổng dòng xử lý</span>
+                <strong>{{ result.totalRows }}</strong>
+              </div>
+            </div>
+
+            @if (result.errors?.length) {
+              <div class="supplier-import-error-list">
+                <h5>Chi tiết dòng cần kiểm tra</h5>
+                <ul>
+                  @for (error of result.errors; track $index) {
+                    <li>
+                      <strong>Dòng {{ error.rowNumber }} · {{ error.field }}:</strong>
+                      {{ error.errorMessage }}
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+          }
+        </div>
+
+        <footer class="supplier-import-footer">
+          <button
+            type="button"
+            class="btn btn-outline"
+            (click)="closeImportModal()"
+            [disabled]="isImporting"
+          >
+            Đóng
+          </button>
+          @if (!isImporting) {
+            <button type="button" class="btn btn-primary" (click)="importExcel()">
+              <i class="fa fa-upload" aria-hidden="true"></i>
+              Chọn file khác
+            </button>
+          }
+        </footer>
+      </section>
+    </div>
+  }
   <app-supplier-view> </app-supplier-view>
 </div>

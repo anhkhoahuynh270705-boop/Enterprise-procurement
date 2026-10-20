@@ -7,6 +7,15 @@
     <span class="sub-breadcrumb">Nhập thông tin đối tác cung ứng mới</span>
   </div>
 
+  @if (openedFromProcurementWarning) {
+    <div class="procurement-prefill-notice" role="status">
+      <i class="fa fa-info-circle" aria-hidden="true"></i>
+      <p>
+        Vui lòng nhập mã số thuế, ít nhất một thông tin liên hệ (email hoặc số điện thoại) và bổ sung các thông tin còn thiếu.
+      </p>
+    </div>
+  }
+
   <form [formGroup]="Createform" (ngSubmit)="onSubmit()" class="supplier-form-card">
     <div class="form-section">
       <h3 class="section-title">

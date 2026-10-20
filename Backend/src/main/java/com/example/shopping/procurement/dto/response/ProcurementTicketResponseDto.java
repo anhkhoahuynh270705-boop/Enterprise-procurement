@@ -56,6 +56,8 @@ public class ProcurementTicketResponseDto implements Serializable {
     @Builder.Default
     private List<ProcurementItemDto> items = new ArrayList<>();
 
+    private List<String> unregisteredSuppliers;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

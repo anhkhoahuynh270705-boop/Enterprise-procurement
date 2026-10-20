@@ -30,6 +30,7 @@ export interface ProcurementTicket {
   checkerComment?: string;
   camundaProcessInstanceId?: string;
   camundaTaskId?: string;
+  unregisteredSuppliers?: string[];
   items: ProcurementItem[];
   createdAt: string;
   updatedAt?: string;

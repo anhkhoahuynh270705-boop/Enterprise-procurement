@@ -47,3 +47,25 @@ export interface UpdateSupplierRequest {
   notes?: string;
   status: SupplierStatus;
 }
+
+export interface SupplierImportRowError {
+  rowNumber: number;
+  field: string;
+  errorMessage: string;
+}
+
+export interface SupplierImportResult {
+  totalRows: number;
+  successRows: number;
+  errorRows: number;
+  message: string;
+  createdSuppliers: Supplier[];
+  errors: SupplierImportRowError[];
+}
+
+export interface SupplierImportApiResponse {
+  status: number;
+  message: string;
+  data: SupplierImportResult;
+  timestamp: string;
+}

@@ -31,4 +31,5 @@ public class CamundaTaskDto {
     private ProcurementTicketResponseDto ticket;
 
     private Map<String, Object> processVariables;
+
 }

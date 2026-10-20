@@ -2,6 +2,7 @@ package com.example.shopping.procurement.service.impl;
 
 import java.math.BigDecimal;
 import java.time.Year;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -29,6 +30,8 @@ import com.example.shopping.procurement.repository.ProcurementTicketRepository;
 import com.example.shopping.procurement.service.ProcurementService;
 import com.example.shopping.procurement.service.ProcurementSkuGenerator;
 import com.example.shopping.security.TicketAccess;
+import com.example.shopping.supplier.repository.SupplierRepository;
+import com.example.shopping.supplier.util.SupplierNameNormalizer;
 import com.example.shopping.workflow.camunda.service.WorkflowTaskService;
 
 import lombok.AccessLevel;
@@ -47,6 +50,8 @@ public class ProcurementServiceImpl implements ProcurementService {
     WorkflowTaskService workflowTaskService;
     ProcurementEventPublisher eventPublisher;
     ProcurementSkuGenerator skuGenerator;
+    ProcurementTicketCache procurementTicketCache;
+    SupplierRepository supplierRepository;
 
     /* Sinh mã phiếu mua sắm tự động theo năm */
     private synchronized String generateNextTicketCode() {
@@ -97,13 +102,13 @@ public class ProcurementServiceImpl implements ProcurementService {
             workflowTaskService.startProcurementProcess(saved);
         }
 
-        return toResponseDtoWithTaskId(saved);
+        return withUnregisteredSupplierWarning(toResponseDtoWithTaskId(saved));
     }
 
     /* Nộp phiếu mua sắm để Checker duyệt */
     @Override
     @Transactional
-    @CacheEvict(value = "procurement_tickets", key = "#id")
+    @CacheEvict(value = "procurement_tickets", allEntries = true)
     public ProcurementTicketResponseDto submitTicket(UUID id, String makerUsername) {
         ProcurementTicket ticket = ticketRepository.findByIdWithItems(id)
                 .orElseThrow(() -> ErrorEnum.TICKET_NOT_FOUND.ex());
@@ -125,15 +130,21 @@ public class ProcurementServiceImpl implements ProcurementService {
                 .eventType(ProcurementEventType.TICKET_SUBMITTED)
                 .build());
 
-        return toResponseDtoWithTaskId(ticket);
+        return withUnregisteredSupplierWarning(toResponseDtoWithTaskId(ticket));
     }
 
     /* Lấy chi tiết phiếu mua sắm */
     @Override
     @Transactional(readOnly = true)
     public ProcurementTicketResponseDto getTicketById(UUID id) {
-        ProcurementTicket ticket = getTicketEntity(id);
-        return toResponseDtoWithTaskId(ticket);
+        ProcurementTicketResponseDto response = procurementTicketCache.getReadableTicket(id);
+        if (response.getStatus() == ProcurementStatus.PENDING_APPROVAL) {
+            if (response.getCamundaProcessInstanceId() != null) {
+                response.setCamundaTaskId(
+                        workflowTaskService.getActiveTaskIdForTicket(response.getCamundaProcessInstanceId()));
+            }
+        }
+        return withUnregisteredSupplierWarning(response);
     }
 
     /* Lấy entity phiếu trực tiếp */
@@ -184,14 +195,13 @@ public class ProcurementServiceImpl implements ProcurementService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "procurement_tickets", key = "#id")
+    @CacheEvict(value = "procurement_tickets", allEntries = true)
     public ProcurementTicketResponseDto updateTicket(UUID id, UpdateProcurementTicketRequestDto request, String username) {
         ProcurementTicket ticket = ticketRepository.findByIdWithItems(id)
                 .orElseThrow(() -> ErrorEnum.TICKET_NOT_FOUND.ex());
 
         TicketAccess.requireSubmit(ticket);
-        if (ticket.getStatus() != ProcurementStatus.DRAFT && ticket.getStatus() != ProcurementStatus.REJECTED
-                && !(TicketAccess.hasRole("ADMIN") && ticket.getStatus() == ProcurementStatus.APPROVED)) {
+        if (ticket.getStatus() != ProcurementStatus.DRAFT && ticket.getStatus() != ProcurementStatus.REJECTED) {
             throw ErrorEnum.TICKET_CANNOT_EDIT.ex();
         }
 
@@ -226,7 +236,7 @@ public class ProcurementServiceImpl implements ProcurementService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "procurement_tickets", key = "#id")
+    @CacheEvict(value = "procurement_tickets", allEntries = true)
     public void deleteTicket(UUID id, String username) {
         ProcurementTicket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> ErrorEnum.TICKET_NOT_FOUND.ex());
@@ -250,5 +260,32 @@ public class ProcurementServiceImpl implements ProcurementService {
             dto.setCamundaTaskId(activeTaskId);
         }
         return dto;
+    }
+
+    private ProcurementTicketResponseDto withUnregisteredSupplierWarning(ProcurementTicketResponseDto response) {
+        if (response.getStatus() != ProcurementStatus.PENDING_APPROVAL) {
+            response.setUnregisteredSuppliers(Collections.emptyList());
+            return response;
+        }
+
+        Set<String> supplierCandidates = response.getItems().stream()
+                .map(item -> item.getSupplierName())
+                .map(SupplierNameNormalizer::normalize)
+                .filter(name -> !name.isEmpty())
+                .collect(Collectors.toSet());
+        log.debug("[SupplierWarning] ticketId={} supplierCandidates={}", response.getId(), supplierCandidates);
+        Set<String> registeredSupplierNames = supplierCandidates.isEmpty()
+                ? Collections.emptySet()
+                : supplierRepository.findExistingNormalizedNames(supplierCandidates);
+        log.debug("[SupplierWarning] ticketId={} registeredSupplierNames={}", response.getId(), registeredSupplierNames);
+        List<String> unregisteredSuppliers = response.getItems().stream()
+                .map(item -> item.getSupplierName())
+                .filter(name -> name != null && !name.isBlank())
+                .map(String::trim)
+                .filter(name -> !registeredSupplierNames.contains(SupplierNameNormalizer.normalize(name)))
+                .distinct()
+                .collect(Collectors.toList());
+        response.setUnregisteredSuppliers(unregisteredSuppliers);
+        return response;
     }
 }

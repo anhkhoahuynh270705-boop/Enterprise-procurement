@@ -1,6 +1,6 @@
 import { SensitiveValue } from '../../../shared/sensitive/sensitive-value/sensitive-value';
 import { ToastService } from '../../../core/services/toast.service';
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -25,11 +25,13 @@ export class ProcurementCreate implements OnInit {
   private procurementService = inject(ProcurementService);
   private supplierService = inject(SupplierService);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   ticketForm!: FormGroup;
   isLoading = false;
 
   suppliers: Supplier[] = [];
+  isLoadingSuppliers = true;
   unitOptions = [
     'Chiếc',
     'Cái',
@@ -61,9 +63,14 @@ export class ProcurementCreate implements OnInit {
     this.supplierService.getSuppliers().subscribe({
       next: (list) => {
         this.suppliers = list.filter((s) => s.status === 'ACTIVE');
+        this.isLoadingSuppliers = false;
+        this.cdr.detectChanges();
       },
       error: () => {
         this.suppliers = [];
+        this.isLoadingSuppliers = false;
+        this.toast.error('Không thể tải danh sách nhà cung cấp. Vui lòng tải lại trang.');
+        this.cdr.detectChanges();
       },
     });
   }

@@ -7,6 +7,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CamundaTask, ImportResult, ProcurementTicket } from '../model/procurement';
 import { ProcurementService } from '../service/procurement.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { debounceTime } from 'rxjs';
 
 @Component({
   selector: 'app-procurement-list',
@@ -17,7 +18,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 })
 export class ProcurementList implements OnInit {
   private readonly toast = inject(ToastService);
-
+  private normalize(value: string | null | undefined): string {
+    return (value ?? '').trim().toLocaleLowerCase('vi');
+  }
   readonly auth = inject(AuthService);
   private procurementService = inject(ProcurementService);
   private readonly route = inject(ActivatedRoute);
@@ -63,7 +66,13 @@ export class ProcurementList implements OnInit {
   readonly filtersForm = this.fb.nonNullable.group({
     searchQuery: '',
     selectedStatus: '',
+    selectedPriority: '',
+    department: '',
+    maker: '',
+    createdFrom: '',
+    createdTo: '',
   });
+  isAdvancedSearchOpen = false;
   currentPage = 0;
   readonly pageSize = 10;
   totalPages = 0;
@@ -85,6 +94,19 @@ export class ProcurementList implements OnInit {
   importResult: ImportResult | null = null;
 
   ngOnInit(): void {
+    let previousStatus = this.filtersForm.controls.selectedStatus.value;
+    this.filtersForm.valueChanges
+      .pipe(debounceTime(150), takeUntilDestroyed(this.destroyRef))
+      .subscribe((filters) => {
+        if (filters.selectedStatus !== previousStatus) {
+          previousStatus = filters.selectedStatus || '';
+          this.currentPage = 0;
+          this.loadData();
+          return;
+        }
+        this.applyFilter();
+      });
+
     this.route.data.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((data) => {
       this.isApprovalView = data['view'] === 'approvals';
       this.loadData();
@@ -135,12 +157,6 @@ export class ProcurementList implements OnInit {
       });
   }
 
-  onStatusChange(): void {
-    this.currentPage = 0;
-    this.loadData();
-    this.cdr.detectChanges();
-  }
-
   goToPage(page: number): void {
     if (page < 0 || page >= this.totalPages || page === this.currentPage) return;
     this.currentPage = page;
@@ -149,19 +165,46 @@ export class ProcurementList implements OnInit {
   }
 
   applyFilter(): void {
-    const q = this.filtersForm.controls.searchQuery.value.trim().toLowerCase();
-    if (!q) {
-      this.filteredTickets = this.tickets;
-      return;
-    }
-    this.filteredTickets = this.tickets.filter(
-      (t) =>
-        t.ticketCode.toLowerCase().includes(q) ||
-        t.title.toLowerCase().includes(q) ||
-        (t.department && t.department.toLowerCase().includes(q)) ||
-        t.makerUsername.toLowerCase().includes(q),
-    );
+    const q = this.normalize(this.filtersForm.controls.searchQuery.value);
+    const priority = this.normalize(this.filtersForm.controls.selectedPriority.value);
+    const department = this.normalize(this.filtersForm.controls.department.value);
+    const maker = this.normalize(this.filtersForm.controls.maker.value);
+    const createdFrom = this.normalize(this.filtersForm.controls.createdFrom.value);
+    const createdTo = this.normalize(this.filtersForm.controls.createdTo.value);
+    this.filteredTickets = this.tickets.filter((t) => {
+      const createdDate = t.createdAt.slice(0, 10);
+      return (
+        (!q ||
+          t.ticketCode.toLocaleLowerCase('vi').includes(q) ||
+          t.title.toLocaleLowerCase('vi').includes(q) ||
+          (t.department && t.department.toLocaleLowerCase('vi').includes(q)) ||
+          t.makerUsername.toLocaleLowerCase('vi').includes(q)) &&
+        (!priority || this.normalize(t.priority) === priority) &&
+        (!department || (t.department || '').toLocaleLowerCase('vi').includes(department)) &&
+        (!maker || t.makerUsername.toLocaleLowerCase('vi').includes(maker)) &&
+        (!createdFrom || createdDate >= createdFrom) &&
+        (!createdTo || createdDate <= createdTo)
+      );
+    });
     this.cdr.detectChanges();
+  }
+
+  resetAdvancedSearch(): void {
+    this.filtersForm.patchValue(
+      {
+        searchQuery: '',
+        selectedStatus: '',
+        selectedPriority: '',
+        department: '',
+        maker: '',
+        createdFrom: '',
+        createdTo: '',
+      },
+      { emitEvent: false },
+    );
+    this.filteredTickets = this.tickets;
+    this.currentPage = 0;
+    this.loadData();
   }
 
   submitTicket(ticket: ProcurementTicket): void {
@@ -183,7 +226,6 @@ export class ProcurementList implements OnInit {
   }
 
   canModifyTicket(ticket: ProcurementTicket): boolean {
-    if (this.auth.hasRole('ADMIN') && ticket.status === 'APPROVED') return true;
     return (
       (ticket.status === 'DRAFT' || ticket.status === 'REJECTED') &&
       (this.auth.hasRole('ADMIN') ||
@@ -351,40 +393,38 @@ export class ProcurementList implements OnInit {
       });
   }
 
-  openImportModal(): void {
-    this.importFile = null;
-    this.importResult = null;
-    this.isImportModalOpen = true;
-  }
-
   closeImportModal(): void {
     this.isImportModalOpen = false;
     this.importFile = null;
     this.importResult = null;
   }
 
-  onFileSelected(event: any): void {
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+
     this.importFile = null;
     this.importResult = null;
-    const file = event.target.files?.[0];
-    if (file) {
-      if (!/\.(xlsx|xls)$/i.test(file.name) || file.size === 0) {
-        this.toast.error(
-          'File import không hợp lệ. Vui lòng chọn file Excel .xlsx hoặc .xls không rỗng.',
-        );
-        event.target.value = '';
-        return;
-      }
-      this.importFile = file;
+    if (!/\.(xlsx|xls)$/i.test(file.name) || file.size === 0) {
+      this.toast.error(
+        'File import không hợp lệ. Vui lòng chọn file Excel .xlsx hoặc .xls không rỗng.',
+      );
+      return;
     }
+
+    this.importFile = file;
+    this.isImportModalOpen = true;
+    this.doImport();
   }
 
-  // downloadTemplate(): void {
-  //   this.procurementService.downloadTemplate().subscribe({
-  //     next: blob => this.downloadBlob(blob, 'Mau_nhap_phieu_mua_sam.xlsx'),
-  //     error: err => alert('Lỗi khi tải file mẫu: ' + (err.error?.message || err.message))
-  //   });
-  // }
+  downloadTemplate(): void {
+    this.procurementService.downloadTemplate().subscribe({
+      next: (blob) => this.downloadBlob(blob, 'Mau_nhap_phieu_mua_sam.xlsx'),
+      error: () => this.toast.error('Không thể tải template Excel. Vui lòng thử lại.'),
+    });
+  }
 
   /* Import Excel file and create procurement ticket */
   doImport(): void {
@@ -396,6 +436,13 @@ export class ProcurementList implements OnInit {
         this.importResult = res.data;
         if (this.importResult?.createdTicket) {
           this.toast.success('Đã nhập phiếu và gửi duyệt thành công.');
+          const unregistered = this.importResult.createdTicket.unregisteredSuppliers;
+          if (unregistered && unregistered.length > 0) {
+            this.toast.warning(
+              `Nhà cung cấp chưa có trong hệ thống: ${unregistered.join(', ')}. ` +
+                `Vui lòng cập nhật đầy đủ thông tin trước khi duyệt.`,
+            );
+          }
           this.loadData();
         }
         this.cdr.markForCheck();

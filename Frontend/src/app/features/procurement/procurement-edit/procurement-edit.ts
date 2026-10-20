@@ -81,6 +81,12 @@ export class ProcurementEdit implements OnInit {
     this.procurementService.getTicketById(id).subscribe({
       next: (res) => {
         const ticket = res.data;
+        if (ticket.status === 'APPROVED') {
+          this.isLoading = false;
+          this.toast.warning('Phiếu đã được duyệt, chỉ có thể xem chi tiết.');
+          void this.router.navigate(['/procurement', ticket.id], { replaceUrl: true });
+          return;
+        }
         this.editingTicketCode = ticket.ticketCode;
         this.ticketForm.patchValue({
           title: ticket.title,

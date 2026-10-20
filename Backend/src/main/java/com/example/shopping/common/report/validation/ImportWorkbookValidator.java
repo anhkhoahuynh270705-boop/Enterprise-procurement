@@ -44,6 +44,7 @@ public final class ImportWorkbookValidator {
         }
     }
 
+    // CHECK VALID SUPPLIER TEMPLATE
     public static SupplierHeaders validateSupplierHeaders(Sheet sheet) {
         String[] expected = { "Tên nhà cung cấp", "Người liên hệ", "Email", "Số điện thoại",
                 "Mã số thuế", "Địa chỉ", "Thành phố", "Quốc gia", "Ngân hàng", "Số tài khoản", "Ghi chú" };
@@ -106,6 +107,28 @@ public final class ImportWorkbookValidator {
             return new SupplierHeaders(profileValues.get("Tên nhà cung cấp").rowIndex(), Map.of(), profileValues);
         }
         throw invalidSupplier();
+    }
+
+    // CHECK VALID PROCUREMENT TEMPLATE 
+    public static void validateProcurementHeaders(Sheet sheet, String[] expectedHeaders) {
+        Row header = sheet.getRow(0);
+        DataFormatter formatter = new DataFormatter();
+        if (header == null || expectedHeaders == null || expectedHeaders.length == 0) {
+            throw ErrorEnum.EXCEL_MISSING_TEMPLATE_HEADERS.ex();
+        }
+
+        for (int column = 0; column < expectedHeaders.length; column++) {
+            String actual = normalize(formatter.formatCellValue(header.getCell(column)));
+            if (!normalize(expectedHeaders[column]).equals(actual)) {
+                throw ErrorEnum.EXCEL_MISSING_TEMPLATE_HEADERS.ex();
+            }
+        }
+
+        for (int column = expectedHeaders.length; column < header.getLastCellNum(); column++) {
+            if (!formatter.formatCellValue(header.getCell(column)).isBlank()) {
+                throw ErrorEnum.EXCEL_MISSING_TEMPLATE_HEADERS.ex();
+            }
+        }
     }
 
     private static ResponseStatusException invalidSupplier() {

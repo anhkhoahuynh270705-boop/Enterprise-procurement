@@ -1,6 +1,7 @@
 package com.example.shopping.procurement.dto.response;
 
 import java.math.BigDecimal;
+import java.io.Serializable;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
@@ -14,7 +15,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProcurementItemDto {
+public class ProcurementItemDto implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private UUID id;
 
@@ -24,11 +27,9 @@ public class ProcurementItemDto {
 
     private String category;
 
-
     private Integer quantity;
 
     private String unit;
-
 
     private BigDecimal unitPrice;
 

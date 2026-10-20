@@ -50,7 +50,7 @@ public class RejectionNotificationDelegate implements JavaDelegate {
 
                 // Evict cache
                 if (cacheManager.getCache("procurement_tickets") != null) {
-                    cacheManager.getCache("procurement_tickets").evict(ticketId);
+                    cacheManager.getCache("procurement_tickets").clear();
                 }
 
                 // Phát hành sự kiện vào Message Queue 

@@ -145,7 +145,7 @@
     </section>
   }
 
-  <form class="toolbar" [formGroup]="filterForm">
+  <div class="toolbar" [formGroup]="filterForm">
     <label class="search-box">
       <i class="fa fa-search" aria-hidden="true"></i>
       <input
@@ -171,7 +171,74 @@
         }
       </select>
     </label>
-  </form>
+    <button
+      type="button"
+      class="btn btn-advanced-search"
+      [class.active]="isAdvancedSearchOpen"
+      [attr.aria-expanded]="isAdvancedSearchOpen"
+      (click)="toggleAdvancedSearch()"
+    >
+      <i class="fa fa-sliders" aria-hidden="true"></i>
+      Tìm kiếm nâng cao
+    </button>
+
+    @if (isAdvancedSearchOpen) {
+      <div class="advanced-search-panel">
+        <label class="advanced-field">
+          <span>Mã đơn đặt hàng</span>
+          <input type="search" formControlName="orderCode" placeholder="Ví dụ: PO-2026-001" />
+        </label>
+        <label class="advanced-field">
+          <span>Phiếu mua sắm</span>
+          <input type="search" formControlName="ticket" placeholder="Mã phiếu hoặc tiêu đề" />
+        </label>
+        <label class="advanced-field">
+          <span>Nhà cung cấp</span>
+          <select formControlName="supplierId" [disabled]="loadingSuppliers">
+            <option value="">
+              {{ loadingSuppliers ? 'Đang tải nhà cung cấp...' : 'Tất cả nhà cung cấp' }}
+            </option>
+            @if (!loadingSuppliers && !supplierOptions.length) {
+              <option value="" disabled>Không tìm thấy nhà cung cấp</option>
+            }
+            @for (supplier of supplierOptions; track supplier.id) {
+              <option [value]="supplier.id">{{ supplier.name }} ({{ supplier.code }})</option>
+            }
+          </select>
+        </label>
+        <label class="advanced-field">
+          <span>Giá trị từ</span>
+          <input type="number" min="0" formControlName="minimumAmount" placeholder="Tối thiểu" />
+        </label>
+        <label class="advanced-field">
+          <span>Đến</span>
+          <input type="number" min="0" formControlName="maximumAmount" placeholder="Tối đa" />
+        </label>
+        <label class="advanced-field">
+          <span>Ngày tạo từ</span>
+          <input type="date" formControlName="createdFrom" />
+        </label>
+        <label class="advanced-field">
+          <span>Ngày tạo đến</span>
+          <input type="date" formControlName="createdTo" />
+        </label>
+        <label class="advanced-field">
+          <span>Ngày giao dự kiến từ</span>
+          <input type="date" formControlName="deliveryFrom" />
+        </label>
+        <label class="advanced-field">
+          <span>Ngày giao dự kiến đến</span>
+          <input type="date" formControlName="deliveryTo" />
+        </label>
+        <div class="advanced-search-footer">
+          <button type="button" class="btn btn-outline" (click)="resetFilters()">
+            <i class="fa fa-undo" aria-hidden="true"></i>
+            Xóa bộ lọc
+          </button>
+        </div>
+      </div>
+    }
+  </div>
 
   <div class="table-card">
     @if (loading) {
@@ -181,9 +248,18 @@
       </div>
     } @else if (!filteredOrders.length) {
       <div class="state-panel empty-state">
-        <i class="fa fa-shopping-basket" aria-hidden="true"></i>
-        <h2>Chưa có đơn đặt hàng</h2>
-        <p>Tạo đơn từ một phiếu đã duyệt để bắt đầu theo dõi giao dịch với nhà cung cấp.</p>
+        @if (orders.length) {
+          <i class="fa fa-search" aria-hidden="true"></i>
+          <h2>Không tìm thấy đơn đặt hàng phù hợp</h2>
+          <p>Thay đổi tiêu chí hoặc xóa bộ lọc để xem lại danh sách.</p>
+          <button type="button" class="btn btn-outline" (click)="resetFilters()">
+            Xóa bộ lọc
+          </button>
+        } @else {
+          <i class="fa fa-shopping-basket" aria-hidden="true"></i>
+          <h2>Chưa có đơn đặt hàng</h2>
+          <p>Tạo đơn từ một phiếu đã duyệt để bắt đầu theo dõi giao dịch với nhà cung cấp.</p>
+        }
       </div>
     } @else {
       <div class="table-responsive">

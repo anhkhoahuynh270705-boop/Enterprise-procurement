@@ -4,7 +4,7 @@ import { environment } from '../../../../environments/environment';
 import { SupplierProposal, SupplierProposalRequest } from '../models/supplier-proposal';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class SupplierProposalService {
   private readonly http = inject(HttpClient);

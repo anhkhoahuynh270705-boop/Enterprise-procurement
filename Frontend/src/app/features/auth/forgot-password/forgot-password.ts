@@ -22,7 +22,6 @@ export class ForgotPassword {
   });
 
   isLoading = false;
-
   isSubmitted = false;
 
   get f() {
@@ -40,6 +39,7 @@ export class ForgotPassword {
       next: () => {
         this.isLoading = false;
         this.isSubmitted = true;
+        this.toast.success('Yêu cầu đặt lại mật khẩu đã được tiếp nhận. Hãy kiểm tra email của bạn.');
       },
       error: (err) => {
         this.isLoading = false;

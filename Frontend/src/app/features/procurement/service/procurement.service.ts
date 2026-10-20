@@ -81,11 +81,11 @@ export class ProcurementService {
     });
   }
 
-  // downloadTemplate(): Observable<Blob> {
-  //   return this.http.get(`${this.apiUrl}/template`, {
-  //     responseType: 'blob'
-  //   });
-  // }
+  downloadTemplate(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/template`, {
+      responseType: 'blob',
+    });
+  }
 
   importExcel(file: File): Observable<ApiResponse<ImportResult>> {
     const formData = new FormData();
