@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
 
 import com.example.shopping.common.enums.ErrorEnum;
 
@@ -48,28 +49,18 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     SupplierRepository supplierRepository;
     PurchaseOrderMapper purchaseOrderMapper;
     PurchaseOrderWorkflowService workflow;
+    PurchaseOrderCache purchaseOrderCache;
 
     @Override
     @Transactional(readOnly = true)
     public List<PurchaseOrderResponse> getPurchaseOrders(PurchaseOrderStatus status) {
         TicketAccess.requireReader();
-        boolean isStaffOrChecker = TicketAccess.hasRole("ADMIN") || TicketAccess.hasRole("CHECKER");
-        return purchaseOrderRepository.findAllByOrderByCreatedAtDesc().stream()
-                .filter(order -> {
-                    if (!isStaffOrChecker) {
-                        if (order.getStatus() != PurchaseOrderStatus.SENT
-                                && order.getStatus() != PurchaseOrderStatus.RECEIVED) {
-                            return false;
-                        }
-                    }
-                    return status == null || order.getStatus() == status;
-                })
-                .map(purchaseOrderMapper::toResponse)
-                .toList();
+        return purchaseOrderCache.getPurchaseOrders(status);
     }
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = PurchaseOrderCache.CACHE_NAME, allEntries = true)
     public synchronized PurchaseOrderResponse createPurchaseOrder(CreatePurchaseOrderRequest request) {
         if (!TicketAccess.hasRole("USER") && !TicketAccess.hasRole("ADMIN")) {
             throw ErrorEnum.ACCESS_DENIED.ex(
@@ -144,6 +135,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = PurchaseOrderCache.CACHE_NAME, allEntries = true)
     public PurchaseOrderResponse updateStatus(UUID id, PurchaseOrderStatus status) {
         if (!TicketAccess.hasRole("ADMIN") && !TicketAccess.hasRole("CHECKER")) {
             throw ErrorEnum.ACCESS_DENIED.ex(

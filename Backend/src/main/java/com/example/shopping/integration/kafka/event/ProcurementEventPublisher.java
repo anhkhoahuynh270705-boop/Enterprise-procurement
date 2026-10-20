@@ -1,7 +1,6 @@
 package com.example.shopping.integration.kafka.event;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -16,15 +15,10 @@ public class ProcurementEventPublisher {
 
     public static final String TOPIC_PROCUREMENT_EVENTS = "procurement-events";
 
-    private final ApplicationEventPublisher applicationEventPublisher;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Autowired
-    public ProcurementEventPublisher(
-            ApplicationEventPublisher applicationEventPublisher,
-            @Autowired(required = false) 
-            KafkaTemplate<String, Object> kafkaTemplate) {
-        this.applicationEventPublisher = applicationEventPublisher;
+    public ProcurementEventPublisher(KafkaTemplate<String, Object> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
     }
 
@@ -32,16 +26,14 @@ public class ProcurementEventPublisher {
     public void publishEvent(ProcurementEvent event) {
         log.info("Event cho phiếu:", event.getEventType(), event.getTicketCode());
 
-        // Thử gửi qua Kafka Message Queue
-        if (kafkaTemplate != null) {
-            try {
-                kafkaTemplate.send(TOPIC_PROCUREMENT_EVENTS, event.getTicketCode(), event);
-                log.info("Đã đẩy message vào Kafka topic.", TOPIC_PROCUREMENT_EVENTS);
-            } catch (Exception e) {
-                log.warn("Không thể gửi vào Kafka topic: ",
-                        TOPIC_PROCUREMENT_EVENTS, e.getMessage());
-            }
-        }
-        applicationEventPublisher.publishEvent(event);
+        kafkaTemplate.send(TOPIC_PROCUREMENT_EVENTS, event.getTicketCode(), event)
+                .whenComplete((result, error) -> {
+                    if (error != null) {
+                        log.error("Không thể gửi sự kiện vào Kafka",
+                                TOPIC_PROCUREMENT_EVENTS, error.getMessage(), error);
+                        return;
+                    }
+                    log.info("Đã gửi sự kiện vào Kafka", TOPIC_PROCUREMENT_EVENTS);
+                });
     }
 }

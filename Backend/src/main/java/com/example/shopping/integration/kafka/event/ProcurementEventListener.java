@@ -1,8 +1,6 @@
 package com.example.shopping.integration.kafka.event;
 
-import org.springframework.context.event.EventListener;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import com.example.shopping.integration.kafka.model.ProcurementEvent;
@@ -21,9 +19,7 @@ public class ProcurementEventListener {
         this.notificationServiceFactory = notificationServiceFactory;
     }
 
-    @Async
-    @EventListener
-    public void handleProcurementEvent(ProcurementEvent event) {
+    public void processProcurementEvent(ProcurementEvent event) {
         log.info("Nhận sự kiện cho phiếu:", event.getEventType(), event.getTicketCode());
         for (NotificationService service : notificationServiceFactory.getAllServices()) {
             try {
@@ -34,9 +30,9 @@ public class ProcurementEventListener {
         }
     }
 
-    @KafkaListener(topics = ProcurementEventPublisher.TOPIC_PROCUREMENT_EVENTS, groupId = "procurement-group", autoStartup = "false")
+    @KafkaListener(topics = ProcurementEventPublisher.TOPIC_PROCUREMENT_EVENTS, groupId = "procurement-group", autoStartup = "true")
     public void handleKafkaMessage(ProcurementEvent event) {
         log.info("Nhận message từ Kafka:", event);
-        handleProcurementEvent(event);
+        processProcurementEvent(event);
     }
 }

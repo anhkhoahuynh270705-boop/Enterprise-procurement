@@ -209,3 +209,23 @@
         }
     }
 }
+.procurement-prefill-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border: 1px solid #b7d8f5;
+  border-radius: 8px;
+  background: #eef7ff;
+  color: #174b75;
+
+  i {
+    margin-top: 3px;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+

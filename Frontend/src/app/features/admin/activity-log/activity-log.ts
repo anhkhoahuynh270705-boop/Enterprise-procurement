@@ -68,7 +68,7 @@ export class ActivityLog implements OnInit, OnDestroy {
     return this.pagedData?.totalElements ?? 0;
   }
   get totalPages(): number {
-    return this.pagedData?.totalPages ?? 1;
+    return Math.max(1, this.pagedData?.totalPages ?? 1);
   }
 
   get statTotal(): number {
@@ -132,6 +132,11 @@ export class ActivityLog implements OnInit, OnDestroy {
   }
 
   onFilterChange(): void {
+    this.currentPage = 0;
+    this.load();
+  }
+
+  onSearch(): void {
     this.currentPage = 0;
     this.load();
   }

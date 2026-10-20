@@ -73,19 +73,21 @@ public enum ErrorEnum {
 
     // Procurement
     TICKET_NOT_FOUND                (HttpStatus.NOT_FOUND,              "Không tìm thấy phiếu mua sắm."),
+    TICKET_DUPLICATE_IMPORT         (HttpStatus.CONFLICT,               "Phiếu mua sắm này trùng với phiếu đã có trong hệ thống."),
     TICKET_NOT_APPROVED             (HttpStatus.CONFLICT,               "Chỉ phiếu mua sắm đã được duyệt mới tạo được đơn đặt hàng."),
     TICKET_ITEM_DUPLICATE           (HttpStatus.BAD_REQUEST,            "Danh sách hạng mục không được chứa dòng trùng lặp."),
     TICKET_ITEM_NOT_IN_TICKET       (HttpStatus.BAD_REQUEST,            "Một hoặc nhiều hạng mục không thuộc phiếu mua sắm đã chọn."),
     TICKET_SELF_APPROVE             (HttpStatus.BAD_REQUEST,            "Không được duyệt phiếu cho chính mình tự tạo."),
     TICKET_NO_PENDING_TASK          (HttpStatus.BAD_REQUEST,            "Phiếu không có nhiệm vụ chờ duyệt hợp lệ."),
     EXCEL_NO_SHEET                  (HttpStatus.BAD_REQUEST,            "File Excel không có sheet nào."),
-    EXCEL_INVALID_FILE              (HttpStatus.BAD_REQUEST,            "File import không hợp lệ. Vui lòng chọn file Excel .xlsx hoặc .xls không rỗng."),
-    EXCEL_UNREADABLE                (HttpStatus.BAD_REQUEST,            "File import không hợp lệ. File phải là Excel đọc được, có trang tính và không được khóa bằng mật khẩu."),
+    EXCEL_INVALID_FILE              (HttpStatus.BAD_REQUEST,            "File Sai định dạng. Vui lòng chọn file Excel .xlsx hoặc .xls không rỗng."),
+    EXCEL_UNREADABLE                (HttpStatus.BAD_REQUEST,            "File Sai định dạng. File phải là Excel đọc được, có trang tính và không được khóa bằng mật khẩu."),
     TICKET_CANNOT_SUBMIT            (HttpStatus.CONFLICT,               "Chỉ phiếu ở trạng thái Nháp hoặc Đã từ chối mới được nộp duyệt."),
     TICKET_CANNOT_EDIT              (HttpStatus.CONFLICT,               "Chỉ được sửa phiếu ở trạng thái Nháp hoặc bị từ chối."),
     TICKET_CANNOT_DELETE            (HttpStatus.CONFLICT,               "Chỉ được xóa phiếu ở trạng thái Nháp hoặc bị từ chối."),
-    EXCEL_MISSING_TEMPLATE_HEADERS  (HttpStatus.BAD_REQUEST,            "File import không hợp lệ. Vui lòng dùng mẫu vật tư."),
-    EXCEL_INVALID_SUPPLIER_TEMPLATE (HttpStatus.BAD_REQUEST,            "File import không hợp lệ. Vui lòng dùng đúng mẫu nhà cung cấp."),
+    TICKET_UNREGISTERED_SUPPLIERS    (HttpStatus.CONFLICT,               "Không thể duyệt phiếu khi còn nhà cung cấp chưa có trong hệ thống."),
+    EXCEL_MISSING_TEMPLATE_HEADERS  (HttpStatus.BAD_REQUEST,            "File Sai định dạng vật tư. Vui lòng dùng đúng mẫu vật tư và thử lại."),
+    EXCEL_INVALID_SUPPLIER_TEMPLATE (HttpStatus.BAD_REQUEST,            "File Sai định dạng nhà cung cấp. Vui lòng dùng đúng mẫu nhà cung cấp và thử lại."),
 
     // Purchase Order
     PURCHASE_ORDER_NOT_FOUND        (HttpStatus.NOT_FOUND,              "Không tìm thấy đơn đặt hàng."),

@@ -103,21 +103,21 @@ public class ProcurementReportController {
         }
     }
 
-    // @GetMapping("/template")
-    // public ResponseEntity<byte[]> downloadSampleTemplate() {
-    // try {
-    // byte[] templateBytes = reportService.generateSampleTemplate();
-    // String filename = "Mau_nhap_phieu_mua_sam.xlsx";
-    // return ResponseEntity.ok()
-    // .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" +
-    // report.filename() + "\"")
-    // .contentType(MediaType.parseMediaType(report.contentType()))
-    // .body(templateBytes);
-    // } catch (Exception e) {
-    // log.error("Lỗi khi tạo template phiếu mua sắm: {}", e.getMessage(), e);
-    // return ResponseEntity.internalServerError().build();
-    // }
-    // }
+    @GetMapping("/template")
+    public ResponseEntity<byte[]> downloadSampleTemplate() {
+        try {
+            byte[] templateBytes = reportService.generateSampleTemplate();
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"Mau_nhap_phieu_mua_sam.xlsx\"")
+                    .contentType(MediaType.parseMediaType(
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(templateBytes);
+        } catch (Exception e) {
+            log.error("Lỗi khi tạo template phiếu mua sắm:", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<ImportResultDto>> importTickets(
             @RequestParam("file") MultipartFile file,

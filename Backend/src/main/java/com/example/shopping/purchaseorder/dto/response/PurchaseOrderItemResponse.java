@@ -1,5 +1,6 @@
 package com.example.shopping.purchaseorder.dto.response;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -15,5 +16,5 @@ public record PurchaseOrderItemResponse(
         Integer quantity,
         String unit,
         BigDecimal unitPrice,
-        BigDecimal totalPrice) {
+        BigDecimal totalPrice) implements Serializable {
 }

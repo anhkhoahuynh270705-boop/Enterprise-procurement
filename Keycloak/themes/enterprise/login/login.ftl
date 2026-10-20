@@ -1,8 +1,34 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout displayMessage=!messagesPerField.existsError('username','password') displayInfo=realm.password && realm.registrationAllowed && !registrationDisabled??; section>
+<#assign resetEmailSent = false>
+<#if message?? && message.summary?? && message.summary == msg("emailSentMessage")>
+    <#assign resetEmailSent = true>
+</#if>
+<#assign showLoginMessage = !resetEmailSent && !messagesPerField.existsError('username','password')>
+<#assign showRegistrationInfo = !resetEmailSent && realm.password && realm.registrationAllowed && !registrationDisabled??>
+<@layout.registrationLayout displayMessage=showLoginMessage displayInfo=showRegistrationInfo; section>
     <#if section = "header">
-        ${msg("loginAccountTitle")}
+        <#if resetEmailSent>
+            ${msg("enterpriseResetSentTitle")}
+        <#else>
+            ${msg("loginAccountTitle")}
+        </#if>
     <#elseif section = "form">
+        <#if resetEmailSent>
+            <div class="enterprise-reset-success" role="status" aria-live="polite">
+                <div class="enterprise-reset-success-icon" aria-hidden="true">
+                    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="24" cy="24" r="21" stroke="currentColor" stroke-width="2.5"/>
+                        <path d="m14 24 7 7 14-15" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h2>${msg("enterpriseResetSentTitle")}</h2>
+                <p>${msg("enterpriseResetSentBody")}</p>
+                <a class="enterprise-reset-back" href="${url.loginUrl}">
+                    <i class="fa fa-arrow-left" aria-hidden="true"></i>
+                    ${msg("backToLogin")}
+                </a>
+            </div>
+        <#else>
         <div id="kc-form">
           <div id="kc-form-wrapper">
             <#if realm.password>
@@ -64,7 +90,7 @@
                             </div>
                             <div class="${properties.kcFormOptionsWrapperClass!}">
                                 <#if realm.resetPasswordAllowed>
-                                    <span><a tabindex="6" href="${url.loginResetCredentialsUrl}<#if locale?? && locale.currentLanguageTag??>&amp;kc_locale=${locale.currentLanguageTag?url}</#if>">${msg("doForgotPassword")}</a></span>
+                                    <span><a tabindex="6" href="${url.loginResetCredentialsUrl}<#if locale?? && locale.currentLanguageTag??>&amp;kc_locale=${locale.currentLanguageTag?url('UTF-8')}</#if>">${msg("doForgotPassword")}</a></span>
                                 </#if>
                             </div>
 
@@ -79,8 +105,9 @@
             </div>
         </div>
         <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
+        </#if>
     <#elseif section = "info" >
-        <#if realm.password && realm.registrationAllowed && !registrationDisabled??>
+        <#if !resetEmailSent && realm.password && realm.registrationAllowed && !registrationDisabled??>
             <div id="kc-registration-container">
                 <div id="kc-registration">
                     <span>${msg("noAccount")} <a tabindex="8"
@@ -89,7 +116,7 @@
             </div>
         </#if>
     <#elseif section = "socialProviders" >
-        <#if realm.password && social?? && social.providers?has_content>
+        <#if !resetEmailSent && realm.password && social?? && social.providers?has_content>
             <div id="kc-social-providers" class="${properties.kcFormSocialAccountSectionClass!}">
                 <hr/>
                 <h2>${msg("identity-provider-login-label")}</h2>

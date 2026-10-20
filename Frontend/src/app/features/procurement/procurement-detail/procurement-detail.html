@@ -100,6 +100,30 @@
           </div>
         </div>
       </div>
+      @if (
+        currentTicket.status === 'PENDING_APPROVAL' &&
+        currentTicket.unregisteredSuppliers?.length
+      ) {
+        <div class="supplier-warning" role="alert">
+          <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+          <div class="supplier-warning-content">
+            <strong>Nhà cung cấp chưa có trong hệ thống</strong>
+            <p>
+              {{ currentTicket.unregisteredSuppliers?.join(', ') }}.
+              Vui lòng cập nhật đầy đủ thông tin trước khi duyệt.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="supplier-warning-action"
+            aria-label="Cập nhật thông tin nhà cung cấp chưa có trong hệ thống"
+            (click)="updateUnregisteredSupplier()"
+          >
+            <i class="fa fa-pencil" aria-hidden="true"></i>
+            Cập nhật nhà cung cấp
+          </button>
+        </div>
+      }
       <div class="card stepper-card">
         <h3 class="card-title">Quy Trình Phê Duyệt</h3>
 
@@ -382,7 +406,7 @@
                   </button>
                 </th>
                 <th>Tên hàng hóa / Mô tả dịch vụ</th>
-                <th>Phân loại</th>
+                <th>Danh mục</th>
                 <th style="text-align: right">Số lượng</th>
                 <th>Đơn vị</th>
                 <th style="text-align: right">Đơn giá</th>
@@ -560,8 +584,8 @@
             type="button"
             class="review-approve"
             (click)="submitReview(true)"
-            [disabled]="isReviewing"
-            title="Chấp thuận và tạo phiếu"
+            [disabled]="isReviewing || hasUnregisteredSuppliers"
+            [title]="hasUnregisteredSuppliers ? 'Cập nhật nhà cung cấp trước khi duyệt' : 'Chấp thuận và tạo phiếu'"
           >
             @if (isReviewing) {
               <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>

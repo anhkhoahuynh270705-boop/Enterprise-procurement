@@ -8,7 +8,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -28,6 +30,7 @@ import com.example.shopping.supplier.report.dto.response.SupplierImportRowErrorD
 import com.example.shopping.supplier.report.exporter.SupplierExcelExporter;
 import com.example.shopping.supplier.report.exporter.SupplierPdfExporter;
 import com.example.shopping.supplier.repository.SupplierRepository;
+import com.example.shopping.supplier.util.SupplierNameNormalizer;
 import com.example.shopping.supplier.service.SupplierService;
 
 import lombok.RequiredArgsConstructor;
@@ -86,6 +89,8 @@ public class SupplierReportServiceImpl implements SupplierReportService {
     public SupplierImportResultDto importSuppliersExcel(InputStream inputStream) throws Exception {
         List<SupplierImportRowErrorDto> errors = new ArrayList<>();
         List<SupplierResponseDto> createdSuppliers = new ArrayList<>();
+        Set<String> importedNames = new HashSet<>();
+        Set<String> importedTaxCodes = new HashSet<>();
 
         try (Workbook workbook = ImportWorkbookValidator.open(inputStream)) {
             Sheet sheet = workbook.getSheetAt(0);
@@ -115,6 +120,7 @@ public class SupplierReportServiceImpl implements SupplierReportService {
                 String email = getCellStringValue(sheet, i, headers, "Email");
                 String phone = getCellStringValue(sheet, i, headers, "Số điện thoại");
                 String taxCode = getCellStringValue(sheet, i, headers, "Mã số thuế");
+                taxCode = taxCode == null || taxCode.isBlank() ? null : taxCode.trim();
                 String address = getCellStringValue(sheet, i, headers, "Địa chỉ");
                 String city = getCellStringValue(sheet, i, headers, "Thành phố");
                 String country = getCellStringValue(sheet, i, headers, "Quốc gia");
@@ -122,11 +128,20 @@ public class SupplierReportServiceImpl implements SupplierReportService {
                 String bankAccount = getCellStringValue(sheet, i, headers, "Số tài khoản");
                 String notes = getCellStringValue(sheet, i, headers, "Ghi chú");
 
-                if (taxCode != null && !taxCode.isBlank() && supplierRepository.existsByTaxCode(taxCode)) {
+                String normalizedName = normalizeSupplierKey(name);
+                String normalizedTaxCode = taxCode == null ? null : normalizeSupplierKey(taxCode);
+                boolean duplicateName = importedNames.contains(normalizedName)
+                        || !supplierRepository.findExistingNormalizedNames(Set.of(normalizedName)).isEmpty();
+                boolean duplicateTaxCode = normalizedTaxCode != null
+                        && (importedTaxCodes.contains(normalizedTaxCode)
+                                || supplierRepository.existsByNormalizedTaxCode(normalizedTaxCode));
+                if (duplicateName || duplicateTaxCode) {
                     errors.add(SupplierImportRowErrorDto.builder()
                             .rowNumber(i + 1)
-                            .field("Mã số thuế")
-                            .errorMessage("Mã số thuế đã tồn tại trong hệ thống: " + taxCode)
+                            .field(duplicateTaxCode ? "Mã số thuế" : "Tên nhà cung cấp")
+                            .errorMessage(duplicateTaxCode
+                                    ? "Nhà cung cấp có mã số thuế này đã được nhập hoặc tồn tại trong hệ thống: " + taxCode
+                                    : "Tên nhà cung cấp đã được nhập hoặc tồn tại trong hệ thống: " + name)
                             .build());
                     continue;
                 }
@@ -148,6 +163,10 @@ public class SupplierReportServiceImpl implements SupplierReportService {
 
                     SupplierResponseDto created = supplierService.createSupplier(request);
                     createdSuppliers.add(created);
+                    importedNames.add(normalizedName);
+                    if (normalizedTaxCode != null) {
+                        importedTaxCodes.add(normalizedTaxCode);
+                    }
                 } catch (Exception e) {
                     errors.add(SupplierImportRowErrorDto.builder()
                             .rowNumber(i + 1)
@@ -168,6 +187,10 @@ public class SupplierReportServiceImpl implements SupplierReportService {
                     .errors(errors)
                     .build();
         }
+    }
+
+    private String normalizeSupplierKey(String value) {
+        return SupplierNameNormalizer.normalize(value);
     }
 
     private boolean isBlankRow(Row row) {

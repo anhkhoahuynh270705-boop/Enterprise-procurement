@@ -84,6 +84,9 @@ public class ProcurementTicket {
     @Column(name = "camunda_process_instance_id", length = 100)
     private String camundaProcessInstanceId;
 
+    @Column(name = "import_fingerprint", unique = true, length = 64)
+    private String importFingerprint;
+
     @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     @Builder.Default

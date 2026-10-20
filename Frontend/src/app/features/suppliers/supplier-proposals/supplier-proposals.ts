@@ -3,6 +3,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { ChangeDetectorRef, Component, inject, OnInit, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../auth/services/auth.service';
 import { SupplierProposalService } from '../services/supplier-proposal.service';
 import { ProposalStatus, SupplierProposal } from '../models/supplier-proposal';
@@ -31,6 +32,7 @@ export class SupplierProposals implements OnInit {
   private readonly service = inject(SupplierProposalService);
   private readonly fb = inject(FormBuilder);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly route = inject(ActivatedRoute);
   readonly isAdmin = this.auth.hasRole('ADMIN');
   readonly isReviewer = this.auth.hasRole('ADMIN', 'CHECKER');
   readonly canSubmit = this.auth.hasRole('USER', 'CHECKER');
@@ -95,6 +97,17 @@ export class SupplierProposals implements OnInit {
   );
 
   ngOnInit() {
+    const supplierName = this.route.snapshot.queryParamMap.get('name');
+    if (supplierName && this.canSubmit) {
+      const ticketCode = this.route.snapshot.queryParamMap.get('ticketCode');
+      this.form.patchValue({
+        name: supplierName,
+        reason: ticketCode
+          ? `Bổ sung nhà cung cấp cho phiếu mua sắm ${ticketCode}.`
+          : 'Bổ sung thông tin nhà cung cấp vào hệ thống.',
+      });
+      this.showForm = true;
+    }
     this.load();
   }
 

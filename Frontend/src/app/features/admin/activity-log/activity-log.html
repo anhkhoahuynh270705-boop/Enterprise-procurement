@@ -105,6 +105,7 @@
         type="search"
         placeholder="Tìm theo mã log, hành động, username..."
         [(ngModel)]="searchKeyword"
+        (ngModelChange)="onSearch()"
       />
     </div>
 

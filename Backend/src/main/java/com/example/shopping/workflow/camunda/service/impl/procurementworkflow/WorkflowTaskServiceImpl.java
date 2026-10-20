@@ -28,6 +28,8 @@ import com.example.shopping.workflow.camunda.dto.response.CamundaTaskDto;
 import com.example.shopping.workflow.camunda.mapper.WorkflowTaskMapper;
 import com.example.shopping.security.TicketAccess;
 import com.example.shopping.common.enums.ErrorEnum;
+import com.example.shopping.supplier.repository.SupplierRepository;
+import com.example.shopping.supplier.util.SupplierNameNormalizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,6 +49,7 @@ public class WorkflowTaskServiceImpl implements WorkflowTaskService {
     ProcurementTicketRepository ticketRepository;
     ProcurementMapper procurementMapper;
     WorkflowTaskMapper workflowTaskMapper;
+    SupplierRepository supplierRepository;
 
     @Transactional
     public String startProcurementProcess(ProcurementTicket ticket) {
@@ -151,13 +154,36 @@ public class WorkflowTaskServiceImpl implements WorkflowTaskService {
             throw ErrorEnum.CAMUNDA_TICKET_ID_NOT_FOUND.ex("Không tìm thấy ticketId cho processInstanceId: " + task.getProcessInstanceId());
         }
         UUID ticketId = UUID.fromString(ticketIdSrt);
-        ProcurementTicket ticket = ticketRepository.findById(ticketId).orElseThrow(() -> ErrorEnum.TICKET_NOT_FOUND.ex());
+        ProcurementTicket ticket = ticketRepository.findByIdWithItems(ticketId).orElseThrow(() -> ErrorEnum.TICKET_NOT_FOUND.ex());
         if(!TicketAccess.hasRole("ADMIN") && ticket.getMakerUsername().equals(checkerUsername)){
             throw ErrorEnum.TICKET_SELF_APPROVE.ex();
         }
         
         if (ticket.getStatus() != ProcurementStatus.PENDING_APPROVAL || !task.getProcessInstanceId().equals(ticket.getCamundaProcessInstanceId())) {
             throw ErrorEnum.TICKET_NO_PENDING_TASK.ex();
+        }
+        if (approved) {
+            Set<String> supplierCandidates = ticket.getItems().stream()
+                    .map(item -> item.getSupplierName())
+                    .map(SupplierNameNormalizer::normalize)
+                    .filter(name -> !name.isEmpty())
+                    .collect(Collectors.toSet());
+            Set<String> registeredSupplierNames = supplierCandidates.isEmpty()
+                    ? Collections.emptySet()
+                    : supplierRepository.findExistingNormalizedNames(supplierCandidates);
+            List<String> unregisteredSuppliers = ticket.getItems().stream()
+                    .map(item -> item.getSupplierName())
+                    .filter(name -> name != null && !name.isBlank())
+                    .map(String::trim)
+                    .filter(name -> !registeredSupplierNames.contains(SupplierNameNormalizer.normalize(name)))
+                    .distinct()
+                    .collect(Collectors.toList());
+            if (!unregisteredSuppliers.isEmpty()) {
+                throw ErrorEnum.TICKET_UNREGISTERED_SUPPLIERS.ex(
+                        "Không thể duyệt phiếu. Nhà cung cấp chưa có trong hệ thống: "
+                                + String.join(", ", unregisteredSuppliers)
+                                + ". Vui lòng cập nhật đầy đủ thông tin nhà cung cấp rồi thử lại.");
+            }
         }
         Map<String, Object> completeVars = new HashMap<>();
         completeVars.put("approved", approved);

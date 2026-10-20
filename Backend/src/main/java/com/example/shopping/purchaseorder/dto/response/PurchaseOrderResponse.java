@@ -1,5 +1,6 @@
 package com.example.shopping.purchaseorder.dto.response;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,5 +32,5 @@ public record PurchaseOrderResponse(
         String reviewedBy,
         LocalDateTime reviewedAt,
         String reviewComment,
-        List<PurchaseOrderItemResponse> items) {
+        List<PurchaseOrderItemResponse> items) implements Serializable {
 }

@@ -1,4 +1,11 @@
 <div class="procurement-container">
+  <input
+    #excelFileInput
+    class="import-file-input"
+    type="file"
+    accept=".xlsx,.xls"
+    (change)="onFileSelected($event)"
+  />
   <div class="page-title-bar">
     <h2>{{ isApprovalView ? 'Phê duyệt mua hàng' : 'Yêu cầu & phiếu mua sắm' }}</h2>
     <span class="sub-breadcrumb">{{
@@ -7,229 +14,281 @@
   </div>
 
   @if (!isApprovalView) {
-  <div class="tabs-container">
-    <div class="action-buttons">
-      @if (auth.hasRole('ADMIN', 'USER')) {
-        <button class="btn btn-outline" (click)="openImportModal()">
-          <i class="fa fa-upload" aria-hidden="true"></i>
-          Import Excel
-        </button>
-        <button class="btn btn-outline" (click)="exportAllExcel()">
-          <i class="fa fa-download" aria-hidden="true"></i>
-          Export Excel
-        </button>
-        <a routerLink="/procurement/create" class="btn btn-primary">
-          <i class="fa fa-plus" aria-hidden="true"></i>
-          Tạo phiếu mới
-        </a>
+    <div class="tabs-container">
+      <div class="action-buttons">
+        @if (auth.hasRole('ADMIN', 'USER')) {
+          <button class="btn btn-outline" type="button" (click)="excelFileInput.click()">
+            <i class="fa fa-upload" aria-hidden="true"></i>
+            Import Excel
+          </button>
+          <button class="btn btn-outline" type="button" (click)="downloadTemplate()">
+            <i class="fa fa-file-excel-o" aria-hidden="true"></i>
+            Tải template Excel
+          </button>
+          <button class="btn btn-outline" (click)="exportAllExcel()">
+            <i class="fa fa-download" aria-hidden="true"></i>
+            Export Excel
+          </button>
+          <a routerLink="/procurement/create" class="btn btn-primary">
+            <i class="fa fa-plus" aria-hidden="true"></i>
+            Tạo phiếu mới
+          </a>
+        }
+      </div>
+    </div>
+    <div class="toolbar" [formGroup]="filtersForm">
+      <div class="search-box">
+        <i class="fa fa-search" aria-hidden="true"></i>
+        <input type="text" placeholder="Nhập từ khóa tìm kiếm..." formControlName="searchQuery" />
+      </div>
+      <button
+        type="button"
+        class="btn-advanced-search"
+        [class.active]="isAdvancedSearchOpen"
+        [attr.aria-expanded]="isAdvancedSearchOpen"
+        (click)="isAdvancedSearchOpen = !isAdvancedSearchOpen"
+      >
+        <i class="fa fa-sliders" aria-hidden="true"></i>
+        Tìm kiếm nâng cao
+        <i
+          class="fa"
+          [ngClass]="isAdvancedSearchOpen ? 'fa-chevron-up' : 'fa-chevron-down'"
+          aria-hidden="true"
+        ></i>
+      </button>
+
+      @if (isAdvancedSearchOpen) {
+        <div class="advanced-search-panel">
+          <label>
+            <span>Trạng thái</span>
+            <select formControlName="selectedStatus">
+              <option value="">Tất cả trạng thái</option>
+              <option value="DRAFT">Bản nháp</option>
+              <option value="PENDING_APPROVAL">Chờ phê duyệt</option>
+              <option value="APPROVED">Đã phê duyệt</option>
+              <option value="REJECTED">Đã từ chối</option>
+            </select>
+          </label>
+          <label>
+            <span>Mức ưu tiên</span>
+            <select formControlName="selectedPriority">
+              <option value="">Tất cả mức ưu tiên</option>
+              <option value="LOW">Thấp</option>
+              <option value="MEDIUM">Trung bình</option>
+              <option value="HIGH">Cao</option>
+              <option value="URGENT">Khẩn cấp</option>
+            </select>
+          </label>
+          <label>
+            <span>Phòng ban</span>
+            <input type="text" formControlName="department" placeholder="Nhập phòng ban" />
+          </label>
+          <label>
+            <span>Người tạo</span>
+            <input type="text" formControlName="maker" placeholder="Tên người tạo" />
+          </label>
+          <label>
+            <span>Tạo từ ngày</span>
+            <input type="date" formControlName="createdFrom" />
+          </label>
+          <label>
+            <span>Đến ngày</span>
+            <input type="date" formControlName="createdTo" />
+          </label>
+          <div class="advanced-search-actions">
+            <button type="button" class="btn-search-reset" (click)="resetAdvancedSearch()">
+              Xóa bộ lọc
+            </button>
+          </div>
+        </div>
       }
     </div>
-  </div>
-  <div class="toolbar" [formGroup]="filtersForm">
-    <div class="search-box">
-      <i class="fa fa-search" aria-hidden="true"></i>
-      <input
-        type="text"
-        placeholder="Tìm theo mã phiếu, tiêu đề, phòng ban, maker..."
-        formControlName="searchQuery"
-        (input)="applyFilter()"
-      />
-    </div>
-    <div class="filter-box">
-      <i class="fa fa-filter" aria-hidden="true"></i>
-      <select formControlName="selectedStatus" (change)="onStatusChange()">
-        <option value="">Tất cả trạng thái</option>
-        <option value="DRAFT">Bản nháp (Draft)</option>
-        <option value="PENDING_APPROVAL">Chờ người kiểm duyệt</option>
-        <option value="APPROVED">Đã phê duyệt</option>
-        <option value="REJECTED">Đã từ chối</option>
-      </select>
-    </div>
-  </div>
 
-  <div class="table-card">
-    @if (isLoading) {
-      <div class="loading-state">
-        <div class="spinner"></div>
-        <p>Đang tải danh sách phiếu mua sắm...</p>
-      </div>
-    } @else if (filteredTickets.length === 0) {
-      <div class="empty-state">
-        <h3>Chưa có phiếu mua sắm nào</h3>
-        <p>Hãy tạo phiếu mới hoặc sử dụng tính năng Import Excel để nạp danh sách vật tư.</p>
-      </div>
-    } @else {
-      <div class="table-responsive">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>
-                Mã phiếu
-                <button
-                  type="button"
-                  class="btn-eye-toggle"
-                  (click)="toggleAllCodes()"
-                  [title]="
-                    visibleCodes.size > 0 && visibleCodes.size === filteredTickets.length
-                      ? 'Ẩn tất cả mã phiếu'
-                      : 'Hiện tất cả mã phiếu'
-                  "
-                >
-                  <i
-                    class="fa"
-                    [ngClass]="
-                      visibleCodes.size > 0 && visibleCodes.size === filteredTickets.length
-                        ? 'fa-eye-slash'
-                        : 'fa-eye'
-                    "
-                  ></i>
-                </button>
-              </th>
-              <th>Tiêu đề yêu cầu</th>
-              <th>Phòng ban</th>
-              <th>Tổng kinh phí</th>
-              <th>Mức ưu tiên</th>
-              <th>Trạng thái</th>
-              <th>Maker</th>
-              <th>Checker</th>
-              <th>Ngày tạo</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (ticket of filteredTickets; track ticket.id) {
+    <div class="table-card">
+      @if (isLoading) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Đang tải danh sách phiếu mua sắm...</p>
+        </div>
+      } @else if (filteredTickets.length === 0) {
+        <div class="empty-state">
+          <h3>Chưa có phiếu mua sắm nào</h3>
+          <p>Hãy tạo phiếu mới hoặc sử dụng tính năng Import Excel để nạp danh sách vật tư.</p>
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
               <tr>
-                <td class="code-cell">
-                  <div class="code-with-eye">
-                    <a [routerLink]="['/procurement', ticket.id]">{{
-                      isCodeVisible(ticket.id) ? ticket.ticketCode : '••••••••'
-                    }}</a>
-                    <button
-                      type="button"
-                      class="btn-eye-toggle"
-                      (click)="toggleCodeVisibility(ticket.id, $event)"
-                      [title]="isCodeVisible(ticket.id) ? 'Ẩn mã phiếu' : 'Hiện mã phiếu'"
-                    >
-                      <i
-                        class="fa"
-                        [ngClass]="isCodeVisible(ticket.id) ? 'fa-eye-slash' : 'fa-eye'"
-                      ></i>
-                    </button>
-                  </div>
-                </td>
-                <td class="title-cell">
-                  <strong>{{ ticket.title }}</strong>
-                  <div class="meta-sub">{{ ticket.items?.length || 0 }} hạng mục vật tư</div>
-                </td>
-                <td>{{ ticket.department || '—' }}</td>
-                <td class="amount-cell">
-                  {{ ticket.totalAmount | number: '1.0-0' }} {{ ticket.currency }}
-                </td>
-                <td>
-                  <span class="badge" [ngClass]="getPriorityClass(ticket.priority)">
-                    {{ ticket.priority }}
-                  </span>
-                </td>
-                <td>
-                  <span class="badge" [ngClass]="getStatusClass(ticket.status)">
-                    {{ getStatusText(ticket.status) }}
-                  </span>
-                </td>
-                <td>{{ ticket.makerUsername }}</td>
-                <td>{{ ticket.checkerUsername || '—' }}</td>
-                <td>{{ ticket.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
-                <td class="actions-cell">
-                  <div class="actions-wrapper">
-                    @if (auth.hasRole('ADMIN', 'USER')) {
-                      <div class="action-row export-row">
-                        <button
-                          class="btn-icon"
-                          title="Xuất PDF phiếu"
-                          (click)="exportTicketPdf(ticket)"
-                        >
-                          <i class="fa fa-download" aria-hidden="true"></i>
-                          PDF
-                        </button>
-                        <button
-                          class="btn-icon"
-                          title="Xuất Excel phiếu"
-                          (click)="exportTicketExcel(ticket)"
-                        >
-                          <i class="fa fa-download" aria-hidden="true"></i>
-                          XLSX
-                        </button>
-                        @if (ticket.status === 'DRAFT' || ticket.status === 'REJECTED') {
+                <th>
+                  Mã phiếu
+                  <button
+                    type="button"
+                    class="btn-eye-toggle"
+                    (click)="toggleAllCodes()"
+                    [title]="
+                      visibleCodes.size > 0 && visibleCodes.size === filteredTickets.length
+                        ? 'Ẩn tất cả mã phiếu'
+                        : 'Hiện tất cả mã phiếu'
+                    "
+                  >
+                    <i
+                      class="fa"
+                      [ngClass]="
+                        visibleCodes.size > 0 && visibleCodes.size === filteredTickets.length
+                          ? 'fa-eye-slash'
+                          : 'fa-eye'
+                      "
+                    ></i>
+                  </button>
+                </th>
+                <th>Tiêu đề yêu cầu</th>
+                <th>Phòng ban</th>
+                <th>Tổng kinh phí</th>
+                <th>Mức ưu tiên</th>
+                <th>Trạng thái</th>
+                <th>Maker</th>
+                <th>Checker</th>
+                <th>Ngày tạo</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ticket of filteredTickets; track ticket.id) {
+                <tr>
+                  <td class="code-cell">
+                    <div class="code-with-eye">
+                      <a [routerLink]="['/procurement', ticket.id]">{{
+                        isCodeVisible(ticket.id) ? ticket.ticketCode : '••••••••'
+                      }}</a>
+                      <button
+                        type="button"
+                        class="btn-eye-toggle"
+                        (click)="toggleCodeVisibility(ticket.id, $event)"
+                        [title]="isCodeVisible(ticket.id) ? 'Ẩn mã phiếu' : 'Hiện mã phiếu'"
+                      >
+                        <i
+                          class="fa"
+                          [ngClass]="isCodeVisible(ticket.id) ? 'fa-eye-slash' : 'fa-eye'"
+                        ></i>
+                      </button>
+                    </div>
+                  </td>
+                  <td class="title-cell">
+                    <strong>{{ ticket.title }}</strong>
+                    <div class="meta-sub">{{ ticket.items?.length || 0 }} hạng mục vật tư</div>
+                  </td>
+                  <td>{{ ticket.department || '—' }}</td>
+                  <td class="amount-cell">
+                    {{ ticket.totalAmount | number: '1.0-0' }} {{ ticket.currency }}
+                  </td>
+                  <td>
+                    <span class="badge" [ngClass]="getPriorityClass(ticket.priority)">
+                      {{ ticket.priority }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge" [ngClass]="getStatusClass(ticket.status)">
+                      {{ getStatusText(ticket.status) }}
+                    </span>
+                  </td>
+                  <td>{{ ticket.makerUsername }}</td>
+                  <td>{{ ticket.checkerUsername || '—' }}</td>
+                  <td>{{ ticket.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td class="actions-cell">
+                    <div class="actions-wrapper">
+                      @if (auth.hasRole('ADMIN', 'USER')) {
+                        <div class="action-row export-row">
                           <button
-                            class="btn-sm btn-submit"
-                            title="Nộp duyệt phiếu"
-                            (click)="submitTicket(ticket)"
+                            class="btn-icon"
+                            title="Xuất PDF phiếu"
+                            (click)="exportTicketPdf(ticket)"
                           >
-                            <i class="fa fa-paper-plane" aria-hidden="true"></i>
-                            Nộp duyệt
+                            <i class="fa fa-download" aria-hidden="true"></i>
+                            PDF
+                          </button>
+                          <button
+                            class="btn-icon"
+                            title="Xuất Excel phiếu"
+                            (click)="exportTicketExcel(ticket)"
+                          >
+                            <i class="fa fa-download" aria-hidden="true"></i>
+                            XLSX
+                          </button>
+                          @if (ticket.status === 'DRAFT' || ticket.status === 'REJECTED') {
+                            <button
+                              class="btn-sm btn-submit"
+                              title="Nộp duyệt phiếu"
+                              (click)="submitTicket(ticket)"
+                            >
+                              <i class="fa fa-paper-plane" aria-hidden="true"></i>
+                              Nộp duyệt
+                            </button>
+                          }
+                        </div>
+                      }
+                      <div class="action-row crud-row">
+                        <a
+                          class="btn-action btn-view"
+                          title="Xem chi tiết phiếu"
+                          [routerLink]="['/procurement', ticket.id]"
+                        >
+                          <i class="fa fa-eye" aria-hidden="true"></i>
+                        </a>
+                        @if (canModifyTicket(ticket)) {
+                          <a
+                            class="btn-action btn-edit"
+                            title="Sửa phiếu"
+                            [routerLink]="['/procurement/edit', ticket.id]"
+                          >
+                            <i class="fa fa-pencil" aria-hidden="true"></i>
+                          </a>
+                        }
+                        @if (canDeleteTicket(ticket)) {
+                          <button
+                            class="btn-action btn-delete"
+                            title="Xóa phiếu"
+                            (click)="deleteTicket(ticket)"
+                          >
+                            <i class="fa fa-trash" aria-hidden="true"></i>
                           </button>
                         }
                       </div>
-                    }
-                    <div class="action-row crud-row">
-                      <a
-                        class="btn-action btn-view"
-                        title="Xem chi tiết phiếu"
-                        [routerLink]="['/procurement', ticket.id]"
-                      >
-                        <i class="fa fa-eye" aria-hidden="true"></i>
-                      </a>
-                      @if (canModifyTicket(ticket)) {
-                        <a
-                          class="btn-action btn-edit"
-                          title="Sửa phiếu"
-                          [routerLink]="['/procurement/edit', ticket.id]"
-                        >
-                          <i class="fa fa-pencil" aria-hidden="true"></i>
-                        </a>
-                      }
-                      @if (canDeleteTicket(ticket)) {
-                        <button
-                          class="btn-action btn-delete"
-                          title="Xóa phiếu"
-                          (click)="deleteTicket(ticket)"
-                        >
-                          <i class="fa fa-trash" aria-hidden="true"></i>
-                        </button>
-                      }
                     </div>
-                  </div>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    @if (totalPages > 1) {
+      <div class="ticket-pagination">
+        <button
+          type="button"
+          class="btn btn-outline"
+          (click)="goToPage(currentPage - 1)"
+          [disabled]="currentPage === 0"
+        >
+          Trang trước
+        </button>
+
+        <span class="ticket-pagination__info">
+          Trang {{ currentPage + 1 }} / {{ totalPages }}
+        </span>
+
+        <button
+          type="button"
+          class="btn btn-outline"
+          (click)="goToPage(currentPage + 1)"
+          [disabled]="currentPage >= totalPages - 1"
+        >
+          Trang sau
+        </button>
       </div>
     }
-  </div>
-
-  @if (totalPages > 1) {
-    <div class="ticket-pagination">
-      <button
-        type="button"
-        class="btn btn-outline"
-        (click)="goToPage(currentPage - 1)"
-        [disabled]="currentPage === 0"
-      >
-        Trang trước
-      </button>
-
-      <span class="ticket-pagination__info"> Trang {{ currentPage + 1 }} / {{ totalPages }} </span>
-
-      <button
-        type="button"
-        class="btn btn-outline"
-        (click)="goToPage(currentPage + 1)"
-        [disabled]="currentPage >= totalPages - 1"
-      >
-        Trang sau
-      </button>
-    </div>
-  }
   }
 
   @if (isApprovalView) {
@@ -418,30 +477,24 @@
             "
           >
             <p style="margin: 0">
-              Chọn file Excel danh mục hàng hóa/thiết bị cần mua. Các dòng hợp lệ sẽ được tạo thành
-              phiếu và tự động gửi duyệt.
+              Điền đủ các cột bắt buộc trong template.
             </p>
-            <!-- <button type="button" class="btn btn-outline btn-sm" (click)="downloadTemplate()" title="Tải file Excel mẫu">
-            <i class="fa fa-download"></i> Tải file mẫu Excel
-          </button> -->
+            <button type="button" class="btn btn-outline btn-sm" (click)="downloadTemplate()">
+              <i class="fa fa-download" aria-hidden="true"></i>
+              Tải template Excel
+            </button>
           </div>
 
           <div class="file-upload-box">
-            <input
-              type="file"
-              accept=".xlsx, .xls"
-              (change)="onFileSelected($event)"
-              id="excelFileInput"
-            />
-            <label for="excelFileInput" class="file-drop-area">
-              @if (importFile) {
+            <div class="selected-file-info">
+              @if (isImporting) {
+                <span>Đang tải lên và xử lý file Excel...</span>
+              } @else if (importFile) {
                 <span class="file-name"
                   >{{ importFile.name }} ({{ (importFile.size / 1024).toFixed(1) }} KB)</span
                 >
-              } @else {
-                <span>Kéo thả file Excel vào đây hoặc bấm để duyệt file</span>
               }
-            </label>
+            </div>
           </div>
           @if (importResult) {
             <div class="import-result-box" [class.has-errors]="importResult.errorRows > 0">
@@ -493,18 +546,13 @@
             Đóng
           </button>
           <button
-            class="btn btn-primary btn-submit"
-            (click)="doImport()"
-            [disabled]="!importFile || isImporting"
+            class="btn btn-outline"
+            type="button"
+            (click)="excelFileInput.click()"
+            [disabled]="isImporting"
           >
-            <i
-              class="fa"
-              [class.fa-spinner]="isImporting"
-              [class.fa-spin]="isImporting"
-              [class.fa-paper-plane]="!isImporting"
-              aria-hidden="true"
-            ></i>
-            {{ isImporting ? 'Đang nhập và gửi duyệt...' : 'Import và gửi duyệt' }}
+            <i class="fa fa-upload" aria-hidden="true"></i>
+            Chọn file khác
           </button>
         </div>
       </div>

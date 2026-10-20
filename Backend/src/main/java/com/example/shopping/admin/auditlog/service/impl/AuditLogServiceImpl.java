@@ -64,6 +64,7 @@ public class AuditLogServiceImpl implements AuditLogService {
             if (keyword != null && !keyword.isBlank()) {
                 String pattern = "%" + keyword.trim().toLowerCase() + "%";
                 predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("logCode")), pattern),
                         cb.like(cb.lower(root.get("action")), pattern),
                         cb.like(cb.lower(root.get("username")), pattern),
                         cb.like(cb.lower(root.get("description")), pattern)

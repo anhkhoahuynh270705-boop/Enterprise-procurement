@@ -10,7 +10,12 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.Locale;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
@@ -18,9 +23,9 @@ import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
 import com.example.shopping.common.report.validation.ImportWorkbookValidator;
 import com.example.shopping.procurement.service.ProcurementService;
 import com.example.shopping.procurement.service.ProcurementSkuGenerator;
@@ -31,6 +36,7 @@ import com.example.shopping.procurement.dto.request.ProcurementItemRequestDto;
 import com.example.shopping.procurement.dto.response.ProcurementTicketResponseDto;
 import com.example.shopping.procurement.enums.ProcurementPriority;
 import com.example.shopping.procurement.entity.ProcurementTicket;
+import com.example.shopping.procurement.entity.ProcurementItem;
 import com.example.shopping.procurement.mapper.ProcurementMapper;
 import com.example.shopping.procurement.report.dto.response.ImportResultDto;
 import com.example.shopping.procurement.report.dto.response.ImportRowErrorDto;
@@ -44,11 +50,16 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 
+import static java.util.UUID.randomUUID;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ReportServiceImpl implements ReportService {
+
+    private static final String IMPORT_DEPARTMENT = "Phòng Mua sắm";
+    private static final String IMPORT_REASON = "Nhập tự động qua file Excel";
 
     PdfExporter pdfExporter;
     ExcelExporter excelExporter;
@@ -104,9 +115,10 @@ public class ReportServiceImpl implements ReportService {
         return excelExporter.exportTickets(tickets);
     }
 
-    // public byte[] generateSampleTemplate() throws Exception {
-    //     return excelExporter.generateSampleTemplate();
-    // }
+    @Override
+    public byte[] generateSampleTemplate() throws Exception {
+        return excelExporter.generateProcurementImportTemplate();
+    }
 
     @Transactional(rollbackFor = Exception.class)
     public ImportResultDto importExcelTickets(InputStream inputStream, String originalFilename, String makerUsername) throws Exception {
@@ -119,9 +131,10 @@ public class ReportServiceImpl implements ReportService {
             }
 
             Sheet sheet = workbook.getSheetAt(0);
+            ImportWorkbookValidator.validateProcurementHeaders(
+                    sheet, ExcelExporter.getProcurementImportHeaders());
             /* Find header row */
             int headerRowIndex = -1;
-            Integer colItemCode = null;
             Integer colItemName = null;
             Integer colCategory = null;
             Integer colQuantity = null;
@@ -138,7 +151,6 @@ public class ReportServiceImpl implements ReportService {
                     continue;
                 }
 
-                Integer curItemCode = null;
                 Integer curItemName = null;
                 Integer curCategory = null;
                 Integer curQuantity = null;
@@ -166,8 +178,6 @@ public class ReportServiceImpl implements ReportService {
                         curUnit = c;
                     } else if (curSupplier == null && isSupplierHeader(norm)) {
                         curSupplier = c;
-                    } else if (curItemCode == null && isItemCodeHeader(norm)) {
-                        curItemCode = c;
                     } else if (curCategory == null && isCategoryHeader(norm)) {
                         curCategory = c;
                     } else if (curTotalPrice == null && isTotalPriceHeader(norm)) {
@@ -179,7 +189,6 @@ public class ReportServiceImpl implements ReportService {
 
                 if (curItemName != null && curQuantity != null && curUnitPrice != null) {
                     headerRowIndex = i;
-                    colItemCode = curItemCode;
                     colItemName = curItemName;
                     colCategory = curCategory;
                     colQuantity = curQuantity;
@@ -232,38 +241,48 @@ public class ReportServiceImpl implements ReportService {
 
                 totalRows++;
 
+                boolean rowHasErrors = false;
                 String itemName = colItemName != null ? getCellStringValue(row.getCell(colItemName)) : null;
                 if (itemName == null || itemName.isBlank()) {
-                    errors.add(ImportRowErrorDto.builder()
-                            .rowNumber(i + 1)
-                            .field("Tên vật tư")
-                            .errorMessage("Tên vật tư không được để trống")
-                            .build());
-                    continue;
+                    addImportRowError(errors, i + 1, "Tên vật tư", "Không được để trống.");
+                    rowHasErrors = true;
                 }
 
                 Integer quantity = colQuantity != null ? getCellIntegerValue(row.getCell(colQuantity)) : null;
                 if (quantity == null || quantity <= 0) {
-                    errors.add(ImportRowErrorDto.builder()
-                            .rowNumber(i + 1)
-                            .field("Số lượng")
-                            .errorMessage("Số lượng phải là số nguyên lớn hơn 0")
-                            .build());
-                    continue;
+                    addImportRowError(errors, i + 1, "Số lượng", "Bắt buộc và phải là số nguyên lớn hơn 0.");
+                    rowHasErrors = true;
                 }
 
-                String unit = colUnit != null ? getCellStringValue(row.getCell(colUnit)) : null;
-                if (unit == null || unit.isBlank()) {
-                    unit = "Cái";
+                String unitInput = colUnit != null ? getCellStringValue(row.getCell(colUnit)) : null;
+                String unit = resolveProcurementUnit(unitInput);
+                if (unit == null) {
+                    addImportRowError(errors, i + 1, "Đơn vị tính", "Bắt buộc chọn một đơn vị trong danh sách.");
+                    rowHasErrors = true;
                 }
 
                 BigDecimal unitPrice = colUnitPrice != null ? getCellBigDecimalValue(row.getCell(colUnitPrice)) : null;
                 if (unitPrice == null || unitPrice.compareTo(BigDecimal.ZERO) <= 0) {
-                    errors.add(ImportRowErrorDto.builder()
-                            .rowNumber(i + 1)
-                            .field("Đơn giá")
-                            .errorMessage("Đơn giá phải lớn hơn 0")
-                            .build());
+                    addImportRowError(errors, i + 1, "Đơn giá", "Bắt buộc và phải lớn hơn 0.");
+                    rowHasErrors = true;
+                }
+
+                String categoryInput = colCategory != null ? getCellStringValue(row.getCell(colCategory)) : null;
+                String category = resolveProcurementCategory(categoryInput);
+                if (category == null) {
+                    addImportRowError(errors, i + 1, "Phân loại", "Bắt buộc chọn một danh mục trong danh sách.");
+                    rowHasErrors = true;
+                }
+
+                String supplierName = colSupplier != null ? getCellStringValue(row.getCell(colSupplier)) : null;
+                if (supplierName == null || supplierName.isBlank() || supplierName.equalsIgnoreCase("N/A")) {
+                    addImportRowError(errors, i + 1, "Nhà cung cấp", "Không được để trống.");
+                    rowHasErrors = true;
+                } else {
+                    supplierName = supplierName.trim();
+                }
+
+                if (rowHasErrors) {
                     continue;
                 }
 
@@ -272,16 +291,9 @@ public class ReportServiceImpl implements ReportService {
                     totalPrice = unitPrice.multiply(BigDecimal.valueOf(quantity));
                 }
 
-                String itemCode = colItemCode != null ? getCellStringValue(row.getCell(colItemCode)) : null;
-                String category = colCategory != null ? getCellStringValue(row.getCell(colCategory)) : null;
-                String supplierName = colSupplier != null ? getCellStringValue(row.getCell(colSupplier)) : null;
-                if (supplierName != null && (supplierName.isBlank() || supplierName.equalsIgnoreCase("N/A"))) {
-                    supplierName = null;
-                }
                 String notes = colNotes != null ? getCellStringValue(row.getCell(colNotes)) : null;
 
                 validItems.add(ProcurementItemRequestDto.builder()
-                        .itemCode(itemCode)
                         .itemName(itemName)
                         .category(category)
                         .quantity(quantity)
@@ -295,13 +307,21 @@ public class ReportServiceImpl implements ReportService {
 
             ProcurementTicketResponseDto createdTicketDto = null;
 
-            if (!validItems.isEmpty()) {
-                String ticketCode = "PR-IMP-" + java.util.UUID.randomUUID().toString();
+            if (!validItems.isEmpty() && errors.isEmpty()) {
+                String importFingerprint = fingerprintRequests(validItems);
+                boolean duplicate = ticketRepository.existsByImportFingerprint(importFingerprint)
+                        || ticketRepository.findImportedTicketsWithItems(IMPORT_REASON, IMPORT_DEPARTMENT).stream()
+                                .anyMatch(ticket -> fingerprintTicketItems(ticket.getItems()).equals(importFingerprint));
+                if (duplicate) {
+                    throw ErrorEnum.TICKET_DUPLICATE_IMPORT.ex();
+                }
+
+                String ticketCode = "PR-IMP-" + randomUUID().toString();
 
                 CreateProcurementTicketRequestDto request = CreateProcurementTicketRequestDto.builder()
                         .title((originalFilename != null ? originalFilename : "Excel"))
-                        .department("Phòng Mua sắm")
-                        .reason("Nhập tự động qua file Excel")
+                        .department(IMPORT_DEPARTMENT)
+                        .reason(IMPORT_REASON)
                         .currency("VND")
                         .priority(ProcurementPriority.MEDIUM)
                         .items(validItems)
@@ -309,22 +329,30 @@ public class ReportServiceImpl implements ReportService {
 
                 ProcurementTicket ticket = procurementMapper.toEntity(request, ticketCode, makerUsername);
                 ticket.getItems().forEach(item -> item.setItemCode(skuGenerator.generateNextSku()));
+                ticket.setImportFingerprint(importFingerprint);
                 ticket.setStatus(request.isSubmitImmediately() ? ProcurementStatus.PENDING_APPROVAL : ProcurementStatus.DRAFT);
                 procurementService.recalculate(ticket);
-                ProcurementTicket saved = ticketRepository.save(ticket);
+                ProcurementTicket saved;
+                try {
+                    saved = ticketRepository.saveAndFlush(ticket);
+                } catch (DataIntegrityViolationException ex) {
+                    throw ErrorEnum.TICKET_DUPLICATE_IMPORT.ex();
+                }
                 createdTicketDto = procurementService.submitTicket(saved.getId(), makerUsername);
             }
 
             String message;
             if (totalRows == 0) {
                 message = "File không có dòng vật tư nào.";
+            } else if (!errors.isEmpty()) {
+                message = "File có " + errors.size() + " lỗi. Chưa tạo phiếu; vui lòng sửa các dòng được báo lỗi và tải lên lại.";
             } else {
-                message = "Nhập thành công " + validItems.size() + " vật tư, có " + errors.size() + " dòng lỗi.";
+                message = "Nhập thành công " + validItems.size() + " vật tư.";
             }
 
             return ImportResultDto.builder()
                     .totalRows(totalRows)
-                    .successRows(validItems.size())
+                    .successRows(errors.isEmpty() ? validItems.size() : 0)
                     .errorRows(errors.size())
                     .message(message)
                     .createdTicket(createdTicketDto)
@@ -333,11 +361,91 @@ public class ReportServiceImpl implements ReportService {
         }
     }
 
+    private String fingerprintRequests(List<ProcurementItemRequestDto> items) {
+        List<String> rows = items.stream()
+                .map(item -> rowFingerprint(item.getItemName(), item.getCategory(), item.getQuantity(), item.getUnit(),
+                        item.getUnitPrice(), item.getSupplierName(), item.getNotes()))
+                .sorted()
+                .toList();
+        return sha256(String.join("", rows.stream().map(this::lengthPrefix).toList()));
+    }
+
+    private String fingerprintTicketItems(List<ProcurementItem> items) {
+        List<String> rows = items.stream()
+                .map(item -> rowFingerprint(item.getItemName(), item.getCategory(), item.getQuantity(), item.getUnit(),
+                        item.getUnitPrice(), item.getSupplierName(), item.getNotes()))
+                .sorted()
+                .toList();
+        return sha256(String.join("", rows.stream().map(this::lengthPrefix).toList()));
+    }
+
+    private String rowFingerprint(String name, String category, Integer quantity, String unit,
+            BigDecimal unitPrice, String supplier, String notes) {
+        List<String> fields = List.of(normalizeFingerprintText(name), normalizeFingerprintText(category),
+                quantity == null ? "" : quantity.toString(), normalizeFingerprintText(unit),
+                normalizeFingerprintDecimal(unitPrice),
+                normalizeFingerprintText(supplier), normalizeFingerprintText(notes));
+        return String.join("", fields.stream().map(this::lengthPrefix).toList());
+    }
+
+    private String normalizeFingerprintText(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizeFingerprintDecimal(BigDecimal value) {
+        return value == null ? "" : value.stripTrailingZeros().toPlainString();
+    }
+
+    private String lengthPrefix(String value) {
+        return value.length() + ":" + value;
+    }
+
+    private String sha256(String value) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                    .digest(value.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256 is unavailable", ex);
+        }
+    }
+
     private String normalizeHeader(String header) {
         if (header == null) {
             return "";
         }
         return header.trim().toLowerCase().replaceAll("\\s+", " ");
+    }
+
+    private String resolveProcurementCategory(String category) {
+        if (category == null || category.isBlank()) {
+            return null;
+        }
+        for (String allowedCategory : ExcelExporter.getProcurementCategoryOptions()) {
+            if (allowedCategory.equalsIgnoreCase(category.trim())) {
+                return allowedCategory;
+            }
+        }
+        return null;
+    }
+
+    private String resolveProcurementUnit(String unit) {
+        if (unit == null || unit.isBlank()) {
+            return null;
+        }
+        for (String allowedUnit : ExcelExporter.getProcurementUnitOptions()) {
+            if (allowedUnit.equalsIgnoreCase(unit.trim())) {
+                return allowedUnit;
+            }
+        }
+        return null;
+    }
+
+    private void addImportRowError(List<ImportRowErrorDto> errors, int rowNumber, String field, String message) {
+        errors.add(ImportRowErrorDto.builder()
+                .rowNumber(rowNumber)
+                .field(field)
+                .errorMessage(message)
+                .build());
     }
 
     private boolean isItemNameHeader(String h) {
@@ -357,19 +465,6 @@ public class ReportServiceImpl implements ReportService {
                 || h.equals("vật tư") || h.equals("vat tu")
                 || h.equals("hàng hóa") || h.equals("hang hoa")
                 || h.equals("tên") || h.equals("ten");
-    }
-
-    private boolean isItemCodeHeader(String h) {
-        return h.contains("mã vt") || h.contains("ma vt")
-                || h.contains("mã vật tư") || h.contains("ma vat tu")
-                || h.contains("mã hàng") || h.contains("ma hang")
-                || h.contains("mã sp") || h.contains("ma sp")
-                || h.contains("mã sản phẩm") || h.contains("ma san pham")
-                || h.contains("mã sku") || h.contains("ma sku")
-                || h.contains("sku")
-                || h.contains("item code")
-                || h.equals("mã") || h.equals("ma")
-                || h.equals("code");
     }
 
     private boolean isCategoryHeader(String h) {
@@ -473,7 +568,7 @@ public class ReportServiceImpl implements ReportService {
             return null;
         }
         try {
-            return value.intValue();
+            return value.intValueExact();
         } catch (Exception ex) {
             return null;
         }

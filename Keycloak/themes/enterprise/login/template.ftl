@@ -13,8 +13,8 @@
             <meta name="${meta?split('==')[0]}" content="${meta?split('==')[1]}"/>
         </#list>
     </#if>
-    <title>${msg("loginTitle",(realm.displayName!''))}</title>
-    <link rel="icon" href="${url.resourcesPath}/img/favicon.ico" />
+    <title>Enterprise procurement</title>
+    <link rel="icon" type="image/png" href="${url.resourcesPath}/img/favicon.png" />
     <#if properties.stylesCommon?has_content>
         <#list properties.stylesCommon?split(' ') as style>
             <link href="${url.resourcesCommonPath}/${style}" rel="stylesheet" />
@@ -52,7 +52,7 @@
     </script>
 </head>
 
-<body class="${properties.kcBodyClass!} enterprise-login">
+<body class="${properties.kcBodyClass!} enterprise-login ${bodyClass!}">
 <video class="enterprise-background" autoplay muted loop playsinline preload="metadata" aria-hidden="true" tabindex="-1">
     <source src="${url.resourcesPath}/videos/introduce.mp4?v=2" type="video/mp4">
 </video>

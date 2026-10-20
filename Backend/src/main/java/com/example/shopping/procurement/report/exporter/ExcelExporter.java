@@ -8,6 +8,9 @@ import java.util.List;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataValidation;
+import org.apache.poi.ss.usermodel.DataValidationConstraint;
+import org.apache.poi.ss.usermodel.DataValidationHelper;
 import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
@@ -18,24 +21,42 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Component;
+
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 
 import com.example.shopping.procurement.entity.ProcurementItem;
 import com.example.shopping.procurement.entity.ProcurementTicket;
 
-import lombok.extern.slf4j.Slf4j;
 import com.example.shopping.user.repository.UserRepository;
 import com.example.shopping.user.entity.UserEntity;
 
 @Slf4j
 @Component
-@lombok.RequiredArgsConstructor
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ExcelExporter {
 
-    private final UserRepository users;
+    private static final String[] PROCUREMENT_IMPORT_HEADERS = {
+        "STT (tự động)", "Mã VT (SKU - hệ thống tự sinh)", "Tên vật tư (*)", "Phân loại (*)", "Đơn vị tính (*)",
+        "Số lượng (*)", "Đơn giá (*)", "Thành tiền (tự tính)", "Nhà cung cấp (*)", "Ghi chú (không bắt buộc)"
+    };
+    private static final String[] PROCUREMENT_UNIT_OPTIONS = {
+        "Chiếc", "Cái", "Bộ", "Hộp", "Thùng", "Gói", "Kg", "Mét", "Cuộn",
+        "Tấm", "Quyển", "Lít", "Chai", "Giờ", "Ngày", "Tháng", "Dịch vụ"
+    };
+    private static final String[] PROCUREMENT_CATEGORY_OPTIONS = {
+        "Hardware", "Software License", "Office Supplies", "Machinery", "Service"
+    };
 
-    private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    UserRepository users;
+
+    DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     public String getFormat() {
         return "EXCEL";
@@ -47,6 +68,87 @@ public class ExcelExporter {
 
     public String getFileExtension() {
         return "xlsx";
+    }
+
+    public static String[] getProcurementImportHeaders() {
+        return PROCUREMENT_IMPORT_HEADERS.clone();
+    }
+
+    public static String[] getProcurementCategoryOptions() {
+        return PROCUREMENT_CATEGORY_OPTIONS.clone();
+    }
+
+    public static String[] getProcurementUnitOptions() {
+        return PROCUREMENT_UNIT_OPTIONS.clone();
+    }
+
+    public byte[] generateProcurementImportTemplate() throws Exception {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Danh mục vật tư");
+            sheet.createFreezePane(0, 1);
+
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setColor(IndexedColors.WHITE.getIndex());
+
+            CellStyle headerStyle = workbook.createCellStyle();
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setAlignment(HorizontalAlignment.CENTER);
+            headerStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+            headerStyle.setWrapText(true);
+            headerStyle.setBorderBottom(BorderStyle.THIN);
+
+            Row header = sheet.createRow(0);
+            header.setHeightInPoints(32);
+            for (int column = 0; column < PROCUREMENT_IMPORT_HEADERS.length; column++) {
+                Cell cell = header.createCell(column);
+                cell.setCellValue(PROCUREMENT_IMPORT_HEADERS[column]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            int[] widths = { 10, 20, 34, 22, 18, 16, 18, 20, 30, 34 };
+            for (int column = 0; column < widths.length; column++) {
+                sheet.setColumnWidth(column, widths[column] * 256);
+            }
+            sheet.setAutoFilter(new CellRangeAddress(0, 0, 0, PROCUREMENT_IMPORT_HEADERS.length - 1));
+
+            DataValidationHelper validationHelper = sheet.getDataValidationHelper();
+            DataValidationConstraint categoryConstraint = validationHelper
+                    .createExplicitListConstraint(PROCUREMENT_CATEGORY_OPTIONS);
+            DataValidation categoryValidation = validationHelper.createValidation(
+                    categoryConstraint, new CellRangeAddressList(1, 1000, 3, 3));
+            categoryValidation.setShowErrorBox(true);
+            categoryValidation.createErrorBox("Danh mục không hợp lệ", "Vui lòng chọn danh mục trong danh sách.");
+            categoryValidation.setSuppressDropDownArrow(false);
+            sheet.addValidationData(categoryValidation);
+
+            DataValidationConstraint unitConstraint = validationHelper
+                    .createExplicitListConstraint(PROCUREMENT_UNIT_OPTIONS);
+            DataValidation unitValidation = validationHelper.createValidation(
+                    unitConstraint, new CellRangeAddressList(1, 1000, 4, 4));
+            unitValidation.setShowErrorBox(true);
+            unitValidation.createErrorBox("Đơn vị tính không hợp lệ", "Vui lòng chọn đơn vị tính trong danh sách.");
+            unitValidation.setSuppressDropDownArrow(false);
+            sheet.addValidationData(unitValidation);
+
+            Sheet guide = workbook.createSheet("Hướng dẫn");
+            String[] instructions = {
+                "HƯỚNG DẪN NHẬP VẬT TƯ",
+                "Điền đủ các cột có dấu (*): Tên vật tư, Phân loại, Đơn vị tính, Số lượng, Đơn giá và Nhà cung cấp.",
+                "Chỉ cột Ghi chú được phép để trống.",
+                "STT và Mã VT (SKU) do hệ thống tự sinh; Thành tiền được hệ thống tự tính nếu để trống.",
+                "Nếu có dòng thiếu hoặc sai dữ liệu, hệ thống sẽ không tạo phiếu và trả danh sách lỗi để sửa."
+            };
+            for (int rowIndex = 0; rowIndex < instructions.length; rowIndex++) {
+                guide.createRow(rowIndex).createCell(0).setCellValue(instructions[rowIndex]);
+            }
+            guide.setColumnWidth(0, 120 * 256);
+
+            workbook.write(out);
+            return out.toByteArray();
+        }
     }
     /* export one ticket for each record*/
     public byte[] exportTicket(ProcurementTicket ticket) throws Exception {

@@ -1,11 +1,13 @@
 import { SensitiveValue } from '../../../shared/sensitive/sensitive-value/sensitive-value';
 import { ToastService } from '../../../core/services/toast.service';
-import { Component, OnInit, ChangeDetectorRef, inject, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, DestroyRef, inject, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { debounceTime } from 'rxjs';
 import { SupplierService } from '../services/supplier.service';
-import { Supplier } from '../models/supplier';
+import { Supplier, SupplierImportResult } from '../models/supplier';
 import { SupplierView } from '../supplier-view/supplier-view';
 import { SupplierProposals } from '../supplier-proposals/supplier-proposals';
 import { SupplierProposalService } from '../services/supplier-proposal.service';
@@ -24,6 +26,7 @@ import { SupplierProposalService } from '../services/supplier-proposal.service';
   templateUrl: './supplier-list.html',
 })
 export class SupplierList implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly toast = inject(ToastService);
 
   showProposals = false;
@@ -36,6 +39,8 @@ export class SupplierList implements OnInit {
   pendingProposalCount: number | null = null;
   private readonly proposalService = inject(SupplierProposalService);
   suppliers: Supplier[] = [];
+  supplierOptions: Supplier[] = [];
+  cityOptions: { value: string; label: string }[] = [];
   filteredSuppliers: Supplier[] = [];
   pagedSuppliers: Supplier[] = [];
 
@@ -48,8 +53,22 @@ export class SupplierList implements OnInit {
   readonly filtersForm = this.fb.nonNullable.group({
     searchKeyword: '',
     selectedStatus: 'ALL',
+    supplierId: '',
+    supplierCode: '',
+    contactPerson: '',
+    taxCode: '',
+    email: '',
+    phone: '',
+    city: '',
   });
+  isAdvancedSearchOpen = false;
   loading = false;
+  downloadingTemplate = false;
+  isImporting = false;
+  isImportModalOpen = false;
+  importFileName = '';
+  importError = '';
+  importResult: SupplierImportResult | null = null;
   deletingId: string | null = null;
   visibleIds = new Set<string | number>();
 
@@ -61,6 +80,12 @@ export class SupplierList implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
+    this.filtersForm.valueChanges
+      .pipe(debounceTime(250), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.applyFilter();
+        this.cdr.markForCheck();
+      });
     this.loadSuppliers();
     this.loadPendingCount();
   }
@@ -98,9 +123,22 @@ export class SupplierList implements OnInit {
 
   loadSuppliers(): void {
     this.loading = true;
-    this.supplierService.getSuppliers(this.filtersForm.controls.searchKeyword.value).subscribe({
+    this.supplierService.getSuppliers().subscribe({
       next: (suppliers) => {
         this.suppliers = suppliers || [];
+        this.supplierOptions = [...this.suppliers].sort((a, b) =>
+          a.name.localeCompare(b.name, 'vi'),
+        );
+        const cities = new Map<string, string>();
+        this.suppliers.forEach((supplier) => {
+          const city = supplier.city?.trim();
+          const normalizedCity = this.normalizeSearch(city);
+          if (city && normalizedCity && !cities.has(normalizedCity)) {
+            cities.set(normalizedCity, city);
+          }
+        });
+        this.cityOptions = [...cities].map(([value, label]) => ({ value, label }))
+          .sort((a, b) => a.label.localeCompare(b.label, 'vi'));
         this.applyFilter();
         this.loading = false;
         this.cdr.detectChanges();
@@ -146,28 +184,64 @@ export class SupplierList implements OnInit {
   //   this.applyFilter();
   // }
 
-  onSearch(): void {
+  toggleAdvancedSearch(): void {
+    this.isAdvancedSearchOpen = !this.isAdvancedSearchOpen;
+  }
+
+  resetFilters(): void {
+    this.filtersForm.reset({
+      searchKeyword: '',
+      selectedStatus: 'ALL',
+      supplierId: '',
+      supplierCode: '',
+      contactPerson: '',
+      taxCode: '',
+      email: '',
+      phone: '',
+      city: '',
+    });
     this.applyFilter();
   }
 
   applyFilter(): void {
-    const keyword = this.filtersForm.controls.searchKeyword.value.trim().toLowerCase();
-    const selectedStatus = this.filtersForm.controls.selectedStatus.value;
+    const filters = this.filtersForm.getRawValue();
+    const keyword = this.normalizeSearch(filters.searchKeyword);
     this.filteredSuppliers = this.suppliers.filter((supplier) => {
-      const matchesKeyword =
-        !keyword ||
-        (supplier.name && supplier.name.toLowerCase().includes(keyword)) ||
-        (supplier.code && supplier.code.toLowerCase().includes(keyword)) ||
-        (supplier.contactPerson && supplier.contactPerson.toLowerCase().includes(keyword)) ||
-        (supplier.taxCode && supplier.taxCode.toLowerCase().includes(keyword)) ||
-        (supplier.email && supplier.email.toLowerCase().includes(keyword));
+      const searchableValues = [
+        supplier.name,
+        supplier.code,
+        supplier.contactPerson,
+        supplier.taxCode,
+        supplier.email,
+        supplier.phone,
+        supplier.address,
+        supplier.city,
+        supplier.country,
+      ].map((value) => this.normalizeSearch(value));
 
-      const matchesStatus = selectedStatus === 'ALL' || supplier.status === selectedStatus;
-
-      return matchesKeyword && matchesStatus;
+      return (
+        (!keyword || searchableValues.some((value) => value.includes(keyword))) &&
+        (filters.selectedStatus === 'ALL' || supplier.status === filters.selectedStatus) &&
+        (!filters.supplierId || supplier.id === filters.supplierId) &&
+        this.matchesField(supplier.code, filters.supplierCode) &&
+        this.matchesField(supplier.contactPerson, filters.contactPerson) &&
+        this.matchesField(supplier.taxCode, filters.taxCode) &&
+        this.matchesField(supplier.email, filters.email) &&
+        this.matchesField(supplier.phone, filters.phone) &&
+        (!filters.city || this.normalizeSearch(supplier.city) === filters.city)
+      );
     });
     this.currentPage = 0;
     this.updatePaging();
+  }
+
+  private normalizeSearch(value: string | null | undefined): string {
+    return (value || '').trim().toLocaleLowerCase('vi-VN');
+  }
+
+  private matchesField(value: string | undefined, filter: string): boolean {
+    const query = this.normalizeSearch(filter);
+    return !query || this.normalizeSearch(value).includes(query);
   }
 
   updatePaging(): void {
@@ -238,6 +312,32 @@ export class SupplierList implements OnInit {
       },
     });
   }
+
+  downloadTemplate(): void {
+    if (this.downloadingTemplate) return;
+    this.downloadingTemplate = true;
+    this.supplierService.downloadTemplate().subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'Mau_nhap_nha_cung_cap.xlsx';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        this.downloadingTemplate = false;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Lỗi khi tải template nhà cung cấp:', err);
+        this.toast.error(err?.error?.message || 'Không thể tải template nhà cung cấp.');
+        this.downloadingTemplate = false;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
   exportSupplier(supplier: Supplier, format: 'PDF' | 'EXCEL'): void {
     this.supplierService.exportSupplier(supplier.id, format).subscribe({
       next: (blob) => {
@@ -266,31 +366,44 @@ export class SupplierList implements OnInit {
     fileInput.accept = '.xlsx,.xls';
     fileInput.onchange = (e: Event) => {
       const target = e.target as HTMLInputElement;
-      if (target.files && target.files.length > 0) {
-        const file = target.files[0];
-        if (!/\.(xlsx|xls)$/i.test(file.name) || file.size === 0) {
-          this.toast.error(
-            'File import không hợp lệ. Vui lòng chọn file Excel .xlsx hoặc .xls không rỗng.',
-          );
-          return;
-        }
-        this.loading = true;
-        this.supplierService.importSuppliers(file).subscribe({
-          next: (res) => {
-            this.loading = false;
-            this.toast.success(res.message || 'Import danh sách nhà cung cấp thành công!');
-            this.loadSuppliers();
-          },
-          error: (err) => {
-            this.loading = false;
-            console.error('Lỗi khi import file Excel:', err);
-            this.toast.error(
-              err?.error?.message || 'Import thất bại. Vui lòng kiểm tra định dạng file Excel.',
-            );
-          },
-        });
+      const file = target.files?.[0];
+      target.value = '';
+      if (!file) return;
+      if (!/\.(xlsx|xls)$/i.test(file.name) || file.size === 0) {
+        this.toast.error(
+          'File import không hợp lệ. Vui lòng chọn file Excel .xlsx hoặc .xls không rỗng.',
+        );
+        return;
       }
+      this.isImportModalOpen = true;
+      this.isImporting = true;
+      this.importFileName = file.name;
+      this.importError = '';
+      this.importResult = null;
+      this.supplierService.importSuppliers(file).subscribe({
+        next: (response) => {
+          this.importResult = response.data;
+          this.isImporting = false;
+          if (response.data?.successRows > 0) this.loadSuppliers();
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          this.isImporting = false;
+          this.importError =
+            err?.error?.message || 'Import thất bại. Vui lòng kiểm tra định dạng file Excel.';
+          this.cdr.markForCheck();
+        },
+      });
     };
     fileInput.click();
   }
+
+  closeImportModal(): void {
+    if (this.isImporting) return;
+    this.isImportModalOpen = false;
+    this.importFileName = '';
+    this.importError = '';
+    this.importResult = null;
+  }
+
 }

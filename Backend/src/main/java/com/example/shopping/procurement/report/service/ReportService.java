@@ -12,6 +12,7 @@ public interface ReportService {
     ReportFileResponse exportTicket(UUID id, String format, boolean detail) throws Exception;
     ReportFileResponse exportAllTickets() throws Exception;
     ImportResultDto importTickets(MultipartFile file, String makerUsername) throws Exception;
+    byte[] generateSampleTemplate() throws Exception;
     byte[] exportTicketPdf(ProcurementTicket ticket) throws Exception;
     byte[] exportTicketExcel(ProcurementTicket ticket) throws Exception;
     byte[] exportTicketDetailPdf(ProcurementTicket ticket) throws Exception;

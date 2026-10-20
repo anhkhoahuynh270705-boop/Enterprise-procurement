@@ -2,7 +2,12 @@ import { Injectable, inject } from '@angular/core';
 import { environment } from '../../../../environments/environment';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { CreateSupplierRequest, Supplier, UpdateSupplierRequest } from '../models/supplier';
+import {
+  CreateSupplierRequest,
+  Supplier,
+  SupplierImportApiResponse,
+  UpdateSupplierRequest,
+} from '../models/supplier';
 
 @Injectable({
   providedIn: 'root'
@@ -51,15 +56,15 @@ export class SupplierService {
     });
   }
 
-  // downloadTemplate(): Observable<Blob> {
-  //   return this.http.get(`${this.apiUrl}/template`, {
-  //     responseType: 'blob'
-  //   });
-  // }
+  downloadTemplate(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/template`, {
+      responseType: 'blob'
+    });
+  }
 
-  importSuppliers(file: File): Observable<any> {
+  importSuppliers(file: File): Observable<SupplierImportApiResponse> {
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post(`${this.apiUrl}/import`, formData);
+    return this.http.post<SupplierImportApiResponse>(`${this.apiUrl}/import`, formData);
   }
 }

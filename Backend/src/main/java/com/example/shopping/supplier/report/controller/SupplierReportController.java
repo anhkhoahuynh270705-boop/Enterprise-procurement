@@ -76,19 +76,19 @@ public class SupplierReportController {
     /**
      * Tải file Excel mẫu để import nhà cung cấp
      */
-    // @GetMapping("/template")
-    // public ResponseEntity<byte[]> downloadSampleTemplate() {
-    //     try {
-    //         byte[] templateBytes = supplierReportService.generateSampleTemplate();
-    //         return ResponseEntity.ok()
-    //                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"Mau_nhap_nha_cung_cap.xlsx\"")
-    //                 .contentType(MediaType.parseMediaType(ReportFormat.EXCEL.getContentType()))
-    //                 .body(templateBytes);
-    //     } catch (Exception e) {
-    //         log.error("Lỗi khi tạo template nhà cung cấp: {}", e.getMessage(), e);
-    //         return ResponseEntity.internalServerError().build();
-    //     }
-    // }
+    @GetMapping("/template")
+    public ResponseEntity<byte[]> downloadSampleTemplate() {
+        try {
+            byte[] templateBytes = supplierReportService.generateSampleTemplate();
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"Mau_nhap_nha_cung_cap.xlsx\"")
+                    .contentType(MediaType.parseMediaType(ReportFormat.EXCEL.getContentType()))
+                    .body(templateBytes);
+        } catch (Exception e) {
+            log.error("Lỗi khi tạo template nhà cung cấp: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 
     /**
      * Import nhà cung cấp từ file Excel

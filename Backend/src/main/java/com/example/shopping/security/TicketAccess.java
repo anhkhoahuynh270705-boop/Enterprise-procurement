@@ -1,12 +1,15 @@
 package com.example.shopping.security;
 
-import com.example.shopping.procurement.entity.ProcurementTicket;
-import com.example.shopping.procurement.enums.ProcurementStatus;
+import java.util.stream.Collectors;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 import com.example.shopping.common.enums.ErrorEnum;
+import com.example.shopping.procurement.entity.ProcurementTicket;
+import com.example.shopping.procurement.enums.ProcurementStatus;
+
 public final class TicketAccess {
     private TicketAccess() { }
 
@@ -26,6 +29,18 @@ public final class TicketAccess {
                 return username;
         }
         return auth.getName();
+    }
+
+    public static String cacheScope() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            throw denied();
+        }
+        String roles = auth.getAuthorities().stream()
+            .map(authority -> authority.getAuthority())
+            .sorted()
+            .collect(Collectors.joining(","));
+        return username() + ":" + roles;
     }
 
     public static void requireReader() {

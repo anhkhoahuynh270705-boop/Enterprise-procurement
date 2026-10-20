@@ -230,16 +230,11 @@ public class SupplierExcelExporter {
                 cell.setCellStyle(headerStyle);
             }
 
-            // Sample row
-            Row sample = sheet.createRow(1);
+            // Blank formatted row so uploading an untouched template cannot create sample data.
+            Row entryRow = sheet.createRow(1);
             CellStyle borderStyle = createBorderedCellStyle(workbook, HorizontalAlignment.LEFT);
-            String[] sampleData = {
-                "Công ty TNHH Thiết Bị Văn Phòng Sao Mai", "Trần Văn B", "saomai@contact.vn", "0912345678",
-                "0109988776", "Tầng 5, Tòa nhà Landmark", "Hà Nội", "Việt Nam", "Vietcombank", "0011002345678", "Đối tác thiết bị văn phòng"
-            };
-            for (int i = 0; i < sampleData.length; i++) {
-                Cell cell = sample.createCell(i);
-                cell.setCellValue(sampleData[i]);
+            for (int i = 0; i < columns.length; i++) {
+                Cell cell = entryRow.createCell(i);
                 cell.setCellStyle(borderStyle);
             }
 

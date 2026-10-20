@@ -2,6 +2,7 @@ package com.example.shopping.supplier.repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,6 +25,16 @@ public interface SupplierRepository extends JpaRepository<SupplierEntity, UUID> 
     boolean existsByTaxCode(String taxCode);
 
     List<SupplierEntity> findByStatus(SupplierStatus status);
+
+    @Query(value = "SELECT LOWER(BTRIM(REGEXP_REPLACE(s.name, '[[:space:]  ]+', ' ', 'g'))) "
+            + "FROM suppliers s "
+            + "WHERE LOWER(BTRIM(REGEXP_REPLACE(s.name, '[[:space:]  ]+', ' ', 'g'))) IN (:normalizedNames)",
+            nativeQuery = true)
+    Set<String> findExistingNormalizedNames(@Param("normalizedNames") Set<String> normalizedNames);
+
+    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM SupplierEntity s "
+            + "WHERE LOWER(TRIM(s.taxCode)) = :normalizedTaxCode")
+    boolean existsByNormalizedTaxCode(@Param("normalizedTaxCode") String normalizedTaxCode);
 
     @Query("SELECT s FROM SupplierEntity s WHERE " +
            "LOWER(s.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +

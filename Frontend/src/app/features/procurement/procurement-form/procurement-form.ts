@@ -237,13 +237,22 @@ export class ProcurementForm implements OnInit {
       };
 
       this.procurementService.createTicket(request).subscribe({
-        next: () => {
+        next: (res) => {
           this.isLoading = false;
           this.toast.success(
             submitImmediately
               ? 'Tạo và nộp phiếu lên Checker thành công!'
               : 'Lưu bản nháp phiếu thành công!',
           );
+          if (submitImmediately) {
+            const unregistered = res?.data?.unregisteredSuppliers;
+            if (unregistered && unregistered.length > 0) {
+              this.toast.warning(
+                `Nhà cung cấp chưa có trong hệ thống: ${unregistered.join(', ')}. ` +
+                  `Checker sẽ thấy cảnh báo — vui lòng cập nhật đầy đủ thông tin trước khi duyệt.`,
+              );
+            }
+          }
           this.router.navigate(['/procurement']);
         },
         error: (err) => {
