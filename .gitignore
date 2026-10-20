@@ -30,3 +30,7 @@ application-*.yml
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Local agent and Codex configuration
+.agents/
+.codex/
