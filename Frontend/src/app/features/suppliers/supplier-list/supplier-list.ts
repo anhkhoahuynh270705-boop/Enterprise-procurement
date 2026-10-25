@@ -81,7 +81,7 @@ export class SupplierList implements OnInit {
 
   ngOnInit(): void {
     this.filtersForm.valueChanges
-      .pipe(debounceTime(250), takeUntilDestroyed(this.destroyRef))
+      .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.applyFilter();
         this.cdr.markForCheck();

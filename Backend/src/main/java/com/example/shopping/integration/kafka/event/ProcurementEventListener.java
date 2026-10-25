@@ -4,16 +4,18 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 import com.example.shopping.integration.kafka.model.ProcurementEvent;
-import com.example.shopping.integration.mail.service.NotificationService;
 import com.example.shopping.integration.mail.factory.NotificationServiceFactory;
+import com.example.shopping.integration.mail.service.NotificationService;
 
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
+@FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
 public class ProcurementEventListener {
 
-    private final NotificationServiceFactory notificationServiceFactory;
+    NotificationServiceFactory notificationServiceFactory;
 
     public ProcurementEventListener(NotificationServiceFactory notificationServiceFactory) {
         this.notificationServiceFactory = notificationServiceFactory;

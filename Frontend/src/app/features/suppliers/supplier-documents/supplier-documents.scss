@@ -18,6 +18,13 @@ header,
     flex-wrap: wrap;
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
 header {
     justify-content: space-between;
     margin-bottom: 20px;
@@ -42,7 +49,7 @@ p {
     padding: 22px;
     background: #fff;
     border: 1px solid #dce3ee;
-    border-radius: 12px;
+    border-radius: 2px;
     margin-bottom: 20px;
 }
 
@@ -65,7 +72,7 @@ input,
 textarea {
     font: inherit;
     padding: 10px 12px;
-    border-radius: 7px;
+    border-radius: 2px;
     background: #fff;
     border: 1px solid #0d0d0d;
     min-width: 0;
@@ -77,9 +84,85 @@ textarea {
     max-width: 600px;
 }
 
+.upload-toggle {
+    min-height: 42px;
+}
+
+.upload-toggle.active {
+    background: #222;
+    color: #fff;
+}
+
+.upload-form fieldset {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+    gap: 0 16px;
+}
+
+.upload-form label {
+    min-width: 0;
+}
+
+.upload-form p,
+.upload-form button[type='submit'] {
+    grid-column: 1 / -1;
+}
+
+.upload-form p {
+    margin: 0 0 14px;
+}
+
 .filters label {
     flex: 1;
     min-width: 180px;
+}
+
+.advanced-toggle {
+    min-height: 42px;
+    white-space: nowrap;
+}
+
+.advanced-toggle.active {
+    background: #222;
+    color: #fff;
+}
+
+.advanced-search-panel {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(180px, 1fr));
+    gap: 14px;
+    width: 100%;
+    padding: 16px;
+    border: 1px solid #888;
+    border-radius: 2px;
+    background: #fff;
+}
+
+.advanced-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    color: #444;
+    font-size: 13px;
+    font-weight: 600;
+
+    input {
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 40px;
+    }
+}
+
+.advanced-search-footer {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 4px;
+}
+
+.reset-filters {
+    font-size: 15px;
 }
 
 button {
@@ -89,7 +172,7 @@ button {
     font-weight: 500;
     padding: 9px 16px;
     border: 2px solid #000000;
-    border-radius: 8px;
+    border-radius: 2px;
     background: #e4e4e4;
     color: #000000;
     transition: background 0.15s, color 0.15s;
@@ -109,7 +192,7 @@ button.primary {
     background: #e4e4e4;
     color: #000000;
     border: 2px solid #000000;
-    border-radius: 8px;
+    border-radius: 2px;
     font-weight: 500;
     font-size: 18px;
     transition: all 0.15s ease;
@@ -146,7 +229,7 @@ button.btn-icon {
     border: none;
     background: transparent;
     padding: 6px 8px;
-    border-radius: 6px;
+    border-radius: 2px;
     color: #444;
     font-size: 25px;
     min-width: 36px;
@@ -203,7 +286,7 @@ small {
 .badge {
     display: inline-block;
     padding: 5px 9px;
-    border-radius: 20px;
+    border-radius: 2px;
     white-space: nowrap;
     font-size: 13px;
     color: #92400e;
@@ -222,7 +305,7 @@ small {
 
 .notice {
     padding: 12px 16px;
-    border-radius: 8px;
+    border-radius: 2px;
 }
 
 .error {
@@ -256,7 +339,7 @@ small {
     padding: 0;
     overflow: hidden;
     border: 1px solid #888;
-    border-radius: 8px;
+    border-radius: 2px;
     background: #fff;
 
     &::backdrop {
@@ -282,7 +365,7 @@ small {
         button {
             padding: 6px 14px;
             border: 1px solid #888;
-            border-radius: 6px;
+            border-radius: 2px;
             background: #fff;
             color: #222;
             font-size: 13px;
@@ -319,7 +402,7 @@ small {
             flex-shrink: 0;
             padding: 6px 16px;
             border: 1px solid #888;
-            border-radius: 6px;
+            border-radius: 2px;
             background: #fff;
             color: #222;
             font-size: 13px;
@@ -339,6 +422,14 @@ small {
 @media (max-width: 640px) {
     .documents-page {
         padding: 12px;
+    }
+
+    .upload-form fieldset {
+        grid-template-columns: 1fr;
+    }
+
+    .advanced-search-panel {
+        grid-template-columns: 1fr;
     }
 
     .panel {

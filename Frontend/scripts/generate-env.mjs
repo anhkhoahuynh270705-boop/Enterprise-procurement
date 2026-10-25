@@ -1,16 +1,15 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
-for (const envPath of ['../../.env', '../.env']) {
-  try {
-    process.loadEnvFile(new URL(envPath, import.meta.url));
-  } catch (error) {
-    if (error.code !== 'ENOENT') throw error;
-  }
+delete process.env.API_BASE_URL;
+try {
+  process.loadEnvFile(new URL('../.env', import.meta.url));
+} catch (error) {
+  if (error.code !== 'ENOENT') throw error;
 }
 
 // Export only explicitly selected public settings, never the whole environment.
 const apiBaseUrl = process.env.API_BASE_URL?.trim().replace(/\/+$/, '');
 if (!apiBaseUrl) {
-  throw new Error('Set API_BASE_URL in Frontend/.env or the process environment.');
+  throw new Error('Set API_BASE_URL in Frontend/.env.');
 }
 const url = new URL(apiBaseUrl);
 if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) {

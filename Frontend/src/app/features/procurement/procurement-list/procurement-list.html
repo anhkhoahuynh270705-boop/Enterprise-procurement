@@ -17,15 +17,15 @@
     <div class="tabs-container">
       <div class="action-buttons">
         @if (auth.hasRole('ADMIN', 'USER')) {
-          <button class="btn btn-outline" type="button" (click)="excelFileInput.click()">
+          <button class="btn btn-outline excel-action" type="button" (click)="excelFileInput.click()">
             <i class="fa fa-upload" aria-hidden="true"></i>
             Import Excel
           </button>
-          <button class="btn btn-outline" type="button" (click)="downloadTemplate()">
+          <button class="btn btn-outline excel-action" type="button" (click)="downloadTemplate()">
             <i class="fa fa-file-excel-o" aria-hidden="true"></i>
             Tải template Excel
           </button>
-          <button class="btn btn-outline" (click)="exportAllExcel()">
+          <button class="btn btn-outline excel-action" (click)="exportAllExcel()">
             <i class="fa fa-download" aria-hidden="true"></i>
             Export Excel
           </button>
@@ -200,7 +200,7 @@
                       @if (auth.hasRole('ADMIN', 'USER')) {
                         <div class="action-row export-row">
                           <button
-                            class="btn-icon"
+                            class="btn-icon excel-export"
                             title="Xuất PDF phiếu"
                             (click)="exportTicketPdf(ticket)"
                           >
@@ -459,27 +459,27 @@
   @if (!isApprovalView && isImportModalOpen) {
     <div class="modal-overlay">
       <div class="modal-card modal-lg">
-        <div class="modal-header">
-          <h3>Nhập danh mục vật tư từ file Excel</h3>
+        <div class="modal-header excel-modal-header">
+          <div class="excel-modal-title">
+            <span class="excel-modal-icon"><i class="fa fa-file-excel-o" aria-hidden="true"></i></span>
+            <div>
+              <span class="excel-modal-kicker">NHẬP DỮ LIỆU EXCEL</span>
+              <h3>Nhập danh mục vật tư</h3>
+              <p>Tải file theo mẫu để tạo phiếu mua sắm nhanh chóng.</p>
+            </div>
+          </div>
           <button class="btn-close" (click)="closeImportModal()" aria-label="Đóng">
             <i class="fa fa-times" aria-hidden="true"></i>
           </button>
         </div>
 
         <div class="modal-body">
-          <div
-            class="import-help"
-            style="
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-bottom: 12px;
-            "
-          >
-            <p style="margin: 0">
-              Điền đủ các cột bắt buộc trong template.
-            </p>
-            <button type="button" class="btn btn-outline btn-sm" (click)="downloadTemplate()">
+          <div class="import-help">
+            <div class="import-help-copy">
+              <i class="fa fa-info-circle" aria-hidden="true"></i>
+              <p>Điền đủ các cột bắt buộc trong template trước khi tải lên.</p>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm excel-action" (click)="downloadTemplate()">
               <i class="fa fa-download" aria-hidden="true"></i>
               Tải template Excel
             </button>
@@ -488,17 +488,25 @@
           <div class="file-upload-box">
             <div class="selected-file-info">
               @if (isImporting) {
+                <i class="fa fa-spinner fa-spin file-status-icon" aria-hidden="true"></i>
                 <span>Đang tải lên và xử lý file Excel...</span>
               } @else if (importFile) {
+                <i class="fa fa-file-excel-o file-status-icon" aria-hidden="true"></i>
                 <span class="file-name"
                   >{{ importFile.name }} ({{ (importFile.size / 1024).toFixed(1) }} KB)</span
                 >
+              } @else {
+                <i class="fa fa-file-excel-o file-status-icon" aria-hidden="true"></i>
+                <span>Sẵn sàng nhận file Excel</span>
               }
             </div>
           </div>
           @if (importResult) {
             <div class="import-result-box" [class.has-errors]="importResult.errorRows > 0">
-              <h4>{{ importResult.message }}</h4>
+              <div class="import-result-heading">
+                <i class="fa" [ngClass]="importResult.errorRows > 0 ? 'fa-exclamation-circle' : 'fa-check-circle'" aria-hidden="true"></i>
+                <h4>{{ importResult.message }}</h4>
+              </div>
               @if (importResult.createdTicket) {
                 <p class="success-note">
                   Đã tạo phiếu và gửi duyệt:

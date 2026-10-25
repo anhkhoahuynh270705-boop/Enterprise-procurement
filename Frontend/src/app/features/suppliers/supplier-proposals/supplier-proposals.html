@@ -3,12 +3,7 @@
     <div>
       <h1>{{ isReviewer ? 'Duyệt đề xuất nhà cung cấp' : 'Đề xuất nhà cung cấp' }}</h1>
       <p>
-        {{
-          isReviewer
-            ? ''
-            : 'Gửi đối tác phù hợp và theo dõi
-        kết quả đề xuất của bạn.'
-        }}
+        {{ isReviewer ? '' : 'Gửi đối tác phù hợp và theo dõi kết quả đề xuất của bạn.' }}
       </p>
       @if (isReviewer && !isAdmin) {
         <p>Đề xuất của bạn cần Checker khác hoặc Admin duyệt.</p>

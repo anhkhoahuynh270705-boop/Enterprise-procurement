@@ -21,7 +21,7 @@
   padding: 16px;
   border: 1px solid #e2e8f0;
   border-left: 4px solid var(--toast-color);
-  border-radius: 12px;
+  border-radius: 2px;
   background: #ffffff;
   color: #1e293b;
   pointer-events: auto;
@@ -32,7 +32,7 @@
 .toast-icon {
   flex: 0 0 24px;
   height: 24px;
-  border-radius: 50%;
+  border-radius: 2px;
   background: var(--toast-color);
   color: #fff;
   text-align: center;

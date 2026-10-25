@@ -11,7 +11,9 @@ import {
   bankNameValidator,
   bankDetailsValidator,
   contactRequiredValidator,
+  normalizeSupplierCompanyName,
   phoneValidator,
+  supplierCompanyNameValidator,
   supplierNameValidator,
   trimmed
 } from '../shared/supplier-form.validators';
@@ -38,13 +40,13 @@ export class SupplierCreate implements OnInit {
     const supplierName = this.route.snapshot.queryParamMap.get('name');
     const ticketId = this.route.snapshot.queryParamMap.get('ticketId');
     if (supplierName) {
-      this.Createform.controls.name.setValue(supplierName);
+      this.Createform.controls.name.setValue(normalizeSupplierCompanyName(supplierName));
       this.openedFromProcurementWarning = Boolean(ticketId);
     }
   }
   
   readonly Createform = this.fb.nonNullable.group({
-    name: ['', [supplierNameValidator(true), trimmed(Validators.minLength(2)), trimmed(Validators.maxLength(200))]],
+    name: ['', [supplierCompanyNameValidator(true), trimmed(Validators.minLength(2)), trimmed(Validators.maxLength(200))]],
     contactPerson: ['', [supplierNameValidator(), trimmed(Validators.maxLength(200))]],
     email: ['', [trimmed(Validators.email), trimmed(Validators.maxLength(254))]],
     phone: ['', phoneValidator()],
@@ -66,6 +68,8 @@ export class SupplierCreate implements OnInit {
       return `Tối thiểu ${field.errors['minlength'].requiredLength} ký tự.`;
     if (field.hasError('maxlength')) 
       return `Tối đa ${field.errors['maxlength'].requiredLength} ký tự.`;
+    if (field.hasError('companyName'))
+      return 'Tên nhà cung cấp chỉ được chứa chữ, dấu ngoặc đơn và khoảng trắng đơn giữa các từ.';
     if (field.hasError('name')) 
       return 'Chỉ nhập chữ và một khoảng trắng giữa các từ, không nhập số.';
     if (field.hasError('bankName'))
@@ -74,9 +78,11 @@ export class SupplierCreate implements OnInit {
       return 'Email không hợp lệ.';
     if (field.hasError('bankAccount'))
        return 'Số tài khoản gồm 6–50 chữ số, không có chữ hoặc khoảng trắng.';
+    if (name === 'phone')
+      return 'Số điện thoại gồm 8–15 chữ số; có thể chèn khoảng trắng.';
     return name === 'taxCode'
       ? 'Mã số thuế phải có 10 hoặc 13 chữ số.'
-      : 'Điện thoại gồm 9–15 chữ số, không có chữ hoặc khoảng trắng.';
+      : '';
   }
 
   onSubmit(): void {
@@ -89,7 +95,7 @@ export class SupplierCreate implements OnInit {
     
     const formVal = this.Createform.getRawValue();
     const createData: CreateSupplierRequest = {
-      name: formVal.name.trim(),
+      name: normalizeSupplierCompanyName(formVal.name),
       contactPerson: formVal.contactPerson.trim() || undefined,
       email: formVal.email.trim() || undefined,
       phone: formVal.phone.trim() || undefined,

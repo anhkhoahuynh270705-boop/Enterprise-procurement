@@ -13,6 +13,8 @@ import {
   bankDetailsValidator,
   contactRequiredValidator,
   phoneValidator,
+  normalizeSupplierCompanyName,
+  supplierCompanyNameValidator,
   supplierNameValidator,
   trimmedValidators,
 } from '../shared/supplier-form.validators';
@@ -64,7 +66,7 @@ export class SupplierProposals implements OnInit {
       name: [
         '',
         [
-          supplierNameValidator(true),
+          supplierCompanyNameValidator(true),
           ...trimmedValidators(Validators.minLength(2), Validators.maxLength(200)),
         ],
       ],
@@ -101,7 +103,7 @@ export class SupplierProposals implements OnInit {
     if (supplierName && this.canSubmit) {
       const ticketCode = this.route.snapshot.queryParamMap.get('ticketCode');
       this.form.patchValue({
-        name: supplierName,
+        name: normalizeSupplierCompanyName(supplierName),
         reason: ticketCode
           ? `Bổ sung nhà cung cấp cho phiếu mua sắm ${ticketCode}.`
           : 'Bổ sung thông tin nhà cung cấp vào hệ thống.',
@@ -160,6 +162,7 @@ export class SupplierProposals implements OnInit {
     const request = Object.fromEntries(
       Object.entries(raw).map(([key, value]) => [key, value.trim()]),
     ) as typeof raw;
+    request.name = normalizeSupplierCompanyName(raw.name);
     this.service.submit(request).subscribe({
       next: () => {
         this.submitting = false;

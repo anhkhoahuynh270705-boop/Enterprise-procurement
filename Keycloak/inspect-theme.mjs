@@ -199,7 +199,7 @@ try {
     }
     if (!forgotReady) throw new Error("Forgot password page failed to render");
     const inheritedTheme = await evaluate(
-      'document.body.classList.contains("enterprise-login") && !!document.querySelector("video") && getComputedStyle(document.querySelector(".card-pf")).borderRadius === "24px"',
+      'document.body.classList.contains("enterprise-login") && !!document.querySelector("video") && getComputedStyle(document.querySelector(".card-pf")).borderRadius === "2px"',
     );
     if (!inheritedTheme) throw new Error("Forgot-password theme missing");
     const shot = await cdp("Page.captureScreenshot", {

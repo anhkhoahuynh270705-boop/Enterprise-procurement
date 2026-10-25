@@ -50,6 +50,11 @@ export class AdminLayout implements OnInit {
     this.loadHeaderAvatar();
   }
 
+  onAvatarUpdated(profile: UserResponse): void {
+    this.headerProfile.set(profile);
+    this.headerAvatarFailed.set(false);
+  }
+
   get headerAvatarUrl(): string | null {
     if (this.headerAvatarFailed()) return null;
     return this.userService.resolveAvatarUrl(this.headerProfile()?.avatarUrl);

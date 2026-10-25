@@ -14,7 +14,7 @@
 .scanner-modal {
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 18px;
+  border-radius: 2px;
   width: 100%;
   max-width: 800px;
   overflow: hidden;
@@ -48,7 +48,7 @@
     color: #64748b;
     width: 32px;
     height: 32px;
-    border-radius: 50%;
+    border-radius: 2px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -76,7 +76,7 @@
   width: 230px;
   height: 230px;
   margin: 1.5rem auto 1rem;
-  border-radius: 50%;
+  border-radius: 2px;
   overflow: hidden;
   border: 3px solid #2563eb;
   background: #000;
@@ -110,7 +110,7 @@
       position: absolute;
       inset: 10px;
       border: 1.5px dashed rgba(255, 255, 255, 0.7);
-      border-radius: 50%;
+      border-radius: 2px;
     }
 
     // Ẩn tia laser dạng sci-fi để giữ giao diện truyền thống, thanh lịch
@@ -140,7 +140,7 @@
       width: 60px;
       height: 60px;
       background: #ffffff;
-      border-radius: 50%;
+      border-radius: 2px;
       font-size: 2rem;
     }
   }
@@ -161,7 +161,7 @@
       width: 40px;
       height: 40px;
       background: #ffffff;
-      border-radius: 50%;
+      border-radius: 2px;
       font-size: 1.5rem;
     }
   }
@@ -176,7 +176,7 @@
     align-items: center;
     gap: 0.45rem;
     padding: 0.35rem 0.85rem;
-    border-radius: 9999px;
+    border-radius: 2px;
     font-size: 0.825rem;
     font-weight: 500;
     background: #f8fafc;
@@ -191,7 +191,7 @@
       .pulse-dot {
         width: 7px;
         height: 7px;
-        border-radius: 50%;
+        border-radius: 2px;
         background: #2563eb;
         animation: pulse 1.2s infinite;
       }

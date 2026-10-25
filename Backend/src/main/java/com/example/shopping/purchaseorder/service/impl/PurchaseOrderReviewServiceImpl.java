@@ -3,9 +3,9 @@ package com.example.shopping.purchaseorder.service.impl;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.cache.annotation.CacheEvict;
 
 import com.example.shopping.common.enums.ErrorEnum;
 import com.example.shopping.purchaseorder.entity.PurchaseOrder;
@@ -13,12 +13,14 @@ import com.example.shopping.purchaseorder.enums.PurchaseOrderStatus;
 import com.example.shopping.purchaseorder.repository.PurchaseOrderRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
 public class PurchaseOrderReviewServiceImpl {
 
-    private final PurchaseOrderRepository purchaseOrderRepository;
+    PurchaseOrderRepository purchaseOrderRepository;
 
     @Transactional
     @CacheEvict(cacheNames = PurchaseOrderCache.CACHE_NAME, allEntries = true)

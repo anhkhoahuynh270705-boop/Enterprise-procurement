@@ -12,6 +12,11 @@ spring.jpa.hibernate.ddl-auto=update
 spring.servlet.multipart.max-file-size=10MB
 spring.servlet.multipart.max-request-size=11MB
 
+# Cloudinary (provide values through backend environment variables)
+cloudinary.cloud-name=${CLOUDINARY_CLOUD_NAME:}
+cloudinary.api-key=${CLOUDINARY_API_KEY:}
+cloudinary.api-secret=${CLOUDINARY_API_SECRET:}
+
 # Flyway Database Migration
 spring.flyway.enabled=true
 spring.flyway.baseline-on-migrate=true
@@ -105,10 +110,17 @@ spring.task.execution.thread-name-prefix=async-task-
 # Mail Configuration (MailHog SMTP)
 spring.mail.host=localhost
 spring.mail.port=1025
-#spring.mail.username=
-#spring.mail.password=
+# MAIL_USERNAME=your-account@gmail.com
+# MAIL_PASSWORD=your-gmail-app-password
+spring.mail.username=${MAIL_USERNAME:}
+spring.mail.password=${MAIL_PASSWORD:}
 spring.mail.protocol=smtp
 spring.mail.default-encoding=UTF-8
 spring.mail.properties.mail.smtp.auth=false
 spring.mail.properties.mail.smtp.starttls.enable=false
 spring.mail.properties.mail.smtp.starttls.required=false
+
+# Cloundinary
+cloudinary.cloud-name=${CLOUDINARY_CLOUD_NAME}
+cloudinary.api-key=${CLOUDINARY_API_KEY}
+cloudinary.api-secret=${CLOUDINARY_API_SECRET}

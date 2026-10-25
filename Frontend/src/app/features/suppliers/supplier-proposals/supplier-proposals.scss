@@ -45,7 +45,7 @@ p {
 .panel {
   background: #ffffff;
   border: 1px solid #dce1e7;
-  border-radius: 10px;
+  border-radius: 2px;
   padding: 24px;
   margin-bottom: 20px;
 }
@@ -81,7 +81,7 @@ textarea,
 select {
   width: 100%;
   border: 1px solid #bac3ce;
-  border-radius: 6px;
+  border-radius: 2px;
   padding: 10px 12px;
   font: inherit;
   background: #ffffff;
@@ -120,7 +120,7 @@ select:focus {
   background: #eaf7ee;
   color: #226b3e;
   padding: 12px 16px;
-  border-radius: 6px;
+  border-radius: 2px;
 }
 
 button,
@@ -130,7 +130,7 @@ button,
   font-weight: 500;
   padding: 10px 18px;
   border: 2px solid #000000;
-  border-radius: 8px;
+  border-radius: 2px;
   background: #e4e4e4;
   color: #000000;
   cursor: pointer;
@@ -178,7 +178,7 @@ button:disabled {
   border: none !important;
   background: transparent !important;
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: 2px;
   color: #444;
   font-size: 20px;
   min-width: 36px;
@@ -213,7 +213,7 @@ button:disabled {
   padding: 6px 12px;
   display: inline-flex;
   align-items: center;
-  border-radius: 10px;
+  border-radius: 2px;
   font-size: 12px;
 }
 
@@ -301,14 +301,14 @@ td {
   display: inline-block;
   font-size: 12px;
   padding: 5px 10px;
-  border-radius: 12px;
+  border-radius: 2px;
   white-space: nowrap;
 }
 
 .pending {
   background: #825900;
   color: #fff;
-  border-radius: 4px !important;
+  border-radius: 2px !important;
 }
 
 .approved {

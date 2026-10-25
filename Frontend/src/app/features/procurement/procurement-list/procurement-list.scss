@@ -57,7 +57,7 @@ input[type="checkbox"] {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: 2px;
   margin-bottom: 20px;
   font-size: 14px;
 
@@ -95,14 +95,14 @@ input[type="checkbox"] {
     gap: 8px;
     background: #ffffff;
     padding: 4px;
-    border-radius: 8px;
+    border-radius: 2px;
 
     .tab-btn {
       min-height: 42px;
       padding: 10px 18px;
       border: 2px solid #000000;
       background: #f1f1f1;
-      border-radius: 8px;
+      border-radius: 2px;
       font-size: 16px;
       font-weight: 500;
       color: #222222;
@@ -127,7 +127,7 @@ input[type="checkbox"] {
         background: #444444;
         color: white;
         padding: 2px 7px;
-        border-radius: 8px;
+        border-radius: 2px;
         font-size: 11px;
         font-weight: 700;
       }
@@ -150,7 +150,7 @@ input[type="checkbox"] {
 
 .btn {
   padding: 6px 16px;
-  border-radius: 8px;
+  border-radius: 2px;
   font-size: 13px;
   font-weight: 300;
   cursor: pointer;
@@ -162,7 +162,7 @@ input[type="checkbox"] {
 
   &.btn-primary {
     color: #000000;
-    border-radius: 8px;
+    border-radius: 2px;
     font-size: 18px;
     border: 2px solid #000000;
 
@@ -177,7 +177,7 @@ input[type="checkbox"] {
     background: #ffffff;
     color: #222222;
     font-size: 16px;
-    border-radius: 8px;
+    border-radius: 2px;
     border: 2px solid #000000;
 
     &:hover {
@@ -253,7 +253,7 @@ input[type="checkbox"] {
 .btn-icon {
   background: #eeeeee;
   border: 1px solid #888888;
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 4px 8px;
   font-size: 11px;
   font-weight: 700;
@@ -272,7 +272,7 @@ input[type="checkbox"] {
   color: #ffffff;
   border: 1px solid #145c2e;
   padding: 4px 8px;
-  border-radius: 8px;
+  border-radius: 2px;
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -287,7 +287,7 @@ input[type="checkbox"] {
   color: #222222;
   border: 1px solid #888888;
   padding: 4px 8px;
-  border-radius: 8px;
+  border-radius: 2px;
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -324,7 +324,7 @@ input[type="checkbox"] {
       width: 100%;
       padding: 10px 14px;
       border: 2px solid #000000;
-      border-radius: 8px;
+      border-radius: 2px;
       font-size: 14px;
       padding: 10px 14px 10px 40px;
       outline: none;
@@ -340,7 +340,7 @@ input[type="checkbox"] {
     select {
       padding: 10px 14px;
       border: 2px solid #000000;
-      border-radius: 8px;
+      border-radius: 2px;
       font-size: 14px;
       background: #ffffff;
       outline: none;
@@ -360,7 +360,7 @@ input[type="checkbox"] {
     min-height: 42px;
     padding: 0 14px;
     border: 2px solid #000000;
-    border-radius: 8px;
+    border-radius: 2px;
     background: #ffffff;
     color: #222222;
     font: inherit;
@@ -391,7 +391,7 @@ input[type="checkbox"] {
     width: 100%;
     padding: 16px;
     border: 1px solid #888888;
-    border-radius: 8px;
+    border-radius: 2px;
     background: #ffffff;
 
     label {
@@ -411,7 +411,7 @@ input[type="checkbox"] {
       min-height: 40px;
       padding: 8px 10px;
       border: 2px solid #000000;
-      border-radius: 8px;
+      border-radius: 2px;
       background: #ffffff;
       color: #222222;
       font: inherit;
@@ -463,7 +463,7 @@ input[type="checkbox"] {
 
 .table-card {
   border: 1px solid #888888;
-  border-radius: 8px;
+  border-radius: 2px;
   overflow: hidden;
   box-shadow: none;
 
@@ -584,7 +584,7 @@ input[type="checkbox"] {
     padding: 3px 8px;
     font-size: 11px;
     font-weight: 600;
-    border-radius: 8px;
+    border-radius: 2px;
     cursor: pointer;
     border: 1px solid transparent;
     text-decoration: none;
@@ -653,7 +653,7 @@ input[type="checkbox"] {
 .badge {
   display: inline-block;
   padding: 3px 8px;
-  border-radius: 8px;
+  border-radius: 2px;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
@@ -663,7 +663,7 @@ input[type="checkbox"] {
   background: #eeeeee;
   color: #333333;
   padding: 4px 8px;
-  border-radius: 8px;
+  border-radius: 2px;
   font-size: 11px;
   font-weight: 600;
 }
@@ -686,7 +686,7 @@ input[type="checkbox"] {
   height: 28px;
   border: 3px solid #888888;
   border-top-color: #333333;
-  border-radius: 50%;
+  border-radius: 2px;
   animation: spin 0.8s linear infinite;
   margin: 0 auto 12px;
 }
@@ -701,7 +701,7 @@ input[type="checkbox"] {
     border: none !important;
     background: transparent !important;
     padding: 6px 8px;
-    border-radius: 6px;
+    border-radius: 2px;
     color: #444444;
     font-size: 25px;
     min-width: 36px;
@@ -748,7 +748,7 @@ input[type="checkbox"] {
 .panel.details.review-panel {
   background: #ffffff;
   border: 1px solid #dce1e7;
-  border-radius: 10px;
+  border-radius: 2px;
   padding: 24px;
   margin-top: 20px;
   animation: slide-down 0.25s ease;
@@ -775,7 +775,7 @@ input[type="checkbox"] {
       font-weight: 500;
       padding: 8px 16px;
       border: 1.5px solid #000000;
-      border-radius: 8px;
+      border-radius: 2px;
       background: #ffffff;
       color: #000000;
       cursor: pointer;
@@ -862,7 +862,7 @@ input[type="checkbox"] {
     textarea {
       width: 100%;
       border: 1px solid #bac3ce;
-      border-radius: 6px;
+      border-radius: 2px;
       padding: 10px 12px;
       font: inherit;
       background: #ffffff;
@@ -898,7 +898,7 @@ input[type="checkbox"] {
       font-weight: 500;
       padding: 10px 18px;
       border: 2px solid #000000;
-      border-radius: 8px;
+      border-radius: 2px;
       background: #e4e4e4;
       color: #000000;
       cursor: pointer;
@@ -957,7 +957,7 @@ input[type="checkbox"] {
 
 .modal-card {
   background: #ffffff;
-  border-radius: 8px;
+  border-radius: 2px;
   width: 100%;
   max-width: 500px;
   box-shadow: none;
@@ -1000,7 +1000,7 @@ input[type="checkbox"] {
     .review-info-box {
       background: #f5f5f5;
       padding: 12px 16px;
-      border-radius: 8px;
+      border-radius: 2px;
       border: 1px solid #888888;
       margin-bottom: 16px;
       font-size: 13px;
@@ -1027,7 +1027,7 @@ input[type="checkbox"] {
         width: 100%;
         padding: 8px 12px;
         border: 1px solid #888888;
-        border-radius: 8px;
+        border-radius: 2px;
         font-size: 13px;
         outline: none;
         box-sizing: border-box;
@@ -1069,7 +1069,7 @@ input[type="checkbox"] {
       .selected-file-info {
         display: block;
         border: 1px solid #888888;
-        border-radius: 8px;
+        border-radius: 2px;
         padding: 14px 16px;
         text-align: center;
         background: #f5f5f5;
@@ -1102,7 +1102,7 @@ input[type="checkbox"] {
     .import-result-box {
       background: #eeeeee;
       border: 1px solid #888888;
-      border-radius: 8px;
+      border-radius: 2px;
       padding: 14px;
       font-size: 13px;
 
@@ -1331,7 +1331,7 @@ textarea:focus-visible {
   padding: 4px 8px;
   display: inline-block;
   text-align: center;
-  border-radius: 8px;
+  border-radius: 2px;
   white-space: nowrap;
 }
 
@@ -1504,7 +1504,7 @@ textarea:focus-visible {
   color: #64748b;
   font-size: 13px;
   line-height: 1;
-  border-radius: 4px;
+  border-radius: 2px;
   vertical-align: middle;
   display: inline-flex;
   align-items: center;
@@ -1532,7 +1532,7 @@ textarea:focus-visible {
   flex-direction: column;
   background: #ffffff;
   border: 1px solid #d1d5db;
-  border-radius: 12px;
+  border-radius: 2px;
   overflow: hidden;
 }
 
@@ -1567,7 +1567,7 @@ textarea:focus-visible {
   align-items: center;
   justify-content: center;
   border: 1px solid #d1d5db;
-  border-radius: 8px;
+  border-radius: 2px;
   background: #ffffff;
   color: #475569;
   font-size: 17px;
@@ -1643,5 +1643,213 @@ textarea:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .checker-page-card {
     animation: none;
+  }
+}
+
+// Excel import and export surfaces
+.procurement-container .excel-action i {
+  color: #287a4b;
+}
+
+.procurement-container .excel-export i {
+  color: #287a4b;
+}
+
+.modal-card.modal-lg {
+  width: min(720px, calc(100vw - 32px));
+  border: 1px solid #d8dee5;
+  border-radius: 2px;
+  box-shadow: 0 24px 70px rgb(16 24 40 / 22%);
+}
+
+.modal-card .excel-modal-header {
+  min-height: 104px;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e7eaee;
+  background: #fff;
+}
+
+.excel-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.excel-modal-icon {
+  display: grid;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid #c9e5d3;
+  border-radius: 2px;
+  background: #edf7f0;
+  color: #287a4b;
+  font-size: 21px;
+}
+
+.excel-modal-kicker {
+  display: block;
+  margin-bottom: 4px;
+  color: #287a4b;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+}
+
+.modal-card .excel-modal-header h3 {
+  color: #202124;
+  font-size: 18px;
+}
+
+.excel-modal-header p {
+  margin: 4px 0 0;
+  color: #68707b;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.modal-card .modal-body {
+  padding: 20px 24px;
+  background: #fff;
+}
+
+.modal-card .modal-body .import-help {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid #e2e7ed;
+  border-radius: 2px;
+  background: #f7f8fa;
+}
+
+.import-help-copy {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: #515963;
+}
+
+.import-help-copy > i {
+  margin-top: 2px;
+  color: #536b86;
+}
+
+.import-help-copy p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.modal-card .modal-body .file-upload-box {
+  margin: 0 0 16px;
+}
+
+.modal-card .modal-body .file-upload-box .selected-file-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 76px;
+  padding: 16px;
+  border: 1px dashed #aeb8c4;
+  border-radius: 2px;
+  background: #fbfcfd;
+  color: #68707b;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.file-status-icon {
+  color: #287a4b;
+  font-size: 20px;
+}
+
+.modal-card .modal-body .file-upload-box .file-name {
+  color: #303741;
+  font-weight: 650;
+}
+
+.modal-card .modal-body .import-result-box {
+  padding: 15px;
+  border: 1px solid #c9e5d3;
+  border-radius: 2px;
+  background: #f3faf5;
+  color: #275d3c;
+}
+
+.modal-card .modal-body .import-result-box.has-errors {
+  border-color: #efd49e;
+  background: #fffaf0;
+  color: #785719;
+}
+
+.import-result-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.import-result-heading > i {
+  margin-top: 1px;
+  font-size: 16px;
+}
+
+.modal-card .modal-body .import-result-heading h4 {
+  margin: 0;
+  color: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.modal-card .modal-body .import-result-box .success-note {
+  margin: 10px 0 0 25px;
+  color: #3d4a41;
+  font-size: 12px;
+}
+
+.modal-card .modal-body .import-result-box .error-list-container {
+  max-height: 180px;
+  margin: 14px 0 0 25px;
+  padding-top: 12px;
+  border-top: 1px solid rgb(120 87 25 / 18%);
+  color: #6e4c12;
+}
+
+.modal-card .modal-body .error-list-container h5 {
+  margin: 0 0 8px;
+  font-size: 12px;
+}
+
+.modal-card .modal-body .error-list-container ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+  color: #6e4c12;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.modal-card .modal-footer {
+  padding: 14px 24px;
+  border-top: 1px solid #e7eaee;
+  background: #f7f8fa;
+}
+
+@media (max-width: 600px) {
+  .modal-card .excel-modal-header,
+  .modal-card .modal-body,
+  .modal-card .modal-footer {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .modal-card .modal-body .import-help {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

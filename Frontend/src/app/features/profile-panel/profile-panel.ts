@@ -1,5 +1,5 @@
 import { SensitiveValue } from '../../shared/sensitive/sensitive-value/sensitive-value';
-import { Component, ElementRef, OnDestroy, inject, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, inject, output, signal, viewChild } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { Gender, UpdateMyProfileRequest, UserResponse } from '../../features/auth/model/auth';
@@ -17,6 +17,7 @@ import { pastDate } from './helper/profile-panel.helper';
   styleUrl: './profile-panel.scss',
 })
 export class ProfilePanel implements OnDestroy {
+  readonly avatarUpdated = output<UserResponse>();
   private readonly userService = inject(UserService);
   private readonly faceAuth = inject(FaceAuthService);
   private readonly toast = inject(ToastService);
@@ -120,6 +121,7 @@ export class ProfilePanel implements OnDestroy {
         this.uploadingAvatar.set(false);
         this.avatarFailed.set(false);
         this.profile.set(updatedProfile);
+        this.avatarUpdated.emit(updatedProfile);
         this.toast.success('Cập nhật ảnh đại diện thành công!');
       },
       error: (err: any) => {

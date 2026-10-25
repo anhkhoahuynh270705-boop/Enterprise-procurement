@@ -1,25 +1,31 @@
-<#macro page link expiration>
+<#macro page link expiration isEmailVerification=false>
+<#assign subjectKey = isEmailVerification?then("emailVerifySubject", "emailResetSubject")>
+<#assign preheaderKey = isEmailVerification?then("emailVerifyPreheader", "emailResetPreheader")>
+<#assign eyebrowKey = isEmailVerification?then("emailVerifyEyebrow", "emailResetEyebrow")>
+<#assign headingKey = isEmailVerification?then("emailVerifyHeading", "emailResetHeading")>
+<#assign introKey = isEmailVerification?then("emailVerifyIntro", "emailResetIntro")>
+<#assign buttonKey = isEmailVerification?then("emailVerifyButton", "emailResetButton")>
 <!doctype html>
 <html lang="${locale.language!'vi'}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>${msg("emailResetSubject")?html}</title>
+  <title>${msg(subjectKey)?html}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f3f6fa;font-family:Arial,Helvetica,sans-serif;color:#172033;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
-    ${msg("emailResetPreheader")?html}
+    ${msg(preheaderKey)?html}
   </div>
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f3f6fa;">
     <tr>
       <td align="center" style="padding:36px 16px;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;background-color:#ffffff;border:1px solid #e5eaf1;border-radius:14px;overflow:hidden;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;background-color:#ffffff;border:1px solid #e5eaf1;border-radius:2px;overflow:hidden;">
           <tr>
             <td style="padding:24px 36px;background-color:#102a43;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                 <tr>
-                  <td width="38" height="38" align="center" valign="middle" style="width:38px;height:38px;border-radius:10px;background-color:#16a6a1;color:#ffffff;font-size:19px;font-weight:bold;">E</td>
+                  <td width="38" height="38" align="center" valign="middle" style="width:38px;height:38px;border-radius:2px;background-color:#16a6a1;color:#ffffff;font-size:19px;font-weight:bold;">E</td>
                   <td style="padding-left:12px;color:#ffffff;font-size:15px;font-weight:bold;letter-spacing:1.1px;">${msg("emailBrand")?html}</td>
                 </tr>
               </table>
@@ -27,22 +33,22 @@
           </tr>
           <tr>
             <td style="padding:38px 36px 16px;">
-              <p style="margin:0 0 12px;color:#11817e;font-size:12px;font-weight:bold;letter-spacing:1.2px;text-transform:uppercase;">${msg("emailResetEyebrow")?html}</p>
-              <h1 style="margin:0;color:#102a43;font-size:28px;line-height:1.25;font-weight:700;">${msg("emailResetHeading")?html}</h1>
+              <p style="margin:0 0 12px;color:#11817e;font-size:12px;font-weight:bold;letter-spacing:1.2px;text-transform:uppercase;">${msg(eyebrowKey)?html}</p>
+              <h1 style="margin:0;color:#102a43;font-size:28px;line-height:1.25;font-weight:700;">${msg(headingKey)?html}</h1>
             </td>
           </tr>
           <tr>
             <td style="padding:8px 36px 0;color:#46566b;font-size:16px;line-height:1.65;">
               <p style="margin:0 0 16px;">${msg("emailResetGreeting")?html}</p>
-              <p style="margin:0 0 22px;">${msg("emailResetIntro")?html}</p>
+              <p style="margin:0 0 22px;">${msg(introKey)?html}</p>
             </td>
           </tr>
           <tr>
             <td align="center" style="padding:4px 36px 24px;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                 <tr>
-                  <td align="center" style="border-radius:8px;background-color:#087f8c;">
-                    <a href="${link?html}" style="display:inline-block;padding:14px 26px;border:1px solid #087f8c;border-radius:8px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">${msg("emailResetButton")?html}</a>
+                  <td align="center" style="border-radius:2px;background-color:#087f8c;">
+                    <a href="${link?html}" style="display:inline-block;padding:14px 26px;border:1px solid #087f8c;border-radius:2px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">${msg(buttonKey)?html}</a>
                   </td>
                 </tr>
               </table>

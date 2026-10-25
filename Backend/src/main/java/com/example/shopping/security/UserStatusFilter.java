@@ -2,34 +2,38 @@ package com.example.shopping.security;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
+
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import com.example.shopping.common.enums.Role;
 
+import com.example.shopping.common.enums.Role;
 import com.example.shopping.user.entity.UserEntity;
 import com.example.shopping.user.repository.UserRepository;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
 public class UserStatusFilter extends OncePerRequestFilter {
 
     /* Block request when user being disabled   
     */
-    private final UserRepository userRepository;
+    UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)

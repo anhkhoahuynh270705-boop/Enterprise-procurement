@@ -1,9 +1,15 @@
 import { AbstractControl, ValidatorFn } from '@angular/forms';
 
 const NAME_PATTERN = /^\p{L}+(?: \p{L}+)*$/u;
+const COMPANY_NAME_PATTERN =
+  /^(?:\p{L}+|\(\p{L}+(?: \p{L}+)*\))(?: (?:\p{L}+|\(\p{L}+(?: \p{L}+)*\)))*$/u;
 const BANK_NAME_PATTERN = /^\p{L}+(?: \p{L}+)*(?: \(\p{L}+(?: \p{L}+)*\))?$/u;
-const PHONE_PATTERN = /^[0-9]{9,15}$/;
+const PHONE_PATTERN = /^(?=(?:[^0-9]*[0-9]){8,15}[^0-9]*$)[0-9 ]+$/;
 const BANK_ACCOUNT_PATTERN = /^[0-9]{6,50}$/;
+
+export function normalizeSupplierCompanyName(value: string): string {
+  return value.normalize('NFKC').replace(/\p{Zs}/gu, ' ').trim();
+}
 
 export function supplierNameValidator(required = false): ValidatorFn {
   return (control) => {
@@ -11,6 +17,17 @@ export function supplierNameValidator(required = false): ValidatorFn {
     const normalized = value.trim();
     if (!normalized) return required ? { required: true, name: true } : null;
     return NAME_PATTERN.test(normalized) && !/\s{2,}/.test(value) ? null : { name: true };
+  };
+}
+
+export function supplierCompanyNameValidator(required = false): ValidatorFn {
+  return (control) => {
+    const value = String(control.value ?? '');
+    const normalized = normalizeSupplierCompanyName(value);
+    if (!normalized) return required ? { required: true, companyName: true } : null;
+    return COMPANY_NAME_PATTERN.test(normalized)
+      ? null
+      : { companyName: true };
   };
 }
 
@@ -26,7 +43,7 @@ export function bankNameValidator(): ValidatorFn {
 export function phoneValidator(): ValidatorFn {
   return (control) => {
     const value = String(control.value ?? '');
-    return !value || PHONE_PATTERN.test(value) ? null : { pattern: true };
+    return !value.trim() || PHONE_PATTERN.test(value) ? null : { pattern: true };
   };
 }
 

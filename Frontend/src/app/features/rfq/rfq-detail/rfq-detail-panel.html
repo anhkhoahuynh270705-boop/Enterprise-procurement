@@ -1,0 +1,802 @@
+@if (record(); as rfq) {
+  <div
+    class="drawer-backdrop"
+    (click)="page().closeRfq()"
+    (keydown.escape)="page().closeRfq()"
+    (keydown)="page().trapDialogFocus($event)"
+  >
+    <section
+      class="rfq-drawer"
+      role="dialog"
+      aria-modal="true"
+      tabindex="-1"
+      [attr.aria-label]="'Chi tiết và so sánh ' + rfq.code"
+      (click)="$event.stopPropagation()"
+      (keydown.escape)="page().closeRfq()"
+      (keydown)="page().trapDialogFocus($event)"
+    >
+      <header class="drawer-header">
+        <div class="drawer-title">
+          <span class="drawer-code">{{ rfq.code }}</span
+          ><span class="status-badge" [class]="'status-badge ' + page().statusClass(rfq.status)">{{
+            page().statusLabel(rfq.status)
+          }}</span>
+          <h2>{{ rfq.title }}</h2>
+          <p>
+            {{ rfq.prCode }} · {{ rfq.department }} · Người tạo: {{ rfq.creatorName }} · Hạn nộp:
+            {{ rfq.deadline | date: 'dd/MM/yyyy HH:mm' }}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="close-button"
+          autofocus
+          (click)="page().closeRfq()"
+          aria-label="Đóng chi tiết"
+        >
+          <i class="fa fa-times"></i>
+        </button>
+        <div class="progress-track" aria-label="Tiến độ RFQ">
+          <span [class.current]="rfq.status === 'PENDING_RFQ_APPROVAL'">Mời</span
+          ><span [class.current]="['RECEIVING_QUOTES', 'CLOSED_QUOTES'].includes(rfq.status)"
+            >Phản hồi</span
+          ><span [class.current]="['COMPARING', 'PENDING_RESULT_APPROVAL'].includes(rfq.status)"
+            >So sánh</span
+          ><span [class.current]="rfq.status === 'PENDING_RESULT_APPROVAL'">Duyệt</span
+          ><span [class.current]="['SELECTED_SUPPLIER', 'PO_CREATED'].includes(rfq.status)"
+            >Chốt</span
+          >
+        </div>
+      </header>
+      <nav class="detail-tabs" aria-label="Các mục chi tiết">
+        <button
+          type="button"
+          [class.active]="page().detailTab() === 'OVERVIEW'"
+          (click)="page().setDetailTab('OVERVIEW')"
+        >
+          Tổng quan
+        </button>
+        <button
+          type="button"
+          [class.active]="page().detailTab() === 'QUOTES'"
+          (click)="page().setDetailTab('QUOTES')"
+        >
+          Báo giá NCC <span>{{ rfq.quotes.length }}</span>
+        </button>
+        <button
+          type="button"
+          [class.active]="page().detailTab() === 'COMPARISON'"
+          (click)="page().setDetailTab('COMPARISON')"
+        >
+          So sánh
+        </button>
+        <button
+          type="button"
+          [class.active]="page().detailTab() === 'APPROVAL'"
+          (click)="page().setDetailTab('APPROVAL')"
+        >
+          Phê duyệt
+        </button>
+        <button
+          type="button"
+          [class.active]="page().detailTab() === 'HISTORY'"
+          (click)="page().setDetailTab('HISTORY')"
+        >
+          Lịch sử
+        </button>
+      </nav>
+      <div class="drawer-content">
+        @if (page().detailTab() === 'OVERVIEW') {
+          <section class="overview-grid">
+            <article class="detail-card">
+              <h3>Thông tin RFQ</h3>
+              <dl>
+                <dt>Phiếu mua sắm</dt>
+                <dd>{{ rfq.prCode }}</dd>
+                <dt>Phòng ban</dt>
+                <dd>{{ rfq.department }}</dd>
+                <dt>Người tạo</dt>
+                <dd>
+                  {{ rfq.creatorName }} <small>({{ rfq.createdBy }})</small>
+                </dd>
+                <dt>Ngày tạo</dt>
+                <dd>{{ rfq.createdAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
+                <dt>Hạn nhận báo giá</dt>
+                <dd [class.text-danger]="page().deadlineIsPast(rfq.deadline)">
+                  {{ rfq.deadline | date: 'dd/MM/yyyy HH:mm' }} ·
+                  {{ page().countdown(rfq.deadline) }}
+                </dd>
+                <dt>Hiệu lực báo giá</dt>
+                <dd>{{ rfq.validityDays }} ngày</dd>
+              </dl>
+            </article>
+            <article class="detail-card">
+              <h3>Nhà cung cấp được mời</h3>
+              <ul class="supplier-list">
+                @for (invite of rfq.invitedSuppliers; track invite.supplierId) {
+                  <li>
+                    <span class="supplier-mark">{{ invite.supplierName.slice(0, 1) }}</span
+                    ><span>{{ invite.supplierName }}</span
+                    ><span class="supplier-state">{{
+                      invite.status === 'RESPONDED'
+                        ? 'Đã phản hồi'
+                        : invite.status === 'DECLINED'
+                          ? 'Từ chối'
+                          : invite.status === 'REVOKED'
+                            ? 'Đã thu hồi'
+                            : 'Chưa phản hồi'
+                    }}</span>
+                    @if (
+                      page().role() === 'MAKER' &&
+                      rfq.createdBy === page().username &&
+                      ['SENT', 'RECEIVING_QUOTES'].includes(rfq.status) &&
+                      invite.status === 'INVITED'
+                    ) {
+                      <button
+                        type="button"
+                        class="button button-secondary"
+                        (click)="page().sendInvitation(rfq, invite.supplierId)"
+                      >
+                        Gửi link
+                      </button>
+                    }
+                  </li>
+                }
+              </ul>
+              <p class="muted">
+                {{ rfq.respondedSupplierCount }} / {{ rfq.invitedSupplierCount }} nhà cung cấp đã
+                gửi báo giá.
+              </p>
+            </article>
+            <article class="detail-card full">
+              <div class="card-heading">
+                <h3>Hạng mục yêu cầu</h3>
+                <span>{{ rfq.items.length }} dòng</span>
+              </div>
+              <div class="table-scroll">
+                <table class="simple-table">
+                  <thead>
+                    <tr>
+                      <th>Mã hàng</th>
+                      <th>Hạng mục</th>
+                      <th>Số lượng</th>
+                      <th>Ngân sách / đơn vị</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of rfq.items; track item.id) {
+                      <tr>
+                        <td>{{ item.sku }}</td>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.quantity }} {{ item.unit }}</td>
+                        <td>{{ page().formatVnd(item.budgetUnitPrice) }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </article>
+            @if (page().canEdit(rfq)) {
+              <div class="role-actions full">
+                <button type="button" class="button button-secondary" (click)="page().editRfq(rfq)">
+                  Chỉnh sửa RFQ
+                </button>
+              </div>
+            }
+            @if (
+              page().role() === 'MAKER' &&
+              rfq.createdBy === page().username &&
+              ['SENT', 'RECEIVING_QUOTES'].includes(rfq.status)
+            ) {
+              <div class="role-actions full">
+                <button
+                  type="button"
+                  class="button button-secondary"
+                  (click)="page().closeQuotes(rfq)"
+                >
+                  Đóng nhận báo giá
+                </button>
+              </div>
+            }
+            @if (
+              page().role() === 'MAKER' &&
+              rfq.createdBy === page().username &&
+              rfq.status === 'CLOSED_QUOTES'
+            ) {
+              <div class="role-actions full">
+                <button
+                  type="button"
+                  class="button button-secondary"
+                  (click)="page().startComparison(rfq)"
+                >
+                  Bắt đầu so sánh
+                </button>
+              </div>
+            }
+            @if (page().role() === 'MAKER' && rfq.status === 'COMPARING') {
+              <div class="role-actions full">
+                <button
+                  type="button"
+                  class="button button-secondary"
+                  (click)="page().requestRequote(rfq)"
+                >
+                  Yêu cầu chào lại</button
+                ><button
+                  type="button"
+                  class="button button-primary"
+                  (click)="page().setDetailTab('COMPARISON')"
+                >
+                  Tiếp tục so sánh
+                </button>
+              </div>
+            }
+            @if (page().canCreatePo(rfq)) {
+              <div class="role-actions full">
+                <button
+                  type="button"
+                  class="button button-primary"
+                  (click)="page().createPurchaseOrder(rfq)"
+                >
+                  Tạo đơn đặt hàng
+                </button>
+              </div>
+            }
+            @if (page().role() === 'ADMIN') {
+              <div class="role-actions full">
+                @if (page().canCancel(rfq)) {
+                  <button
+                    type="button"
+                    class="button button-danger"
+                    (click)="page().cancelRfq(rfq)"
+                  >
+                    Hủy RFQ
+                  </button>
+                }
+              </div>
+            }
+          </section>
+        }
+        @if (page().detailTab() === 'QUOTES') {
+          <section class="quote-cards">
+            @for (quote of rfq.quotes; track quote.id) {
+              <article class="detail-card">
+                <div class="card-heading">
+                  <div>
+                    <span class="round-tag">V{{ quote.round }}</span>
+                    <h3>{{ quote.supplierName }}</h3>
+                  </div>
+                  <span
+                    class="technical-badge"
+                    [class]="'technical-badge ' + page().technicalClass(quote.technicalStatus)"
+                    >{{ page().technicalLabel(quote.technicalStatus) }}</span
+                  >
+                </div>
+                <p>Nhận lúc {{ quote.submittedAt | date: 'dd/MM/yyyy HH:mm' }}</p>
+                @if (page().hasIncompleteQuote(rfq, quote)) {
+                  <p class="quote-warning">
+                    <i class="fa fa-exclamation-triangle"></i> Báo giá chưa đầy đủ: nhà cung cấp
+                    chưa chào đủ hạng mục.
+                  </p>
+                }
+                <div class="table-scroll">
+                  <table class="simple-table">
+                    <thead>
+                      <tr>
+                        <th>Hạng mục</th>
+                        <th>Đơn giá</th>
+                        <th>Thành tiền</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of rfq.items; track item.id) {
+                        <tr>
+                          <td>{{ item.name }}</td>
+                          @if (page().priceAt(quote, item.id) === null) {
+                            <td colspan="2" class="no-quote-text">Không chào giá</td>
+                          } @else {
+                            <td>{{ page().formatVnd(page().priceAt(quote, item.id)!) }}</td>
+                            <td>{{ page().formatVnd(page().lineTotal(quote, item)!) }}</td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+                <div class="quote-meta">
+                  <span>Giao {{ quote.deliveryDays }} ngày</span
+                  ><span>{{ quote.paymentTerms }}</span
+                  ><span>Bảo hành {{ quote.warranty }}</span
+                  ><strong>{{ page().formatVnd(page().totalCost(rfq, quote)) }}</strong>
+                </div>
+              </article>
+            }
+          </section>
+        }
+        @if (page().detailTab() === 'COMPARISON') {
+          <section class="comparison-section" id="rfq-comparison">
+            <div class="comparison-heading">
+              <div>
+                <p class="eyebrow">PHÂN TÍCH BÁO GIÁ</p>
+                <h3>Ma trận so sánh nhà cung cấp</h3>
+                <p>Giá thấp nhất và ngân sách được tô màu để hỗ trợ quyết định.</p>
+              </div>
+              <div class="comparison-tools">
+                <label
+                  ><input
+                    type="checkbox"
+                    [checked]="page().includeVat()"
+                    (change)="page().toggleVat()"
+                  />
+                  Hiển thị sau VAT</label
+                ><label
+                  ><input
+                    type="checkbox"
+                    [checked]="page().onlyDifferences()"
+                    (change)="page().toggleDifferences()"
+                  />
+                  Chỉ dòng có chênh lệch</label
+                ><button
+                  type="button"
+                  class="button button-secondary"
+                  (click)="page().exportComparisonExcel()"
+                >
+                  Xuất Excel</button
+                ><button
+                  type="button"
+                  class="button button-secondary"
+                  (click)="page().exportComparisonPdf()"
+                >
+                  Xuất PDF
+                </button>
+              </div>
+            </div>
+            <div class="supplier-visibility">
+              <strong>Cột nhà cung cấp:</strong>
+              @for (quote of page().currentQuotes(rfq); track quote.id) {
+                <label
+                  ><input
+                    type="checkbox"
+                    [checked]="!page().hiddenSuppliers().includes(quote.supplierId)"
+                    (change)="page().toggleSupplier(quote.supplierId)"
+                  />{{ quote.supplierName }}</label
+                >
+              }
+            </div>
+            @if (page().hasIncompleteQuotes(rfq)) {
+              <p class="quote-warning">
+                <i class="fa fa-exclamation-triangle"></i> Có báo giá chưa đầy đủ. Hạng mục không
+                được chào giá được hiển thị riêng và không tính vào tổng báo giá của nhà cung cấp.
+              </p>
+            }
+            <div class="matrix-scroll">
+              <table class="comparison-matrix">
+                <thead>
+                  <tr>
+                    <th class="sticky-item">HẠNG MỤC</th>
+                    @for (quote of page().getVisibleQuotes(rfq); track quote.id) {
+                      <th>
+                        {{ quote.supplierName }}<small>Vòng {{ quote.round }}</small>
+                      </th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of page().matrixItems(rfq); track item.id) {
+                    <tr>
+                      <th class="sticky-item">
+                        <strong>{{ item.name }}</strong
+                        ><small
+                          >{{ item.sku }} · {{ item.quantity }} {{ item.unit }} · Ngân sách
+                          {{ page().formatVnd(item.budgetUnitPrice) }}</small
+                        ><label class="item-winner"
+                          >Chọn NCC hạng mục<select
+                            [value]="page().itemWinnerDraft()[item.id] || ''"
+                            (change)="page().setItemWinner(item.id, $any($event.target).value)"
+                          >
+                            <option value="">Chưa chọn</option>
+                            @for (quote of page().currentQuotes(rfq); track quote.id) {
+                              <option [value]="quote.supplierId">{{ quote.supplierName }}</option>
+                            }
+                          </select></label
+                        >
+                        @if (page().itemWinnerNeedsReason(rfq, item.id)) {
+                          <input
+                            class="reason-input"
+                            type="text"
+                            [value]="page().itemReasonDraft()[item.id] || ''"
+                            (input)="page().setItemReason(item.id, $any($event.target).value)"
+                            placeholder="Giải trình bắt buộc (10+ ký tự)"
+                            aria-label="Lý do chọn giá không thấp nhất"
+                          />
+                        }
+                      </th>
+                      @for (quote of page().getVisibleQuotes(rfq); track quote.id) {
+                        <td [class]="'price-cell ' + page().quoteCellClass(rfq, quote, item.id)">
+                          @if (page().priceAt(quote, item.id) === null) {
+                            <strong>Không chào</strong><small>Thiếu báo giá</small>
+                          } @else {
+                            <strong>{{
+                              page().formatVnd(
+                                page().includeVat()
+                                  ? page().priceAt(quote, item.id)! * 1.1
+                                  : page().priceAt(quote, item.id)!
+                              )
+                            }}</strong
+                            ><small
+                              >Thành tiền:
+                              {{
+                                page().formatVnd(
+                                  page().includeVat()
+                                    ? page().lineTotal(quote, item)! * 1.1
+                                    : page().lineTotal(quote, item)!
+                                )
+                              }}</small
+                            ><small
+                              [class.positive]="page().pctDiffFromLowest(rfq, quote, item.id) === 0"
+                              >{{ page().pctDiffFromLowest(rfq, quote, item.id)! >= 0 ? '+' : ''
+                              }}{{
+                                page().pctDiffFromLowest(rfq, quote, item.id) | number: '1.0-1'
+                              }}% so với thấp nhất</small
+                            ><small
+                              [class.negative]="
+                                page().priceAt(quote, item.id)! > item.budgetUnitPrice
+                              "
+                              >{{
+                                (page().priceAt(quote, item.id)! / item.budgetUnitPrice - 1) * 100
+                                  | number: '1.0-1'
+                              }}% so với ngân sách</small
+                            >
+                          }
+                        </td>
+                      }
+                    </tr>
+                  }
+                  <tr class="matrix-total">
+                    <th class="sticky-item">TỔNG TRƯỚC VAT</th>
+                    @for (quote of page().getVisibleQuotes(rfq); track quote.id) {
+                      <td>{{ page().formatVnd(page().quoteSubtotal(rfq, quote)) }}</td>
+                    }
+                  </tr>
+                  <tr class="matrix-total">
+                    <th class="sticky-item">TỔNG SAU VAT + PHÍ</th>
+                    @for (quote of page().getVisibleQuotes(rfq); track quote.id) {
+                      <td>{{ page().formatVnd(page().totalCost(rfq, quote)) }}</td>
+                    }
+                  </tr>
+                  <tr>
+                    <th class="sticky-item">Phí vận chuyển</th>
+                    @for (quote of page().getVisibleQuotes(rfq); track quote.id) {
+                      <td>{{ page().formatVnd(quote.shipping) }}</td>
+                    }
+                  </tr>
+                  <tr>
+                    <th class="sticky-item">Chi phí khác</th>
+                    @for (quote of page().getVisibleQuotes(rfq); track quote.id) {
+                      <td>{{ page().formatVnd(quote.otherCost) }}</td>
+                    }
+                  </tr>
+                  <tr>
+                    <th class="sticky-item">Tổng chi phí sở hữu (TCO)</th>
+                    @for (quote of page().getVisibleQuotes(rfq); track quote.id) {
+                      <td class="money">{{ page().formatVnd(page().totalCost(rfq, quote)) }}</td>
+                    }
+                  </tr>
+                  <tr>
+                    <th class="sticky-item">Thời gian giao hàng</th>
+                    @for (quote of page().getVisibleQuotes(rfq); track quote.id) {
+                      <td>{{ quote.deliveryDays }} ngày</td>
+                    }
+                  </tr>
+                  <tr>
+                    <th class="sticky-item">Thanh toán / Bảo hành</th>
+                    @for (quote of page().getVisibleQuotes(rfq); track quote.id) {
+                      <td>
+                        {{ quote.paymentTerms }}<small>{{ quote.warranty }}</small>
+                      </td>
+                    }
+                  </tr>
+                  <tr>
+                    <th class="sticky-item">Hiệu lực / Kỹ thuật</th>
+                    @for (quote of page().getVisibleQuotes(rfq); track quote.id) {
+                      <td>
+                        {{ quote.validityDays }} ngày
+                        <span
+                          class="technical-badge"
+                          [class]="
+                            'technical-badge ' + page().technicalClass(quote.technicalStatus)
+                          "
+                          >{{ page().technicalLabel(quote.technicalStatus) }}</span
+                        >
+                      </td>
+                    }
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="score-section">
+              <div class="score-heading">
+                <div>
+                  <h3>Chấm điểm theo trọng số</h3>
+                </div>
+                <span class="edit-score-label">Trọng số được lưu theo cấu hình RFQ</span>
+              </div>
+              @if (page().weightTotal() !== 100) {
+                <p class="quote-warning">
+                  Tổng trọng số đang là {{ page().weightTotal() }}%. Hãy điều chỉnh về 100% trước
+                  khi trình duyệt.
+                </p>
+              }
+              <div class="score-table-wrap">
+                <table class="score-table">
+                  <thead>
+                    <tr>
+                      <th>Tiêu chí</th>
+                      <th>Trọng số</th>
+                      @for (quote of page().rankedQuotes(rfq); track quote.id) {
+                        <th>{{ quote.supplierName }}</th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (key of page().scoreKeys; track key) {
+                      <tr>
+                        <th>{{ page().scoreLabel(key) }}</th>
+                        <td>{{ page().weights()[key] }}%</td>
+                        @for (quote of page().rankedQuotes(rfq); track quote.id) {
+                          <td>
+                            @if (
+                              page().role() === 'MAKER' &&
+                              rfq.status === 'COMPARING' &&
+                              key !== 'price'
+                            ) {
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                [value]="page().scoreValue(rfq, quote, key)"
+                                (change)="
+                                  page().updateQuoteScore(
+                                    rfq.code,
+                                    quote.id,
+                                    key,
+                                    +$any($event.target).value
+                                  )
+                                "
+                                aria-label="{{ page().scoreLabel(key) }} điểm {{
+                                  quote.supplierName
+                                }}"
+                              />
+                            } @else {
+                              {{ page().scoreValue(rfq, quote, key) | number: '1.0-1' }}
+                            }
+                            / 100
+                          </td>
+                        }
+                      </tr>
+                    }
+                    <tr class="score-total">
+                      <th>TỔNG ĐIỂM</th>
+                      <td>100%</td>
+                      @for (quote of page().rankedQuotes(rfq); track quote.id; let rank = $index) {
+                        <td>
+                          <strong>{{ page().weightedScore(rfq, quote) | number: '1.1-1' }}</strong>
+                          @if (rank === 0) {
+                            <span class="top-score-tag">Hạng 1</span>
+                          }
+                        </td>
+                      }
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="score-bars" aria-label="Biểu đồ điểm nhà cung cấp">
+                @for (quote of page().rankedQuotes(rfq); track quote.id) {
+                  <div class="score-bar-row">
+                    <span>{{ quote.supplierName }}</span>
+                    <div class="bar-track">
+                      <span
+                        [style.width.%]="page().weightedScore(rfq, quote)"
+                        [class.best]="quote === page().topScoreSupplier(rfq)"
+                      ></span>
+                    </div>
+                    <strong>{{ page().weightedScore(rfq, quote) | number: '1.1-1' }}</strong>
+                  </div>
+                }
+              </div>
+            </div>
+            @if (
+              page().role() === 'MAKER' &&
+              rfq.createdBy === page().username &&
+              rfq.status === 'CLOSED_QUOTES'
+            ) {
+              <section class="winner-box">
+                <h3>RFQ đã đóng nhận báo giá</h3>
+                <p>Bắt đầu so sánh để đề xuất nhà cung cấp và trình checker duyệt kết quả.</p>
+                <button
+                  type="button"
+                  class="button button-primary"
+                  (click)="page().startComparison(rfq)"
+                >
+                  Bắt đầu so sánh
+                </button>
+              </section>
+            }
+            @if (
+              page().role() === 'MAKER' &&
+              rfq.createdBy === page().username &&
+              rfq.status === 'COMPARING'
+            ) {
+              <section class="winner-box">
+                <h3>Đề xuất nhà cung cấp thắng</h3>
+                <p>
+                  Giá thấp nhất:
+                  <strong>{{
+                    page().lowestPriceSupplier(rfq)?.supplierName || 'Chưa đủ báo giá hoàn chỉnh'
+                  }}</strong>
+                  · Điểm cao nhất:
+                  <strong>{{ page().topScoreSupplier(rfq)?.supplierName || '—' }}</strong>
+                </p>
+                <label
+                  >Nhà cung cấp đề xuất<select
+                    [value]="page().winnerDraft()"
+                    (change)="page().chooseWinner($any($event.target).value)"
+                  >
+                    <option value="">Chọn nhà cung cấp</option>
+                    @for (quote of page().currentQuotes(rfq); track quote.id) {
+                      <option [value]="quote.supplierId">{{ quote.supplierName }}</option>
+                    }
+                  </select></label
+                >
+                @if (page().globalWinnerNeedsReason(rfq)) {
+                  <label class="reason-required"
+                    >Lý do chọn khác giá thấp nhất / điểm cao nhất <span>*</span
+                    ><textarea
+                      [value]="page().winnerReasonDraft()"
+                      (input)="page().setWinnerReason($any($event.target).value)"
+                      rows="3"
+                      placeholder="Nhập lý do giải trình, tối thiểu 10 ký tự"
+                    ></textarea>
+                  </label>
+                }
+                <div class="winner-actions">
+                  <button
+                    type="button"
+                    class="button button-secondary"
+                    (click)="page().saveWinner(rfq)"
+                    [disabled]="
+                      !page().winnerDraft() ||
+                      (page().globalWinnerNeedsReason(rfq) &&
+                        page().winnerReasonDraft().trim().length < 10)
+                    "
+                  >
+                    Lưu lựa chọn</button
+                  ><button
+                    type="button"
+                    class="button button-primary"
+                    (click)="page().submitResultForApproval(rfq)"
+                    [disabled]="
+                      !page().winnerDraft() ||
+                      page().weightTotal() !== 100 ||
+                      (page().globalWinnerNeedsReason(rfq) &&
+                        page().winnerReasonDraft().trim().length < 10)
+                    "
+                  >
+                    Trình duyệt kết quả
+                  </button>
+                </div>
+              </section>
+            }
+
+          </section>
+        }
+        @if (page().detailTab() === 'APPROVAL') {
+          <section class="approval-layout">
+            <article class="detail-card">
+              <h3>Quyết định và giải trình</h3>
+              <p>
+                Trạng thái hiện tại:
+                <span
+                  class="status-badge"
+                  [class]="'status-badge ' + page().statusClass(rfq.status)"
+                  >{{ page().statusLabel(rfq.status) }}</span
+                >
+              </p>
+              @if (rfq.chosenSupplierId) {
+                <p>
+                  Maker đề xuất: <strong>{{ page().supplierName(rfq.chosenSupplierId) }}</strong>
+                </p>
+                <p class="reason-display">{{ rfq.selectionReason }}</p>
+              }
+              @if (rfq.decisionReason) {
+                <p class="reason-display">Quyết định trước: {{ rfq.decisionReason }}</p>
+              }
+              @if (page().canCurrentUserReview(rfq)) {
+                <div class="decision-box">
+                  <label
+                    >Lý do quyết định <span>*</span
+                    ><textarea
+                      rows="4"
+                      [value]="page().decisionReason()"
+                      (input)="page().decisionReason.set($any($event.target).value)"
+                      placeholder="Nhập lý do duyệt, trả lại hoặc từ chối (tối thiểu 10 ký tự)"
+                    ></textarea>
+                  </label>
+                  <div class="decision-actions">
+                    <button
+                      type="button"
+                      class="button button-primary"
+                      (click)="page().decision(rfq, 'APPROVE')"
+                      [disabled]="page().decisionReason().trim().length < 10"
+                    >
+                      Duyệt</button
+                    ><button
+                      type="button"
+                      class="button button-secondary"
+                      (click)="page().decision(rfq, 'RETURN')"
+                      [disabled]="page().decisionReason().trim().length < 10"
+                    >
+                      Trả lại</button
+                    ><button
+                      type="button"
+                      class="button button-danger"
+                      (click)="page().decision(rfq, 'REJECT')"
+                      [disabled]="page().decisionReason().trim().length < 10"
+                    >
+                      Từ chối
+                    </button>
+                  </div>
+                </div>
+              } @else if (page().role() === 'CHECKER') {
+                <p class="muted">
+                  Bạn không có RFQ chờ duyệt trong hồ sơ này hoặc không được duyệt hồ sơ do chính
+                  mình tạo.
+                </p>
+              }
+              @if (page().role() === 'ADMIN') {
+                <div class="decision-actions">
+                  @if (page().canCancel(rfq)) {
+                    <button
+                      type="button"
+                      class="button button-danger"
+                      (click)="page().cancelRfq(rfq)"
+                    >
+                      Hủy RFQ
+                    </button>
+                  }
+                </div>
+              }
+              @if (page().canCreatePo(rfq)) {
+                <button
+                  type="button"
+                  class="button button-primary"
+                  (click)="page().createPurchaseOrder(rfq)"
+                >
+                  Tạo đơn đặt hàng
+                </button>
+              }
+            </article>
+          </section>
+        }
+        @if (page().detailTab() === 'HISTORY') {
+          <section class="history-card">
+            <h3>Lịch sử thay đổi</h3>
+            <ol class="timeline">
+              @for (entry of rfq.history; track $index) {
+                <li>
+                  <span class="timeline-dot"></span>
+                  <div>
+                    <strong>{{ entry.action }}</strong
+                    ><small>{{ entry.actor }} · {{ entry.at | date: 'dd/MM/yyyy HH:mm:ss' }}</small>
+                    @if (entry.detail) {
+                      <p>{{ entry.detail }}</p>
+                    }
+                  </div>
+                </li>
+              }
+            </ol>
+          </section>
+        }
+      </div>
+    </section>
+  </div>
+}

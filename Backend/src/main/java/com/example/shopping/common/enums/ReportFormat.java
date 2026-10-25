@@ -1,14 +1,16 @@
 package com.example.shopping.common.enums;
 
 import lombok.Getter;
+import lombok.experimental.FieldDefaults;
 
 @Getter
+@FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
 public enum ReportFormat {
     PDF("application/pdf", "pdf"),
     EXCEL("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx");
 
-    private final String contentType;
-    private final String extension;
+    String contentType;
+    String extension;
 
     ReportFormat(String contentType, String extension) {
         this.contentType = contentType;

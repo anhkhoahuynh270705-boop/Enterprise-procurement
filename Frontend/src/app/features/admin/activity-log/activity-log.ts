@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { ToastService } from '../../../core/services/toast.service';
 import { AuditLogService } from '../services/audit-log.service';
 import { AuditLogItem, PagedResponse } from '../model/audit-log.model';
@@ -9,7 +9,7 @@ import { AuditLogItem, PagedResponse } from '../model/audit-log.model';
 @Component({
   selector: 'app-activity-log',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './activity-log.html',
   styleUrl: './activity-log.scss',
 })
@@ -18,11 +18,15 @@ export class ActivityLog implements OnInit, OnDestroy {
   private readonly svc = inject(AuditLogService);
   private readonly destroy$ = new Subject<void>();
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly fb = inject(FormBuilder);
+
+  readonly filtersForm = this.fb.nonNullable.group({
+    searchKeyword: '',
+    levelFilter: 'ALL',
+    dateFilter: 'TODAY',
+  });
 
   activeCategory: string = 'ALL';
-  searchKeyword: string = '';
-  levelFilter: string = 'ALL';
-  dateFilter: string = 'TODAY';
   isLoading: boolean = false;
 
   selectedLog: AuditLogItem | null = null;
@@ -85,6 +89,15 @@ export class ActivityLog implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.filtersForm.controls.searchKeyword.valueChanges
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe(() => this.onFilterChange());
+    this.filtersForm.controls.levelFilter.valueChanges
+      .pipe(distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe(() => this.onFilterChange());
+    this.filtersForm.controls.dateFilter.valueChanges
+      .pipe(distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe(() => this.onFilterChange());
     this.load();
   }
 
@@ -95,12 +108,13 @@ export class ActivityLog implements OnInit, OnDestroy {
 
   load(): void {
     this.isLoading = true;
+    const filters = this.filtersForm.getRawValue();
     this.svc
       .search({
         module: this.activeCategory,
-        status: this.levelFilter,
-        dateRange: this.dateFilter,
-        keyword: this.searchKeyword,
+        status: filters.levelFilter,
+        dateRange: filters.dateFilter,
+        keyword: filters.searchKeyword,
         page: this.currentPage,
         size: this.pageSize,
       })
@@ -132,11 +146,6 @@ export class ActivityLog implements OnInit, OnDestroy {
   }
 
   onFilterChange(): void {
-    this.currentPage = 0;
-    this.load();
-  }
-
-  onSearch(): void {
     this.currentPage = 0;
     this.load();
   }

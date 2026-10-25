@@ -10,15 +10,9 @@
         <div id="kc-info-message">
             <p class="instruction">${kcSanitize(message.summary)?no_esc}<#if requiredActions??><#list requiredActions>: <b><#items as reqActionItem>${msg("requiredAction.${reqActionItem}")}<#sep>, </#items></b></#list></#if></p>
 
-            <#assign loginTargetUrl = "http://localhost:4200/login">
-            <#if pageRedirectUri?has_content>
-                <#assign loginTargetUrl = pageRedirectUri>
-            <#elseif (client.baseUrl)?has_content>
-                <#assign loginTargetUrl = client.baseUrl>
-            <#elseif url.loginUrl?has_content>
+            <#assign loginTargetUrl = url.loginRestartFlowUrl!''>
+            <#if url.loginUrl?has_content>
                 <#assign loginTargetUrl = url.loginUrl>
-            <#elseif url.loginRestartFlowUrl?has_content>
-                <#assign loginTargetUrl = url.loginRestartFlowUrl>
             </#if>
 
             <div id="kc-form-buttons" class="${properties.kcFormGroupClass!}" style="margin-top: 24px;">

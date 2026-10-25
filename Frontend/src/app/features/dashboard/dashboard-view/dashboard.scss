@@ -16,7 +16,7 @@
 .filter-toolbar select, .filter-toolbar button { 
   padding: 7px; 
   border: 1px solid #c8c6c4; 
-  border-radius: 4px; 
+  border-radius: 2px; 
   background: #ffffff; 
 }
 
@@ -102,7 +102,7 @@ canvas {
   gap: 8px;
   padding: 8px 11px;
   border: 1px solid #e1dfdd;
-  border-radius: 3px;
+  border-radius: 2px;
   background: #ffffff;
   color: #605e5c;
   font-size: 12px;
@@ -111,7 +111,7 @@ canvas {
 .live-dot {
   width: 7px;
   height: 7px;
-  border-radius: 50%;
+  border-radius: 2px;
   background: #107c10;
 }
 
@@ -128,7 +128,7 @@ canvas {
   padding: 18px 18px 15px;
   overflow: hidden;
   border: 1px solid #e1dfdd;
-  border-radius: 4px;
+  border-radius: 2px;
   background: #ffffff;
 
   &::before {
@@ -178,7 +178,7 @@ canvas {
 .report-card {
   min-width: 0;
   border: 1px solid #e1dfdd;
-  border-radius: 4px;
+  border-radius: 2px;
   background: #ffffff;
 }
 
@@ -322,7 +322,7 @@ table {
 .status-pill {
   display: inline-block;
   padding: 3px 7px;
-  border-radius: 9px;
+  border-radius: 2px;
   background: #edebe9;
   color: #484644;
   font-size: 10px;
@@ -371,7 +371,7 @@ table {
   min-height: 390px;
   gap: 10px;
   border: 1px solid #e1dfdd;
-  border-radius: 4px;
+  border-radius: 2px;
   background: #ffffff;
 }
 
@@ -380,7 +380,7 @@ table {
   height: 18px;
   border: 2px solid #d2d0ce;
   border-top-color: #118dff;
-  border-radius: 50%;
+  border-radius: 2px;
   animation: spin .7s linear infinite;
 }
 
@@ -391,7 +391,7 @@ table {
   margin-bottom: 14px;
   padding: 11px 13px;
   border: 1px solid #f1bbbc;
-  border-radius: 3px;
+  border-radius: 2px;
   background: #fde7e9;
   color: #a4262c;
   font-size: 13px;

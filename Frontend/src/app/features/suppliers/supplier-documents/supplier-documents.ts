@@ -49,6 +49,14 @@ export class SupplierDocuments implements OnInit, OnDestroy {
   readonly filterForm = this.fb.nonNullable.group({
     filterSupplier: '',
     filterStatus: '',
+    searchQuery: '',
+    submittedBy: '',
+    reviewedBy: '',
+    reviewComment: '',
+    submittedFrom: '',
+    submittedTo: '',
+    reviewedFrom: '',
+    reviewedTo: '',
   });
 
   readonly reviewForm = this.fb.nonNullable.group({
@@ -68,6 +76,8 @@ export class SupplierDocuments implements OnInit, OnDestroy {
   viewingId = '';
   preview: SupplierDocument | null = null;
   previewUrl: SafeResourceUrl | null = null;
+  showUploadForm = false;
+  showAdvancedSearch = false;
   private objectUrl = '';
 
   ngOnInit() {
@@ -79,12 +89,73 @@ export class SupplierDocuments implements OnInit, OnDestroy {
   }
 
   get filtered() {
-    const { filterSupplier, filterStatus } = this.filterForm.getRawValue();
-    return this.documents.filter(
-      (d) =>
-        (!filterSupplier || d.supplierId === filterSupplier) &&
-        (!filterStatus || d.status === filterStatus),
-    );
+    const filters = this.filterForm.getRawValue();
+    const query = this.normalizeSearch(filters.searchQuery);
+    const submittedBy = this.normalizeSearch(filters.submittedBy);
+    const reviewedBy = this.normalizeSearch(filters.reviewedBy);
+    const reviewComment = this.normalizeSearch(filters.reviewComment);
+    return this.documents.filter((document) => {
+      const submittedDate = document.submittedAt?.slice(0, 10) || '';
+      const reviewedDate = document.reviewedAt?.slice(0, 10) || '';
+      const searchableText = this.normalizeSearch(
+        [
+          document.filename,
+          document.supplierName,
+          document.submittedBy,
+          document.reviewedBy,
+          document.reviewComment,
+        ]
+          .filter(Boolean)
+          .join(' '),
+      );
+
+      return (
+        (!filters.filterSupplier || document.supplierId === filters.filterSupplier) &&
+        (!filters.filterStatus || document.status === filters.filterStatus) &&
+        (!query || searchableText.includes(query)) &&
+        (!submittedBy || this.normalizeSearch(document.submittedBy).includes(submittedBy)) &&
+        (!reviewedBy || this.normalizeSearch(document.reviewedBy).includes(reviewedBy)) &&
+        (!reviewComment || this.normalizeSearch(document.reviewComment).includes(reviewComment)) &&
+        (!filters.submittedFrom || submittedDate >= filters.submittedFrom) &&
+        (!filters.submittedTo || submittedDate <= filters.submittedTo) &&
+        (!filters.reviewedFrom || (!!reviewedDate && reviewedDate >= filters.reviewedFrom)) &&
+        (!filters.reviewedTo || (!!reviewedDate && reviewedDate <= filters.reviewedTo))
+      );
+    });
+  }
+
+  toggleAdvancedSearch(): void {
+    this.showAdvancedSearch = !this.showAdvancedSearch;
+  }
+
+  resetFilters(): void {
+    this.filterForm.reset({
+      filterSupplier: '',
+      filterStatus: '',
+      searchQuery: '',
+      submittedBy: '',
+      reviewedBy: '',
+      reviewComment: '',
+      submittedFrom: '',
+      submittedTo: '',
+      reviewedFrom: '',
+      reviewedTo: '',
+    });
+  }
+
+  private normalizeSearch(value: string | null | undefined): string {
+    return (value || '').trim().toLocaleLowerCase('vi');
+  }
+
+  toggleUploadForm(): void {
+    if (this.uploading) return;
+    if (this.showUploadForm) {
+      this.file = null;
+      this.uploadForm.reset({ supplierId: '' });
+      if (this.fileInput) this.fileInput.nativeElement.value = '';
+    }
+    this.showUploadForm = !this.showUploadForm;
+    this.error = '';
   }
 
   canReview(document: SupplierDocument) {
@@ -142,6 +213,7 @@ export class SupplierDocuments implements OnInit, OnDestroy {
     this.service.upload(supplierId, this.file).subscribe({
       next: (document) => {
         this.uploading = false;
+        this.showUploadForm = false;
         this.file = null;
         this.uploadForm.reset({ supplierId: '' });
         if (this.fileInput) this.fileInput.nativeElement.value = '';

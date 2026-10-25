@@ -3,10 +3,12 @@ package com.example.shopping.supplier.proposal.dto.request;
 import jakarta.validation.constraints.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import java.text.Normalizer;
+
 public record SupplierProposalRequest(
     @NotBlank(message = "Tên nhà cung cấp không được để trống")
     @Size(min = 2, max = 200, message = "Tên nhà cung cấp phải có 2–200 ký tự")
-    @Pattern(regexp = "\\p{L}+(?: \\p{L}+)*", message = "Tên nhà cung cấp chỉ được chứa chữ và một khoảng trắng giữa các từ") 
+    @Pattern(regexp = "(?:\\p{L}+|\\(\\p{L}+(?: \\p{L}+)*\\))(?: (?:\\p{L}+|\\(\\p{L}+(?: \\p{L}+)*\\)))*", message = "Tên nhà cung cấp chỉ được chứa chữ, dấu ngoặc đơn và khoảng trắng đơn giữa các từ")
     String name,
     
     @NotBlank(message = "Mã số thuế không được để trống")
@@ -49,7 +51,7 @@ public record SupplierProposalRequest(
     String reason
 ) {
     public SupplierProposalRequest {
-        name = clean(name); 
+        name = cleanCompanyName(name);
         taxCode = clean(taxCode); 
         contactPerson = clean(contactPerson);
         email = clean(email); 
@@ -65,6 +67,11 @@ public record SupplierProposalRequest(
 
     static String clean(String value) { 
         return value == null ? "" : value.strip(); 
+    }
+
+    private static String cleanCompanyName(String value) {
+        return value == null ? "" : Normalizer.normalize(value, Normalizer.Form.NFKC)
+                .replaceAll("\\p{Zs}", " ").strip();
     }
 
     @JsonIgnore

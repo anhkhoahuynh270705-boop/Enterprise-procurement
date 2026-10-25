@@ -66,6 +66,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/face/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/users/*/avatar").permitAll()
+                .requestMatchers(HttpMethod.POST,
+                        "/api/public/rfq-invitations/resolve",
+                        "/api/public/rfq-invitations/quotes").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                 /* USER PROFILE & AVATAR */
@@ -99,6 +102,21 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/procurement/export/*", "/api/procurement/export-detail/*", "/api/procurement/export-all").hasAnyRole("ADMIN", "USER")
                 .requestMatchers(HttpMethod.PUT, "/api/procurement/tickets/*").hasAnyRole("ADMIN", "USER")
                 .requestMatchers(HttpMethod.DELETE, "/api/procurement/tickets/*").hasAnyRole("ADMIN", "USER")
+
+                /* RFQ supplier invitations */
+                .requestMatchers(HttpMethod.POST, "/api/rfqs/*/invitations/*/send-link").hasAnyRole("ADMIN", "USER")
+
+                /* RFQ internal workflow */
+                .requestMatchers(HttpMethod.GET, "/api/rfqs", "/api/rfqs/*")
+                        .hasAnyRole("ADMIN", "USER", "CHECKER")
+                .requestMatchers(HttpMethod.POST, "/api/rfqs/*/decision")
+                        .hasAnyRole("ADMIN", "CHECKER")
+                .requestMatchers(HttpMethod.POST, "/api/rfqs",
+                        "/api/rfqs/*/submit", "/api/rfqs/*/cancel", "/api/rfqs/*/close-quotes",
+                        "/api/rfqs/*/comparison/start", "/api/rfqs/*/requote", "/api/rfqs/*/winners")
+                        .hasAnyRole("ADMIN", "USER")
+                .requestMatchers(HttpMethod.PUT, "/api/rfqs/*", "/api/rfqs/*/quotes/*/scores")
+                        .hasAnyRole("ADMIN", "USER")
 
                 /* COMPANY DOCUMENTS */
                 .requestMatchers(HttpMethod.GET, "/api/company-documents", "/api/company-documents/*/download").hasAnyRole("ADMIN", "USER", "CHECKER")

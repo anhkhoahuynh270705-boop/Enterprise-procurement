@@ -23,6 +23,7 @@ public interface UserMapper {
     @Mapping(target = "emailVerificationRequired", constant = "true")
     @Mapping(target = "employeeStatus", source = "dto.employeeStatus", defaultValue = "ACTIVE")
     @Mapping(target = "avatarUrl", ignore = true)
+    @Mapping(target = "avatarPublicId", ignore = true)
     @Mapping(target = "avatarData", ignore = true)
     @Mapping(target = "avatarContentType", ignore = true)
     UserEntity toEntity(CreateUserRequestDto dto, String encodedPassword);
