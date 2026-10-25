@@ -13,11 +13,12 @@ import com.example.shopping.common.enums.ErrorEnum;
 import com.example.shopping.procurement.dto.response.ProcurementItemDto;
 import com.example.shopping.procurement.entity.ProcurementTicket;
 import com.example.shopping.procurement.mapper.ProcurementMapper;
+import com.example.shopping.user.entity.UserEntity;
+import com.example.shopping.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import com.example.shopping.user.repository.UserRepository;
-import com.example.shopping.user.entity.UserEntity;
 import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperExportManager;
 import net.sf.jasperreports.engine.JasperFillManager;
@@ -28,13 +29,13 @@ import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
 public class PdfExporter {
 
-    private final UserRepository users;
-
-    private final ProcurementMapper procurementMapper;
-    private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-    private final DecimalFormat currencyFormat = new DecimalFormat("#,##0");
+    UserRepository users;
+    ProcurementMapper procurementMapper;
+    DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    DecimalFormat currencyFormat = new DecimalFormat("#,##0");
 
     public String getFormat() {
         return "PDF";

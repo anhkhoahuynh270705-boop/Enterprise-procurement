@@ -18,6 +18,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 
 /**
  * Cấu hình JWT cho Keycloak: - {@link JwtDecoder} : validate JWT bằng JWK Set
@@ -26,9 +27,10 @@ import lombok.RequiredArgsConstructor;
  */
 @Configuration
 @RequiredArgsConstructor
+@FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
 public class KeycloakJwtConfig {
 
-    private final KeycloakConfig keycloakConfig;
+    KeycloakConfig keycloakConfig;
 
     /**
      * Check valid JWT

@@ -1,0 +1,222 @@
+<main class="supplier-quote-page">
+  <header class="portal-header">
+    <span class="brand-mark"><i class="fa fa-balance-scale" aria-hidden="true"></i></span>
+    <div>
+      <strong>Enterprise Procurement</strong>
+      <small>Cổng báo giá nhà cung cấp</small>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <section class="quote-card loading-state" role="status">
+      <span class="loading-icon"><i class="fa fa-refresh fa-spin" aria-hidden="true"></i></span>
+      <h1>Đang tải yêu cầu báo giá</h1>
+      <p>Đang xác thực lời mời và lấy danh sách hạng mục.</p>
+    </section>
+  } @else if (submitted()) {
+    <section class="quote-card success-state" role="status">
+      <span class="success-icon"><i class="fa fa-check" aria-hidden="true"></i></span>
+      <p class="eyebrow">ĐÃ GHI NHẬN</p>
+      <h1>Đã gửi báo giá thành công</h1>
+      <p>Báo giá của bạn đã được gửi cho bên mời và lưu vào hệ thống.</p>
+      <strong>{{ invitation()?.rfqCode }}</strong>
+    </section>
+  } @else if (invitation(); as rfq) {
+    <section class="quote-card">
+      <div class="rfq-intro">
+        <p class="eyebrow">YÊU CẦU BÁO GIÁ · {{ rfq.rfqCode }}</p>
+        <h1>{{ rfq.title }}</h1>
+        <p class="intro-copy">Vui lòng điền báo giá và gửi trước hạn nhận báo giá.</p>
+        <div class="request-facts">
+          <span
+            ><i class="fa fa-clock-o" aria-hidden="true"></i> Hạn nhận:
+            {{ rfq.deadline | date: 'dd/MM/yyyy HH:mm' }}</span
+          >
+          @if (rfq.deliveryLocation) {
+            <span
+              ><i class="fa fa-map-marker" aria-hidden="true"></i> {{ rfq.deliveryLocation }}</span
+            >
+          }
+          @if (rfq.deliveryWindow) {
+            <span><i class="fa fa-truck" aria-hidden="true"></i> {{ rfq.deliveryWindow }}</span>
+          }
+        </div>
+      </div>
+
+      @if (error()) {
+        <div class="form-error" role="alert">
+          <i class="fa fa-exclamation-circle" aria-hidden="true"></i>{{ error() }}
+        </div>
+      }
+
+      <form [formGroup]="quoteForm" (ngSubmit)="submitQuote()">
+        <section class="form-section">
+          <div class="section-heading">
+            <div>
+              <span class="section-number">1</span>
+              <h2>Báo giá theo hạng mục</h2>
+            </div>
+            <small>{{ rfq.currency }}</small>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>MÃ HÀNG</th>
+                  <th>HẠNG MỤC</th>
+                  <th>SỐ LƯỢNG</th>
+                  <th>CHÀO GIÁ</th>
+                  <th>ĐƠN GIÁ</th>
+                  <th>GHI CHÚ</th>
+                </tr>
+              </thead>
+              <tbody formArrayName="items">
+                @for (
+                  itemForm of itemForms.controls;
+                  track itemForm.controls.rfqItemId.value;
+                  let index = $index
+                ) {
+                  @if (invitation()?.items?.[index]; as item) {
+                    <tr
+                      [formGroupName]="index"
+                      [class.not-quoted-row]="!itemForm.controls.quoted.value"
+                    >
+                      <td>{{ item.sku || '—' }}</td>
+                      <td>
+                        <strong>{{ item.itemName }}</strong>
+                      </td>
+                      <td>{{ item.quantity }} {{ item.unit }}</td>
+                      <td>
+                        <label class="quote-toggle"
+                          ><input type="checkbox" formControlName="quoted" /> Có chào</label
+                        >
+                      </td>
+                      <td>
+                        <input
+                          aria-label="Đơn giá {{ item.itemName }}"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          formControlName="unitPrice"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          aria-label="Ghi chú {{ item.itemName }}"
+                          maxlength="1000"
+                          formControlName="note"
+                          placeholder="Tùy chọn"
+                        />
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="helper-text">
+            Nếu không thể cung cấp một hạng mục, bỏ chọn “Có chào” và ghi lý do trong phần ghi chú.
+          </p>
+        </section>
+
+        <section class="form-section">
+          <div class="section-heading">
+            <div>
+              <span class="section-number">2</span>
+              <h2>Điều kiện báo giá</h2>
+            </div>
+          </div>
+          <div class="form-grid">
+            <label
+              >Hiệu lực đến ngày <span>*</span
+              ><input type="date" formControlName="validUntil" required
+            /></label>
+            <label
+              >Thời gian giao hàng (ngày)<input
+                type="number"
+                min="0"
+                formControlName="deliveryDays"
+            /></label>
+            <label
+              >Điều khoản thanh toán<input
+                maxlength="1000"
+                formControlName="paymentTerms"
+                placeholder="Ví dụ: thanh toán trong 30 ngày"
+            /></label>
+            <label
+              >Bảo hành<input
+                maxlength="1000"
+                formControlName="warranty"
+                placeholder="Ví dụ: 12 tháng"
+            /></label>
+            <label
+              >Đánh giá kỹ thuật<select formControlName="technicalStatus">
+                <option value="PASS">Đạt</option>
+                <option value="PARTIAL">Đạt một phần</option>
+                <option value="FAIL">Không đạt</option>
+              </select></label
+            >
+          </div>
+        </section>
+
+        <section class="form-section">
+          <div class="section-heading">
+            <div>
+              <span class="section-number">3</span>
+              <h2>Thuế và chi phí</h2>
+            </div>
+          </div>
+          <div class="form-grid cost-grid">
+            <label
+              >Thuế<input
+                type="number"
+                min="0"
+                step="0.01"
+                formControlName="taxAmount"
+            /></label>
+            <label
+              >Phí vận chuyển<input
+                type="number"
+                min="0"
+                step="0.01"
+                formControlName="shippingCost"
+            /></label>
+            <label
+              >Chi phí khác<input
+                type="number"
+                min="0"
+                step="0.01"
+                formControlName="otherCost"
+            /></label>
+          </div>
+        </section>
+
+        <footer class="form-actions">
+          <p>
+            <i class="fa fa-lock" aria-hidden="true"></i> Báo giá chỉ được chia sẻ với bên mời RFQ.
+          </p>
+          <button type="submit" class="submit-button" [disabled]="isSubmitting()">
+            <i
+              class="fa"
+              [class.fa-send]="!isSubmitting()"
+              [class.fa-refresh]="isSubmitting()"
+              [class.fa-spin]="isSubmitting()"
+              aria-hidden="true"
+            ></i>
+            {{ isSubmitting() ? 'Đang gửi…' : 'Gửi báo giá' }}
+          </button>
+        </footer>
+      </form>
+    </section>
+  } @else {
+    <section class="quote-card error-state" role="alert">
+      <span class="error-icon"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i></span>
+      <p class="eyebrow">KHÔNG THỂ MỞ RFQ</p>
+      <h1>Link báo giá không hợp lệ</h1>
+      <p>{{ error() }}</p>
+      <p class="support-copy">
+        Vui lòng dùng link mới nhất trong email mời báo giá hoặc liên hệ bên mời RFQ.
+      </p>
+    </section>
+  }
+</main>

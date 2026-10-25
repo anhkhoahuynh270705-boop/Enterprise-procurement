@@ -1,5 +1,6 @@
 package com.example.shopping.user.service.impl;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -19,6 +20,8 @@ import com.example.shopping.common.enums.ErrorEnum;
 import com.example.shopping.common.enums.Role;
 
 import com.example.shopping.integration.keycloak.service.KeycloakAdminService;
+import com.example.shopping.integration.cloudinary.service.CloudinaryStorageService;
+import com.example.shopping.integration.cloudinary.dto.UploadedImage;
 import com.example.shopping.user.dto.request.CreateUserRequestDto;
 import com.example.shopping.user.dto.request.UpdateUserRequestDto;
 import com.example.shopping.user.dto.response.UserResponseDto;
@@ -26,6 +29,7 @@ import com.example.shopping.user.entity.UserEntity;
 import com.example.shopping.user.mapper.UserMapper;
 import com.example.shopping.user.repository.UserRepository;
 import com.example.shopping.user.service.UserService;
+import com.example.shopping.user.normalization.UserNameNormalizer;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +47,7 @@ public class UserServiceImpl implements UserService {
     PasswordEncoder passwordEncoder;
     UserMapper userMapper;
     KeycloakAdminService keycloakAdminService;
+    CloudinaryStorageService cloudinaryStorageService;
 
     @Override
     @Transactional 
@@ -185,14 +190,16 @@ public class UserServiceImpl implements UserService {
         user.setJobTitle(optionalText(request.getJobTitle()));
         user.setOfficeLocation(optionalText(request.getOfficeLocation()));
         user.setManager(optionalText(request.getManager()));
-        if (request.getEmployeeStatus() != null) user.setEmployeeStatus(request.getEmployeeStatus());
+
+        if (request.getEmployeeStatus() != null)
+            user.setEmployeeStatus(request.getEmployeeStatus());
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         boolean nameChanged = !Objects.equals(user.getFirstName(), request.getFirstName())
                 || !Objects.equals(user.getLastName(), request.getLastName());
         String requestedName = request.getFullName() != null ? request.getFullName()
                 : (nameChanged ? null : user.getFullName());
-        user.setFullName(com.example.shopping.user.normalization.UserNameNormalizer.resolveFullName(requestedName, request.getFirstName(), request.getLastName()));
+        user.setFullName(UserNameNormalizer.resolveFullName(requestedName, request.getFirstName(), request.getLastName()));
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
 
@@ -286,14 +293,17 @@ public class UserServiceImpl implements UserService {
         }
 
         try {
-            user.setAvatarData(file.getBytes());
+            UploadedImage uploaded = cloudinaryStorageService.uploadImage(
+                    file.getBytes(), "shopping/avatars", user.getId().toString());
+            user.setAvatarData(null);
             user.setAvatarContentType(contentType);
-            user.setAvatarUrl("/api/users/" + user.getId() + "/avatar");
-            UserEntity saved = userRepository.save(user);
+            user.setAvatarUrl(uploaded.secureUrl());
+            user.setAvatarPublicId(uploaded.publicId());
+            UserEntity saved = userRepository.saveAndFlush(user);
             return userMapper.toDto(saved);
-        } catch (java.io.IOException e) {
-            log.error("Lỗi khi đọc file avatar cho user {}", user.getUsername(), e);
-            throw ErrorEnum.USER_AVATAR_READ_ERROR.ex(e);
+        } catch (IOException e) {
+            log.error("Lỗi khi upload avatar cho user {}", user.getUsername(), e);
+            throw ErrorEnum.USER_AVATAR_UPLOAD_ERROR.ex(e);
         }
     }
 

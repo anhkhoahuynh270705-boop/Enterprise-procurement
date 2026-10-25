@@ -6,20 +6,20 @@
 
   <div class="tabs-container">
     <div class="action-buttons">
-      <button type="button" class="btn btn-outline" (click)="importExcel()">
+      <button type="button" class="btn btn-outline excel-action" (click)="importExcel()">
         <i class="fa fa-upload" aria-hidden="true"></i>
         Import Excel
       </button>
       <button
         type="button"
-        class="btn btn-outline"
+        class="btn btn-outline excel-action"
         (click)="downloadTemplate()"
         [disabled]="downloadingTemplate"
       >
         <i class="fa" [ngClass]="downloadingTemplate ? 'fa-spinner fa-spin' : 'fa-file-excel-o'" aria-hidden="true"></i>
         {{ downloadingTemplate ? 'Đang tải...' : 'Tải template Excel' }}
       </button>
-      <button type="button" class="btn btn-outline" (click)="exportExcel()">
+      <button type="button" class="btn btn-outline excel-action" (click)="exportExcel()">
         <i class="fa fa-download" aria-hidden="true"></i>
         Export Excel
       </button>
@@ -231,7 +231,7 @@
 
                     <button
                       type="button"
-                      class="btn-export"
+                      class="btn-export excel-export"
                       (click)="exportSupplier(supplier, 'EXCEL')"
                     >
                       <i class="fa fa-download"></i> XLSX
@@ -341,9 +341,13 @@
         (click)="$event.stopPropagation()"
       >
         <header class="supplier-import-header">
-          <div>
-            <h3 id="supplier-import-title">Kết quả nhập nhà cung cấp</h3>
-            <p>{{ importFileName }}</p>
+          <div class="supplier-import-title">
+            <span class="supplier-import-icon"><i class="fa fa-file-excel-o" aria-hidden="true"></i></span>
+            <div>
+              <span class="supplier-import-kicker">NHẬP DỮ LIỆU EXCEL</span>
+              <h3 id="supplier-import-title">Kết quả nhập nhà cung cấp</h3>
+              <p>{{ importFileName }}</p>
+            </div>
           </div>
           <button
             type="button"
@@ -371,14 +375,17 @@
             <h4>{{ result.message }}</h4>
             <div class="supplier-import-summary">
               <div>
+                <i class="fa fa-check-circle" aria-hidden="true"></i>
                 <span>Đã nhập thành công</span>
                 <strong>{{ result.successRows }}</strong>
               </div>
               <div>
+                <i class="fa fa-exclamation-circle" aria-hidden="true"></i>
                 <span>Số dòng lỗi</span>
                 <strong>{{ result.errorRows }}</strong>
               </div>
               <div>
+                <i class="fa fa-list-alt" aria-hidden="true"></i>
                 <span>Tổng dòng xử lý</span>
                 <strong>{{ result.totalRows }}</strong>
               </div>

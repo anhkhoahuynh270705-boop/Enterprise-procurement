@@ -39,6 +39,7 @@ public enum ErrorEnum {
     USER_AVATAR_INVALID_TYPE        (HttpStatus.BAD_REQUEST,            "Chỉ chấp nhận file hình ảnh."),
     USER_AVATAR_TOO_LARGE           (HttpStatus.BAD_REQUEST,            "Dung lượng ảnh tối đa là 5MB."),
     USER_AVATAR_READ_ERROR          (HttpStatus.INTERNAL_SERVER_ERROR,  "Không thể đọc dữ liệu file ảnh."),
+    USER_AVATAR_UPLOAD_ERROR        (HttpStatus.BAD_GATEWAY,             "Không thể tải ảnh đại diện lên dịch vụ lưu trữ."),
     KEYCLOAK_USER_EXISTS            (HttpStatus.CONFLICT,               "User đã tồn tại trong Keycloak."),
     AUTH_INVALID_BROWSER_RESPONSE   (HttpStatus.BAD_GATEWAY,             "Phản hồi xác thực không hợp lệ."),
     AUTH_BROWSER_HEADER_REQUIRED    (HttpStatus.FORBIDDEN,               "Yêu cầu thiếu thông tin trình duyệt hợp lệ."),
@@ -88,6 +89,44 @@ public enum ErrorEnum {
     TICKET_UNREGISTERED_SUPPLIERS    (HttpStatus.CONFLICT,               "Không thể duyệt phiếu khi còn nhà cung cấp chưa có trong hệ thống."),
     EXCEL_MISSING_TEMPLATE_HEADERS  (HttpStatus.BAD_REQUEST,            "File Sai định dạng vật tư. Vui lòng dùng đúng mẫu vật tư và thử lại."),
     EXCEL_INVALID_SUPPLIER_TEMPLATE (HttpStatus.BAD_REQUEST,            "File Sai định dạng nhà cung cấp. Vui lòng dùng đúng mẫu nhà cung cấp và thử lại."),
+
+    // RFQ & supplier invitations
+    RFQ_NOT_FOUND                   (HttpStatus.NOT_FOUND,              "Không tìm thấy yêu cầu báo giá."),
+    RFQ_INVITATION_NOT_FOUND        (HttpStatus.NOT_FOUND,              "Không tìm thấy lời mời nhà cung cấp cho RFQ này."),
+    RFQ_INVITATION_FORBIDDEN        (HttpStatus.FORBIDDEN,              "Bạn không có quyền gửi lời mời cho RFQ này."),
+    RFQ_NOT_OPEN                    (HttpStatus.CONFLICT,               "RFQ hiện không nhận báo giá."),
+    RFQ_DEADLINE_PASSED             (HttpStatus.CONFLICT,               "RFQ đã quá hạn nhận báo giá."),
+    RFQ_INVITATION_REVOKED          (HttpStatus.CONFLICT,               "Lời mời nhà cung cấp đã bị thu hồi."),
+    RFQ_SUPPLIER_NOT_ACTIVE          (HttpStatus.CONFLICT,               "Nhà cung cấp không ở trạng thái hoạt động."),
+    RFQ_SUPPLIER_EMAIL_MISSING       (HttpStatus.BAD_REQUEST,            "Nhà cung cấp chưa có email."),
+    RFQ_INVITATION_TOKEN_MISSING     (HttpStatus.BAD_REQUEST,            "Thiếu mã truy cập."),
+    RFQ_INVITATION_TOKEN_INVALID     (HttpStatus.BAD_REQUEST,            "Liên kết không hợp lệ hoặc đã hết hạn."),
+    RFQ_QUOTE_VALID_UNTIL_INVALID    (HttpStatus.BAD_REQUEST,            "Ngày hiệu lực báo giá không hợp lệ."),
+    RFQ_QUOTE_ITEM_DUPLICATE         (HttpStatus.BAD_REQUEST,            "Báo giá có hạng mục bị lặp."),
+    RFQ_QUOTE_ITEM_NOT_IN_RFQ        (HttpStatus.BAD_REQUEST,            "Báo giá chứa hạng mục không thuộc RFQ này."),
+    RFQ_QUOTE_ITEM_PRICE_REQUIRED    (HttpStatus.BAD_REQUEST,            "Hạng mục đã chào giá phải có đơn giá."),
+    RFQ_QUOTE_ITEM_PRICE_FORBIDDEN   (HttpStatus.BAD_REQUEST,            "Hạng mục không chào giá không được có đơn giá."),
+    RFQ_QUOTE_INCOMPLETE             (HttpStatus.BAD_REQUEST,            "Báo giá chưa đầy đủ hạng mục."),
+    RFQ_TOKEN_HASH_FAILED            (HttpStatus.INTERNAL_SERVER_ERROR,  "Không thể tạo mã truy cập."),
+    RFQ_TICKET_NOT_APPROVED          (HttpStatus.CONFLICT,               "Chỉ phiếu mua sắm đã được duyệt mới tạo được RFQ."),
+    RFQ_TICKET_ACCESS_DENIED          (HttpStatus.FORBIDDEN,              "Bạn không có quyền tạo RFQ từ phiếu mua sắm này."),
+    RFQ_ITEM_NOT_IN_TICKET            (HttpStatus.BAD_REQUEST,            "Hạng mục không thuộc phiếu mua sắm đã chọn."),
+    RFQ_SUPPLIER_SELECTION_INVALID    (HttpStatus.BAD_REQUEST,            "Danh sách nhà cung cấp không hợp lệ hoặc có nhà cung cấp không hoạt động."),
+    RFQ_SUPPLIERS_MINIMUM             (HttpStatus.BAD_REQUEST,            "Cần mời ít nhất 3 nhà cung cấp hoặc nhập lý do ngoại lệ."),
+    RFQ_WEIGHT_INVALID                (HttpStatus.BAD_REQUEST,            "Tổng trọng số tiêu chí chấm điểm phải bằng 100%."),
+    RFQ_CANNOT_EDIT                   (HttpStatus.CONFLICT,               "RFQ chỉ được sửa khi đang ở trạng thái Nháp hoặc Bị trả lại."),
+    RFQ_CANNOT_SUBMIT                 (HttpStatus.CONFLICT,               "RFQ không thể trình duyệt ở trạng thái hiện tại."),
+    RFQ_CANNOT_REVIEW                 (HttpStatus.CONFLICT,               "RFQ hiện không chờ quyết định duyệt."),
+    RFQ_SELF_REVIEW                   (HttpStatus.FORBIDDEN,              "Người tạo RFQ không được tự duyệt RFQ của mình."),
+    RFQ_CANNOT_CANCEL                 (HttpStatus.CONFLICT,               "Không thể hủy RFQ ở trạng thái hiện tại."),
+    RFQ_CANNOT_CLOSE_QUOTES           (HttpStatus.CONFLICT,               "Không thể đóng nhận báo giá ở trạng thái hiện tại."),
+    RFQ_CANNOT_START_COMPARISON        (HttpStatus.CONFLICT,               "Chỉ được bắt đầu so sánh sau khi đã đóng nhận báo giá."),
+    RFQ_QUOTE_NOT_FOUND               (HttpStatus.NOT_FOUND,              "Không tìm thấy vòng báo giá của nhà cung cấp."),
+    RFQ_QUOTE_CANNOT_SCORE            (HttpStatus.CONFLICT,               "Chỉ được chấm điểm báo giá khi RFQ đang so sánh."),
+    RFQ_CANNOT_SELECT_WINNER          (HttpStatus.CONFLICT,               "Chỉ được chọn nhà cung cấp khi RFQ đang so sánh báo giá."),
+    RFQ_WINNER_INVALID                (HttpStatus.BAD_REQUEST,            "Nhà cung cấp được chọn không có báo giá hợp lệ cho hạng mục."),
+    RFQ_WINNER_REASON_REQUIRED        (HttpStatus.BAD_REQUEST,            "Cần nhập lý do khi chọn nhà cung cấp không có giá thấp nhất."),
+    RFQ_AWARD_INCOMPLETE              (HttpStatus.BAD_REQUEST,            "Cần chọn nhà cung cấp cho tất cả hạng mục trước khi trình duyệt."),
 
     // Purchase Order
     PURCHASE_ORDER_NOT_FOUND        (HttpStatus.NOT_FOUND,              "Không tìm thấy đơn đặt hàng."),
@@ -143,7 +182,7 @@ public enum ErrorEnum {
     }
 
     /**
-     * Tạo exception với thông báo tùy chỉnh (giữ nguyên HTTP status).
+     * Tạo exception với thông báo tùy chỉnh.
      */
     public ResponseStatusException ex(String customMessage) {
         return new ResponseStatusException(status, customMessage);

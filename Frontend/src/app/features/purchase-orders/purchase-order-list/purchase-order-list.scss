@@ -19,7 +19,7 @@
     min-height: 36px;
     padding: 8px 16px;
     border: 2px solid #000;
-    border-radius: 8px;
+    border-radius: 2px;
     background: #e4e4e4;
     color: #000;
     font-size: 18px;
@@ -51,7 +51,7 @@
   min-height: 40px;
   padding: 8px 14px;
   border: 1px solid #222;
-  border-radius: 7px;
+  border-radius: 2px;
   font: inherit;
   font-weight: 600;
   text-decoration: none;
@@ -98,7 +98,7 @@ button[type='submit'].btn-submit {
   margin-bottom: 18px;
   padding: 12px 14px;
   border: 1px solid #bfdbfe;
-  border-radius: 8px;
+  border-radius: 2px;
   background: #eff6ff;
   color: #1e3a5f;
   line-height: 1.5;
@@ -125,7 +125,7 @@ button[type='submit'].btn-submit {
   min-height: 42px;
   padding: 0 14px;
   border: 2px solid #000;
-  border-radius: 8px;
+  border-radius: 2px;
   background: #fff;
   color: #222;
   font: inherit;
@@ -155,7 +155,7 @@ button[type='submit'].btn-submit {
   width: 100%;
   padding: 16px;
   border: 1px solid #888;
-  border-radius: 8px;
+  border-radius: 2px;
   background: #fff;
 }
 
@@ -175,7 +175,7 @@ button[type='submit'].btn-submit {
     min-height: 40px;
     padding: 8px 10px;
     border: 2px solid #000;
-    border-radius: 8px;
+    border-radius: 2px;
     background: #fff;
     color: #222;
     font: inherit;
@@ -224,7 +224,7 @@ button[type='submit'].btn-submit {
     min-height: 42px;
     padding: 10px 14px 10px 40px;
     border: 2px solid #000;
-    border-radius: 8px;
+    border-radius: 2px;
     background: #fff;
     color: #222;
     font-size: 14px;
@@ -247,7 +247,7 @@ button[type='submit'].btn-submit {
     min-height: 42px;
     padding: 10px 16px;
     border: 2px solid #000;
-    border-radius: 8px;
+    border-radius: 2px;
     background: #fff;
     color: #222;
     font-size: 14px;
@@ -263,7 +263,7 @@ button[type='submit'].btn-submit {
 .table-card {
   overflow: hidden;
   border: 1px solid #d4d4d4;
-  border-radius: 9px;
+  border-radius: 2px;
   background: #fff;
 }
 
@@ -315,7 +315,7 @@ table {
 .status-badge {
   display: inline-flex;
   padding: 5px 8px;
-  border-radius: 8px;
+  border-radius: 2px;
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
@@ -393,7 +393,7 @@ table {
   margin: 2px;
   padding: 6px 8px;
   border: 1px solid #aaa;
-  border-radius: 6px;
+  border-radius: 2px;
   background: #fff;
   color: #333;
   font: inherit;
@@ -468,14 +468,14 @@ table {
   height: 20px;
   border: 2px solid #d5d5d5;
   border-top-color: #2671b8;
-  border-radius: 50%;
+  border-radius: 2px;
   animation: spin 0.75s linear infinite;
 }
 
 .create-form-card {
   margin: 0 0 18px;
   border: 1px solid #d4d4d4;
-  border-radius: 9px;
+  border-radius: 2px;
   background: #fff;
 }
 
@@ -516,7 +516,7 @@ table {
   height: 34px;
   place-items: center;
   border: 0;
-  border-radius: 6px;
+  border-radius: 2px;
   background: transparent;
   color: #555;
   font-size: 17px;
@@ -553,7 +553,7 @@ table {
     min-height: 40px;
     padding: 8px 10px;
     border: 1px solid #b8b8b8;
-    border-radius: 6px;
+    border-radius: 2px;
     background: #fff;
     color: #222;
     font: inherit;
@@ -570,7 +570,7 @@ table {
   margin: 4px 0 16px;
   padding: 10px 12px;
   border: 1px solid #d5d5d5;
-  border-radius: 7px;
+  border-radius: 2px;
 
   legend {
     padding: 0 5px;
@@ -632,7 +632,7 @@ table {
 
 .empty-source {
   padding: 12px;
-  border-radius: 7px;
+  border-radius: 2px;
   background: #f8fafc;
 }
 

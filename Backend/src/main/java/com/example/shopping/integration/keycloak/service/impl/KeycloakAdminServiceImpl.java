@@ -181,12 +181,9 @@ public class KeycloakAdminServiceImpl implements KeycloakAdminService {
 
             String userId = (String) users.get(0).get("id");
 
-            // Gửi email thực hiện action UPDATE_PASSWORD kèm redirect_uri về trang login
-            String executeActionsUrl = UriComponentsBuilder
-                    .fromUriString(keycloakConfig.getAdminBaseUrl() + "/users/" + userId + "/execute-actions-email")
-                    .queryParam("client_id", keycloakConfig.getClientId())
-                    .queryParam("redirect_uri", "http://localhost:4200/login")
-                    .toUriString();
+            // Không truyền redirect_uri: Keycloak không cần kiểm tra URI được phép của client.
+            String executeActionsUrl = keycloakConfig.getAdminBaseUrl()
+                    + "/users/" + userId + "/execute-actions-email";
 
             HttpEntity<List<String>> actionsEntity
                     = new HttpEntity<>(List.of("UPDATE_PASSWORD"), headers);
@@ -327,11 +324,8 @@ public class KeycloakAdminServiceImpl implements KeycloakAdminService {
             return;
         }
         String userId = (String) users.get(0).get("id");
-        String executeActionsUrl = UriComponentsBuilder
-            .fromUriString(base + "/users/" + userId + "/execute-actions-email")
-            .queryParam("client_id", keycloakConfig.getClientId())
-            .queryParam("redirect_uri", "http://localhost:4200/login")
-            .toUriString();
+        // Không truyền redirect_uri để tránh Keycloak từ chối URI chưa được whitelist.
+        String executeActionsUrl = base + "/users/" + userId + "/execute-actions-email";
         try {
             restTemplate.exchange(executeActionsUrl, HttpMethod.PUT,
                 new HttpEntity<>(List.of("VERIFY_EMAIL"), headers), Void.class);
@@ -361,7 +355,7 @@ public class KeycloakAdminServiceImpl implements KeycloakAdminService {
 
             List<Map<String, Object>> users = response.getBody();
             if (users == null || users.isEmpty()) {
-                log.warn("Keycloak: Không tìm thấy user với username={}", username);
+                log.warn("Keycloak: Không tìm thấy user với username", username);
                 return;
             }
 
@@ -402,9 +396,9 @@ public class KeycloakAdminServiceImpl implements KeycloakAdminService {
             restTemplate.postForEntity(keycloakConfig.getLogoutEndpoint(), entity, String.class);
             log.info("Token đã bị revoke thành công.");
         } catch (HttpClientErrorException e) {
-            log.warn("Revoke token thất bại: {}", e.getStatusCode());
+            log.warn("Revoke token thất bại:", e.getStatusCode());
         } catch (Exception e) {
-            log.warn("Revoke token exception: {}", e.getMessage());
+            log.warn("Revoke token exception:", e.getMessage());
         }
     }
 }

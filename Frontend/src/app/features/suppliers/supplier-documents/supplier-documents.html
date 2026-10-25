@@ -6,23 +6,35 @@
         {{
           isAdmin
             ? 'Upload trực tiếp và quản lý các đề xuất tài liệu.'
-            : 'Gửi tài liệu theo nhà cung cấp và theo dõi
-        kết quả duyệt.'
+            : 'Gửi tài liệu theo nhà cung cấp và theo dõi kết quả duyệt.'
         }}
       </p>
       @if (isReviewer && !isAdmin) {
         <p>Đề xuất của bạn cần Checker khác hoặc Admin duyệt.</p>
       }
     </div>
-    <button
-      type="button"
-      (click)="load()"
-      [disabled]="loading || uploading || reviewing"
-      title="Tải lại"
-    >
-      <i class="fa fa-refresh" [class.fa-spin]="loading"></i>
-      Tải lại
-    </button>
+    <div class="header-actions">
+      <button
+        type="button"
+        class="upload-toggle"
+        [class.active]="showUploadForm"
+        [attr.aria-expanded]="showUploadForm"
+        (click)="toggleUploadForm()"
+        [disabled]="uploading"
+      >
+        <i class="fa" [class.fa-plus]="!showUploadForm" [class.fa-times]="showUploadForm"></i>
+        {{ showUploadForm ? 'Đóng' : isAdmin ? 'Thêm tài liệu' : 'Gửi tài liệu' }}
+      </button>
+      <button
+        type="button"
+        (click)="load()"
+        [disabled]="loading || uploading || reviewing"
+        title="Tải lại"
+      >
+        <i class="fa fa-refresh" [class.fa-spin]="loading"></i>
+        Tải lại
+      </button>
+    </div>
   </header>
   @if (error) {
     <p class="error notice" role="alert">{{ error }}</p>
@@ -30,48 +42,54 @@
   @if (success) {
     <p class="success notice" role="status">{{ success }}</p>
   }
-  <form class="panel upload-form" [formGroup]="uploadForm" (ngSubmit)="upload()">
-    <h2>{{ isAdmin ? 'Upload tài liệu chính thức' : 'Đề xuất tài liệu' }}</h2>
-    <fieldset [disabled]="uploading || loading">
-      <label
-        >Nhà cung cấp
-        <select formControlName="supplierId" required>
-          <option value="">Chọn nhà cung cấp</option>
-          @for (supplier of suppliers; track supplier.id) {
-            <option [value]="supplier.id">{{ supplier.name }}</option>
-          }
-        </select>
-      </label>
-      <label
-        >Tài liệu
-        <input
-          #fileInput
-          type="file"
-          [accept]="accept"
-          (change)="selectFile($event)"
-          aria-describedby="file-help"
-        />
-      </label>
-      <p id="file-help">
-        PDF, Word (.doc, .docx), Excel (.xls, .xlsx), ảnh PNG/JPG/GIF/BMP/WebP. Tối đa 10 MB/file.
-      </p>
-      <button
-        type="submit"
-        class="primary"
-        [disabled]="!uploadForm.controls.supplierId.value || !file || uploading || loading"
-      >
-        <i
-          class="fa"
-          [class.fa-spinner]="uploading"
-          [class.fa-spin]="uploading"
-          [class.fa-paper-plane]="!uploading"
-          aria-hidden="true"
+  @if (showUploadForm) {
+    <form
+      class="panel upload-form"
+      [formGroup]="uploadForm"
+      (ngSubmit)="upload()"
+      aria-label="{{ isAdmin ? 'Upload tài liệu chính thức' : 'Đề xuất tài liệu' }}"
+    >
+      <h2>{{ isAdmin ? 'Upload tài liệu chính thức' : 'Đề xuất tài liệu' }}</h2>
+      <fieldset [disabled]="uploading || loading">
+        <label
+          >Nhà cung cấp
+          <select formControlName="supplierId" required>
+            <option value="">Chọn nhà cung cấp</option>
+            @for (supplier of suppliers; track supplier.id) {
+              <option [value]="supplier.id">{{ supplier.name }}</option>
+            }
+          </select>
+        </label>
+        <label
+          >Tài liệu
+          <input
+            #fileInput
+            type="file"
+            [accept]="accept"
+            (change)="selectFile($event)"
+            aria-describedby="file-help"
+          />
+        </label>
+        <p id="file-help">
+          PDF, Word (.doc, .docx), Excel (.xls, .xlsx), ảnh PNG/JPG/GIF/BMP/WebP. Tối đa 10 MB/file.
+        </p>
+        <button
+          type="submit"
+          class="primary"
+          [disabled]="!uploadForm.controls.supplierId.value || !file || uploading || loading"
         >
-        </i>
-        {{ uploading ? 'Đang tải lên…' : isAdmin ? 'Upload tài liệu' : 'Nộp đề xuất' }}
-      </button>
-    </fieldset>
-  </form>
+          <i
+            class="fa"
+            [class.fa-spinner]="uploading"
+            [class.fa-spin]="uploading"
+            [class.fa-paper-plane]="!uploading"
+            aria-hidden="true"
+          ></i>
+          {{ uploading ? 'Đang tải lên…' : isAdmin ? 'Upload tài liệu' : 'Nộp đề xuất' }}
+        </button>
+      </fieldset>
+    </form>
+  }
   <section class="panel" aria-label="Danh sách tài liệu">
     <div class="filters" [formGroup]="filterForm">
       <label
@@ -92,6 +110,62 @@
           <option value="REJECTED">Từ chối</option>
         </select>
       </label>
+      <button
+        type="button"
+        class="advanced-toggle"
+        [class.active]="showAdvancedSearch"
+        [attr.aria-expanded]="showAdvancedSearch"
+        (click)="toggleAdvancedSearch()"
+      >
+        <i class="fa fa-sliders" aria-hidden="true"></i>
+        Tìm kiếm nâng cao
+      </button>
+      @if (showAdvancedSearch) {
+        <div class="advanced-search-panel">
+          <label class="advanced-field">
+            <span>Từ khóa</span>
+            <input
+              type="search"
+              formControlName="searchQuery"
+              placeholder="Tên file, nhà cung cấp, người gửi hoặc người duyệt"
+            />
+          </label>
+          <label class="advanced-field">
+            <span>Người gửi</span>
+            <input type="search" formControlName="submittedBy" placeholder="Tên người gửi" />
+          </label>
+          <label class="advanced-field">
+            <span>Người duyệt</span>
+            <input type="search" formControlName="reviewedBy" placeholder="Tên người duyệt" />
+          </label>
+          <label class="advanced-field">
+            <span>Ngày gửi từ</span>
+            <input type="date" formControlName="submittedFrom" />
+          </label>
+          <label class="advanced-field">
+            <span>Ngày gửi đến</span>
+            <input type="date" formControlName="submittedTo" />
+          </label>
+          <label class="advanced-field">
+            <span>Ngày duyệt từ</span>
+            <input type="date" formControlName="reviewedFrom" />
+          </label>
+          <label class="advanced-field">
+            <span>Ngày duyệt đến</span>
+            <input type="date" formControlName="reviewedTo" />
+          </label>
+          <label class="advanced-field">
+            <span>Nội dung nhận xét</span>
+            <input type="search" formControlName="reviewComment" placeholder="Nhận xét duyệt" />
+          </label>
+          <div class="advanced-search-footer">
+            <button type="button" class="reset-filters" (click)="resetFilters()">
+              <i class="fa fa-undo" aria-hidden="true"></i>
+              Xóa bộ lọc
+            </button>
+          </div>
+        </div>
+      }
     </div>
     @if (loading) {
       <p role="status">Đang tải tài liệu…</p>

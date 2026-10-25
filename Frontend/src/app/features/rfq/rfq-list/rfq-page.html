@@ -1,0 +1,317 @@
+<main class="rfq-page">
+  <header class="page-heading">
+    <div class="heading-copy">
+      <p class="eyebrow">MUA SẮM / YÊU CẦU BÁO GIÁ</p>
+      <h1>Yêu cầu báo giá &amp; so sánh báo giá</h1>
+      <p>Quản lý RFQ, theo dõi báo giá nhà cung cấp và so sánh để chọn nhà cung cấp phù hợp</p>
+    </div>
+    <div class="heading-actions">
+      @if (role() === 'MAKER') {
+        <button type="button" class="button button-primary" (click)="openCreate()">
+          <i class="fa fa-plus" aria-hidden="true"></i> Tạo RFQ
+        </button>
+      }
+      <button type="button" class="button button-secondary" (click)="exportExcel()">
+        <i class="fa fa-download" aria-hidden="true"></i> Xuất Excel
+      </button>
+      <button
+        type="button"
+        class="button button-primary" 
+        (click)="refresh()"
+        [disabled]="isLoading()"
+      >
+        <i class="fa fa-refresh" [class.fa-spin]="isLoading()" aria-hidden="true"></i> Làm mới
+      </button>
+    </div>
+  </header>
+
+  <section class="kpi-grid" aria-label="Chỉ số RFQ">
+    @for (kpi of kpis(); track kpi.id) {
+      <button
+        type="button"
+        class="kpi-card"
+        [class.selected]="activeKpi() === kpi.id"
+        (click)="toggleKpi(kpi.id)"
+        [attr.aria-pressed]="activeKpi() === kpi.id"
+      >
+        <span
+          class="kpi-icon"
+          [class.blue]="kpi.color === 'blue'"
+          [class.green]="kpi.color === 'green'"
+          [class.red]="kpi.color === 'red'"
+        >
+          <i class="fa" [class]="'fa ' + kpi.icon" aria-hidden="true"></i>
+        </span>
+        <span class="kpi-copy"
+          ><span>{{ kpi.label }}</span
+          ><strong>{{ kpi.value }}</strong></span
+        >
+        <i class="fa fa-chevron-right kpi-chevron" aria-hidden="true"></i>
+      </button>
+    }
+  </section>
+
+  @if (loadError()) {
+    <div class="page-alert error" role="alert">
+      <i class="fa fa-exclamation-circle"></i>{{ loadError()
+      }}<button type="button" (click)="refresh()">Thử lại</button>
+    </div>
+  }
+
+  <section class="list-card" aria-label="Danh sách yêu cầu báo giá">
+    <nav class="status-tabs" aria-label="Lọc nhanh theo trạng thái">
+      @for (tab of tabs(); track tab.id) {
+        <button
+          type="button"
+          [class.active]="activeTab() === tab.id && !activeKpi()"
+          (click)="setTab(tab.id)"
+          [attr.aria-pressed]="activeTab() === tab.id && !activeKpi()"
+        >
+          {{ tab.label }}
+        </button>
+      }
+    </nav>
+
+    <form class="filter-bar" [formGroup]="filtersForm" aria-label="Bộ lọc RFQ">
+      <label class="search-control">
+        <i class="fa fa-search" aria-hidden="true"></i>
+        <span class="sr-only">Tìm kiếm RFQ</span>
+        <input
+          type="search"
+          formControlName="query"
+          placeholder="Mã RFQ, mã PR, nhà cung cấp, tên hàng…"
+        />
+      </label>
+      <label
+        ><span class="sr-only">Trạng thái</span>
+        <select formControlName="status">
+          <option value="">Mọi trạng thái</option>
+          @for (entry of statusEntries; track entry[0]) {
+            <option [value]="entry[0]">{{ entry[1] }}</option>
+          }
+        </select>
+      </label>
+      <label
+        ><span class="sr-only">Phòng ban</span>
+        <select formControlName="department">
+          <option value="">Mọi phòng ban</option>
+          @for (department of departments(); track department) {
+            <option [value]="department">{{ department }}</option>
+          }
+        </select>
+      </label>
+      <label
+        ><span class="sr-only">Người tạo</span>
+        <input type="search" formControlName="creator" placeholder="Username người tạo" />
+      </label>
+      <label class="date-control"
+        ><span class="sr-only">Từ ngày</span
+        ><input type="date" formControlName="from" aria-label="Tạo từ ngày"
+      /></label>
+      <label class="date-control"
+        ><span class="sr-only">Đến ngày</span
+        ><input type="date" formControlName="to" aria-label="Tạo đến ngày"
+      /></label>
+    </form>
+
+    <div class="table-summary">
+      <span>{{ totalElements() }} yêu cầu phù hợp</span
+      ><span>Hiển thị {{ pageStart() }}–{{ pageEnd() }} / {{ totalElements() }}</span>
+    </div>
+    @if (isLoading()) {
+      <div class="skeleton-table" role="status" aria-label="Đang tải danh sách RFQ">
+        @for (row of [1, 2, 3, 4, 5]; track row) {
+          <div class="skeleton-row">
+            <span></span> <span></span><span></span><span></span><span></span><span></span>
+          </div>
+        }
+      </div>
+    } @else if (pageRows().length) {
+      <div class="table-scroll">
+        <table class="rfq-table">
+          <thead>
+            <tr>
+              <th>MÃ RFQ</th>
+              <th>TIÊU ĐỀ</th>
+              <th>PR LIÊN QUAN</th>
+              <th>PHÒNG BAN</th>
+              <th>NCC ĐÃ BÁO GIÁ</th>
+              <th>HẠN NỘP</th>
+              <th>GIÁ TRỊ ƯỚC TÍNH</th>
+              <th>TRẠNG THÁI</th>
+              <th>NGƯỜI TẠO</th>
+              <th>THAO TÁC</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (rfq of pageRows(); track rfq.id) {
+              <tr
+                (click)="openRfq(rfq)"
+                (keydown.enter)="openRfq(rfq)"
+                tabindex="0"
+                [attr.aria-label]="'Mở chi tiết ' + rfq.code"
+              >
+                <td>
+                  <button
+                    type="button"
+                    class="text-link"
+                    (click)="$event.stopPropagation(); openRfq(rfq)"
+                  >
+                    {{ rfq.code }}
+                  </button>
+                </td>
+                <td class="title-cell">
+                  <strong>{{ rfq.title }}</strong
+                  ><small>{{
+                    rfq.items.length
+                      ? rfq.items.length + ' hạng mục'
+                      : 'Mở chi tiết để xem hạng mục'
+                  }}</small>
+                </td>
+                <td>
+                  <span class="pr-code">{{ rfq.prCode }}</span>
+                </td>
+                <td>{{ rfq.department }}</td>
+                <td>
+                  <span class="quote-count" [class.incomplete]="hasIncompleteQuotes(rfq)">{{
+                    quoteRatio(rfq)
+                  }}</span>
+                </td>
+                <td>
+                  <span class="deadline" [class.overdue]="deadlineIsPast(rfq.deadline)">{{
+                    rfq.deadline | date: 'dd/MM/yyyy'
+                  }}</span
+                  ><small class="countdown" [class.overdue]="deadlineIsPast(rfq.deadline)">{{
+                    countdown(rfq.deadline)
+                  }}</small>
+                </td>
+                <td class="money">{{ formatVnd(rfq.estimatedValue) }}</td>
+                <td>
+                  <span class="status-badge" [class]="'status-badge ' + statusClass(rfq.status)">{{
+                    statusLabel(rfq.status)
+                  }}</span>
+                </td>
+                <td>{{ rfq.creatorName }}</td>
+                <td>
+                  <div class="row-actions" (click)="$event.stopPropagation()">
+                    <button
+                      type="button"
+                      class="icon-action"
+                      (click)="openRfq(rfq)"
+                      title="Xem và so sánh"
+                      aria-label="Xem và so sánh"
+                    >
+                      <i class="fa fa-eye"></i>
+                    </button>
+                    @if (canClone(rfq)) {
+                      <button
+                        type="button"
+                        class="icon-action"
+                        (click)="cloneRfq(rfq)"
+                        title="Nhân bản"
+                        aria-label="Nhân bản"
+                      >
+                        <i class="fa fa-clone"></i>
+                      </button>
+                    }
+                    @if (canCancel(rfq)) {
+                      <button
+                        type="button"
+                        class="icon-action danger"
+                        (click)="cancelRfq(rfq)"
+                        title="Hủy RFQ"
+                        aria-label="Hủy RFQ"
+                      >
+                        <i class="fa fa-ban"></i>
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="empty-state">
+        <span class="empty-icon"><i class="fa fa-inbox" aria-hidden="true"></i></span>
+        <h2>Không tìm thấy RFQ phù hợp với bộ lọc</h2>
+        <p>Hãy đổi tab hoặc điều chỉnh bộ lọc đang chọn.</p>
+        <button
+          type="button"
+          class="button button-secondary"
+          (click)="
+            filtersForm.reset({
+              query: '',
+              status: '',
+              department: '',
+              creator: '',
+              from: '',
+              to: '',
+            });
+            setTab('ALL')
+          "
+        >
+          Xóa bộ lọc
+        </button>
+      </div>
+    }
+    <footer class="pagination-bar">
+      <label
+        >Hiển thị
+        <select [value]="pageSize()" (change)="changePageSize(+$any($event.target).value)">
+          <option [value]="8">8</option>
+          <option [value]="15">15</option>
+          <option [value]="25">25</option>
+        </select>
+        dòng</label
+      ><span>Trang {{ page() }} / {{ pageCount() }}</span>
+      <div>
+        <button
+          type="button"
+          class="button button-secondary"
+          (click)="previousPage()"
+          [disabled]="page() <= 1"
+        >
+          Trước</button
+        ><button
+          type="button"
+          class="button button-secondary"
+          (click)="nextPage()"
+          [disabled]="page() >= pageCount()"
+        >
+          Sau
+        </button>
+      </div>
+    </footer>
+  </section>
+</main>
+
+<app-rfq-detail-panel [record]="selectedRfq()" [page]="pageContext" />
+
+@if (isCreateOpen()) {
+  @if (editingRfq(); as rfq) {
+    <app-rfq-edit-dialog
+      [initialRfq]="rfq"
+      [approvedTickets]="approvedTickets()"
+      [departments]="departments()"
+      [suppliers]="suppliers()"
+      [isSaving]="isSaving()"
+      [serverError]="createError()"
+      (close)="closeCreate()"
+      (clearServerError)="createError.set('')"
+      (save)="saveRfqForm($event)"
+    />
+  } @else {
+    <app-rfq-form-dialog
+      [approvedTickets]="approvedTickets()"
+      [departments]="departments()"
+      [suppliers]="suppliers()"
+      [isSaving]="isSaving()"
+      [serverError]="createError()"
+      (close)="closeCreate()"
+      (clearServerError)="createError.set('')"
+      (save)="saveRfqForm($event)"
+    />
+  }
+}

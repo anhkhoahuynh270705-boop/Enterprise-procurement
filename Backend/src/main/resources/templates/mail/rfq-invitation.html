@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thư mời báo giá</title>
+</head>
+<body style="margin:0;padding:24px;background:#f1f5f9;font-family:Arial,sans-serif;color:#1f2937;">
+<main style="max-width:600px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:2px;overflow:hidden;">
+    <header style="padding:24px;background:#111827;color:#fff;">
+        <p style="margin:0 0 8px;font-size:12px;letter-spacing:1px;">ENTERPRISE PROCUREMENT</p>
+        <h1 style="margin:0;font-size:22px;">Thư mời gửi báo giá</h1>
+    </header>
+    <section style="padding:28px 24px;line-height:1.6;">
+        <p>Kính gửi <strong th:text="${supplierName}">Nhà cung cấp</strong>,</p>
+        <p>Quý nhà cung cấp được mời gửi báo giá cho yêu cầu <strong th:text="${rfqCode}">RFQ-0001</strong>.</p>
+        <p style="margin:28px 0;text-align:center;">
+            <a th:href="${invitationLink}"
+               style="display:inline-block;padding:13px 22px;background:#111827;color:#fff;text-decoration:none;border-radius:2px;font-weight:bold;">
+                Mở yêu cầu và gửi báo giá
+            </a>
+        </p>
+        <p>Liên kết có hiệu lực đến <strong th:text="${expiresAt}">dd/MM/yyyy HH:mm</strong>.</p>
+        <p style="font-size:13px;color:#64748b;">Liên kết này dành riêng cho quý nhà cung cấp. Vui lòng không chuyển tiếp email.</p>
+    </section>
+    <footer style="padding:16px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;color:#64748b;font-size:12px;">
+        Email tự động từ Enterprise Procurement. Vui lòng không trả lời email này.
+    </footer>
+</main>
+</body>
+</html>

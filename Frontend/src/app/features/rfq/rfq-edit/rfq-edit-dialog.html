@@ -1,0 +1,184 @@
+<div class="modal-backdrop" (click)="dismiss()" (keydown.escape)="dismiss()">
+  <section
+    class="create-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="edit-rfq-title"
+    tabindex="-1"
+    (click)="$event.stopPropagation()"
+    (keydown.escape)="dismiss()"
+    (keydown)="trapDialogFocus($event)"
+  >
+    <header class="modal-heading">
+      <div>
+        <p class="eyebrow">CẬP NHẬT RFQ</p>
+        <h2 id="edit-rfq-title">Chỉnh sửa yêu cầu báo giá</h2>
+      </div>
+      <button type="button" class="close-button" (click)="dismiss()" aria-label="Đóng biểu mẫu">
+        <i class="fa fa-times"></i>
+      </button>
+    </header>
+    <form [formGroup]="form" (ngSubmit)="saveForm(true)">
+      @if (formError() || serverError()) {
+        <p class="form-alert" role="alert">{{ formError() || serverError() }}</p>
+      }
+      <section class="form-section">
+        <h3><span>1</span> Thông tin chung</h3>
+        <div class="create-grid">
+          <label
+            >Phiếu mua sắm đã duyệt
+            <select
+              formControlName="procurementTicketId"
+              [disabled]="true"
+            >
+              <option value="">Chọn PR đã duyệt</option>
+              @for (ticket of approvedTickets(); track ticket.id) {
+                <option [value]="ticket.id">{{ ticket.ticketCode }} · {{ ticket.title }}</option>
+              }
+            </select>
+          </label>
+          <label
+            >Tiêu đề RFQ<input formControlName="title" maxlength="255" placeholder="Nhập tiêu đề"
+          /></label>
+          <label
+            >Phòng ban
+            <select formControlName="department">
+              <option value="">Chọn phòng ban</option>
+              @for (department of departments(); track department) {
+                <option [value]="department">{{ department }}</option>
+              }
+            </select>
+          </label>
+          <label>Hạn nộp báo giá<input type="date" formControlName="deadline" /></label>
+          <label
+            >Hiệu lực báo giá (ngày)<input type="number" min="1" formControlName="validityDays"
+          /></label>
+          <label>Địa điểm giao hàng<input formControlName="deliveryLocation" /></label>
+          <label class="wide">Thời gian giao hàng<input formControlName="deliveryWindow" /></label>
+        </div>
+      </section>
+      <section class="form-section">
+        <div class="section-heading">
+          <h3><span>2</span> Hạng mục</h3>
+          <div>
+            <label class="import-button"
+              ><i class="fa fa-upload"></i> Nhập CSV
+              <input type="file" accept=".csv" (change)="importItems($event)" />
+            </label>
+            <button type="button" class="button button-secondary" (click)="addItem()">
+              <i class="fa fa-plus"></i> Thêm dòng
+            </button>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table class="simple-table create-items">
+            <thead>
+              <tr>
+                <th>Mã hàng</th>
+                <th>Tên hạng mục</th>
+                <th>Số lượng</th>
+                <th>ĐVT</th>
+                <th>Ngân sách / đơn vị</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of items(); track item.id; let index = $index) {
+                <tr>
+                  <td>{{ item.sku }}</td>
+                  <td>
+                    <input
+                      [value]="item.name"
+                      (input)="updateItem(index, 'name', $any($event.target).value)"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min="1"
+                      [value]="item.quantity"
+                      (input)="updateItem(index, 'quantity', $any($event.target).value)"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      [value]="item.unit"
+                      (input)="updateItem(index, 'unit', $any($event.target).value)"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      [value]="item.budgetUnitPrice"
+                      (input)="updateItem(index, 'budgetUnitPrice', $any($event.target).value)"
+                    />
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      class="icon-action danger"
+                      (click)="removeItem(index)"
+                      aria-label="Xóa hạng mục"
+                    >
+                      <i class="fa fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section class="form-section">
+        <h3><span>3</span> Nhà cung cấp</h3>
+        <p class="muted">
+          Chọn tối thiểu 3 NCC. NCC không hoạt động hoặc trong danh sách chặn không thể mời.
+        </p>
+        <div class="supplier-check-list">
+          @for (supplier of suppliers(); track supplier.id) {
+            <label [class.blocked]="supplier.status !== 'ACTIVE'">
+              <input
+                type="checkbox"
+                [checked]="selectedSupplierIds().includes(supplier.id)"
+                [disabled]="supplier.status !== 'ACTIVE'"
+                (change)="toggleSupplier(supplier.id, $any($event.target).checked)"
+              />
+              <span>{{ supplier.name }}</span>
+              @if (supplier.status === 'BLACKLISTED') {
+                <small>Đang bị chặn</small>
+              } @else if (supplier.status === 'INACTIVE') {
+                <small>Không hoạt động</small>
+              }
+            </label>
+          }
+        </div>
+        @if (selectedSupplierIds().length < 3) {
+          <label class="exception-field"
+            >Lý do ngoại lệ khi mời dưới 3 NCC <span>*</span>
+            <textarea
+              rows="2"
+              [value]="supplierException()"
+              (input)="supplierException.set($any($event.target).value)"
+              placeholder="Nhập lý do, tối thiểu 10 ký tự"
+            ></textarea>
+          </label>
+        }
+      </section>
+      <footer class="modal-actions">
+        <button type="button" class="button button-secondary" (click)="dismiss()">Đóng</button>
+        <button
+          type="button"
+          class="button button-secondary"
+          (click)="saveForm(false)"
+          [disabled]="isSaving()"
+        >
+          Lưu nháp
+        </button>
+        <button type="submit" class="button button-primary" [disabled]="isSaving()">
+          {{ isSaving() ? 'Đang lưu…' : 'Gửi RFQ / Trình duyệt' }}
+        </button>
+      </footer>
+    </form>
+  </section>
+</div>

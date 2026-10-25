@@ -125,20 +125,76 @@
       <input
         type="search"
         placeholder="Tên tài liệu, tên file hoặc mô tả…"
-        [value]="search()"
-        (input)="search.set($any($event.target).value)"
+        [value]="searchDraft()"
+        (input)="onSearchInput($any($event.target).value)"
       />
     </div>
-    <div class="filter-box">
-      <i class="fa fa-filter" aria-hidden="true"></i>
-      <select [value]="category()" (change)="category.set($any($event.target).value)">
-        <option value="">Tất cả danh mục</option>
-        @for (item of categories; track item.value) {
-          <option [value]="item.value">{{ item.label }}</option>
-        }
-      </select>
-    </div>
+    <button
+      type="button"
+      class="advanced-toggle"
+      [class.active]="isAdvancedSearchOpen()"
+      [attr.aria-expanded]="isAdvancedSearchOpen()"
+      aria-controls="company-document-advanced-search"
+      (click)="toggleAdvancedSearch()"
+    >
+      <i class="fa fa-sliders" aria-hidden="true"></i>
+      Tìm kiếm nâng cao
+      <i
+        class="fa"
+        [class.fa-chevron-up]="isAdvancedSearchOpen()"
+        [class.fa-chevron-down]="!isAdvancedSearchOpen()"
+        aria-hidden="true"
+      ></i>
+    </button>
   </div>
+
+  @if (isAdvancedSearchOpen()) {
+    <div
+      id="company-document-advanced-search"
+      class="advanced-search-panel"
+      [formGroup]="advancedForm"
+      aria-label="Bộ lọc tìm kiếm nâng cao"
+    >
+      <label class="advanced-field">
+        <span>Danh mục</span>
+        <select formControlName="category">
+          <option value="">Tất cả danh mục</option>
+          @for (item of categories; track item.value) {
+            <option [value]="item.value">{{ item.label }}</option>
+          }
+        </select>
+      </label>
+      <label class="advanced-field">
+        <span>Người đăng</span>
+        <input type="search" formControlName="uploadedBy" placeholder="Tên người đăng tài liệu" />
+      </label>
+      <label class="advanced-field">
+        <span>Đăng từ ngày</span>
+        <input type="date" formControlName="uploadedFrom" />
+      </label>
+      <label class="advanced-field">
+        <span>Đăng đến ngày</span>
+        <input type="date" formControlName="uploadedTo" />
+      </label>
+      <label class="advanced-field">
+        <span>Loại tệp</span>
+        <select formControlName="fileType">
+          <option value="">Tất cả loại tệp</option>
+          <option value="PDF">PDF</option>
+          <option value="WORD">Word</option>
+          <option value="EXCEL">Excel</option>
+          <option value="IMAGE">Hình ảnh</option>
+        </select>
+      </label>
+      <div class="advanced-search-footer">
+        <span class="debounce-hint">Bộ lọc áp dụng tự động sau khi nhập.</span>
+        <button type="button" class="btn-reset-filters" (click)="resetFilters()">
+          <i class="fa fa-undo" aria-hidden="true"></i>
+          Xóa bộ lọc
+        </button>
+      </div>
+    </div>
+  }
 
   <section class="panel" aria-label="Danh sách tài liệu">
     @if (loading()) {
@@ -152,7 +208,7 @@
         <p>
           {{
             documents().length
-              ? 'Thử đổi từ khóa hoặc danh mục.'
+              ? 'Thử đổi từ khóa hoặc bộ lọc tìm kiếm.'
               : isAdmin
                 ? 'Đăng tài liệu đầu tiên để chia sẻ với nhân viên.'
                 : 'Tài liệu sẽ xuất hiện khi quản trị viên đăng tải.'
@@ -193,7 +249,7 @@
                         type="button"
                         (click)="download(doc, true)"
                         [disabled]="!!busy() || uploading() || loading()"
-                        [title]="'Xem ' + doc.title"
+                        [title]="'Xem'"
                         [attr.aria-label]="'Xem ' + doc.title"
                       >
                         <i class="fa fa-eye" aria-hidden="true"></i>
@@ -203,7 +259,7 @@
                       type="button"
                       (click)="download(doc)"
                       [disabled]="!!busy() || uploading() || loading()"
-                      [title]="'Tải xuống ' + doc.title"
+                      [title]="'Tải xuống'"
                       [attr.aria-label]="'Tải xuống ' + doc.title"
                     >
                       <i class="fa fa-download" aria-hidden="true"></i>
@@ -215,7 +271,7 @@
                         data-action="delete"
                         (click)="remove(doc)"
                         [disabled]="!!busy() || uploading() || loading()"
-                        [title]="'Gỡ ' + doc.title"
+                        [title]="'Gỡ'"
                         [attr.aria-label]="'Gỡ ' + doc.title"
                       >
                         <i class="fa fa-trash-o" aria-hidden="true"></i>

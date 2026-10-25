@@ -14,6 +14,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, debounceTime } from 'rxjs';
 import { AuthService } from '../../auth/services/auth.service';
 import { CompanyDocumentService } from '../services/company-document.service';
 import { CompanyDocument } from '../model/company.model';
@@ -40,7 +41,9 @@ export class CompanyDocuments implements OnInit, OnDestroy {
   ];
   readonly documents = signal<CompanyDocument[]>([]);
   readonly search = signal('');
-  readonly category = signal('');
+  readonly searchDraft = signal('');
+  readonly isAdvancedSearchOpen = signal(false);
+  private readonly searchInput = new Subject<string>();
   readonly loading = signal(false);
   readonly uploading = signal(false);
   readonly busy = signal('');
@@ -54,6 +57,14 @@ export class CompanyDocuments implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly previewDialog = viewChild<ElementRef<HTMLDialogElement>>('previewDialog');
   private readonly fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
+  readonly advancedForm = this.fb.nonNullable.group({
+    category: '',
+    uploadedBy: '',
+    uploadedFrom: '',
+    uploadedTo: '',
+    fileType: '',
+  });
+  readonly advancedFilters = signal(this.advancedForm.getRawValue());
 
   readonly form = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.maxLength(200)]],
@@ -62,10 +73,30 @@ export class CompanyDocuments implements OnInit, OnDestroy {
   });
   readonly filtered = computed(() => {
     const query = this.search().trim().toLocaleLowerCase('vi');
+    const filters = this.advancedFilters();
+    const uploadedBy = filters.uploadedBy.trim().toLocaleLowerCase('vi');
     return this.documents().filter(
-      (doc) =>
-        (!this.category() || doc.category === this.category()) &&
-        `${doc.title} ${doc.filename} ${doc.description}`.toLocaleLowerCase('vi').includes(query),
+      (doc) => {
+        const searchableText = `${doc.title} ${doc.filename} ${doc.description} ${doc.uploadedBy} ${this.categoryLabel(doc.category)}`
+          .toLocaleLowerCase('vi');
+        const uploadedDate = doc.uploadedAt?.slice(0, 10) ?? '';
+        const contentType = doc.contentType?.toLocaleLowerCase('vi') ?? '';
+        const matchesFileType =
+          !filters.fileType ||
+          (filters.fileType === 'PDF' && contentType === 'application/pdf') ||
+          (filters.fileType === 'WORD' && (contentType.includes('word') || contentType === 'application/msword')) ||
+          (filters.fileType === 'EXCEL' && (contentType.includes('spreadsheet') || contentType.includes('excel'))) ||
+          (filters.fileType === 'IMAGE' && contentType.startsWith('image/'));
+
+        return (
+          (!filters.category || doc.category === filters.category) &&
+          (!query || searchableText.includes(query)) &&
+          (!uploadedBy || doc.uploadedBy.toLocaleLowerCase('vi').includes(uploadedBy)) &&
+          (!filters.uploadedFrom || uploadedDate >= filters.uploadedFrom) &&
+          (!filters.uploadedTo || uploadedDate <= filters.uploadedTo) &&
+          matchesFileType
+        );
+      },
     );
   });
 
@@ -76,6 +107,12 @@ export class CompanyDocuments implements OnInit, OnDestroy {
   rows: CompanyDocument[] = [];
 
   constructor() {
+    this.searchInput
+      .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
+      .subscribe((query) => this.search.set(query));
+    this.advancedForm.valueChanges
+      .pipe(debounceTime(250), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.advancedFilters.set(this.advancedForm.getRawValue()));
     effect(() => {
       const _ = this.filtered();
       this.currentPage = 0;
@@ -93,6 +130,30 @@ export class CompanyDocuments implements OnInit, OnDestroy {
     if (page < 0 || page >= this.totalPages) return;
     this.currentPage = page;
     this.updatePaging();
+  }
+
+  onSearchInput(value: string): void {
+    this.searchDraft.set(value);
+    this.searchInput.next(value);
+  }
+
+  toggleAdvancedSearch(): void {
+    this.isAdvancedSearchOpen.update((open) => !open);
+  }
+
+  resetFilters(): void {
+    this.searchDraft.set('');
+    this.search.set('');
+    this.searchInput.next('');
+    const emptyFilters = {
+      category: '',
+      uploadedBy: '',
+      uploadedFrom: '',
+      uploadedTo: '',
+      fileType: '',
+    };
+    this.advancedForm.reset(emptyFilters);
+    this.advancedFilters.set(emptyFilters);
   }
 
   ngOnInit(): void {
@@ -181,8 +242,7 @@ export class CompanyDocuments implements OnInit, OnDestroy {
           this.file.set(null);
           if (this.fileInput()) this.fileInput()!.nativeElement.value = '';
           this.showUpload.set(false);
-          this.search.set('');
-          this.category.set('');
+          this.resetFilters();
           this.toast.success('Đăng tài liệu thành công');
         },
         error: (err) => {

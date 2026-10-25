@@ -1,6 +1,8 @@
 <div class="supplier-form-page">
   <div class="page-title-bar">
-    <a class="btn btn-outline" routerLink="/suppliers"> <i class="fa fa-arrow-left" aria-hidden="true"></i> Back </a>
+    <a class="btn btn-outline" routerLink="/suppliers">
+      <i class="fa fa-arrow-left" aria-hidden="true"></i> Back
+    </a>
     <h2>Edit suppliers</h2>
     <span class="sub-breadcrumb"
       >Cập nhật thông tin đối tác
@@ -21,7 +23,8 @@
             id="name"
             type="text"
             formControlName="name"
-            placeholder="Ví dụ: Công ty TNHH Giải Pháp Công Nghệ ABC"
+            maxlength="200"
+            placeholder="Ví dụ: Công ty TNHH ABC"
             [class.is-invalid]="editform.controls.name.touched && editform.controls.name.invalid"
           />
           @if (editform.controls.name.touched && editform.controls.name.hasError('required')) {
@@ -29,6 +32,15 @@
           }
           @if (editform.controls.name.touched && editform.controls.name.hasError('maxlength')) {
             <span class="error-msg">Tên không được vượt quá 200 ký tự</span>
+          }
+          @if (editform.controls.name.touched && editform.controls.name.hasError('minlength')) {
+            <span class="error-msg">Tên nhà cung cấp phải có ít nhất 2 ký tự</span>
+          }
+          @if (editform.controls.name.touched && editform.controls.name.hasError('companyName')) {
+            <span class="error-msg"
+              >Tên nhà cung cấp chỉ được chứa chữ, dấu ngoặc đơn và khoảng trắng đơn giữa các
+              từ.</span
+            >
           }
         </div>
 
@@ -73,7 +85,18 @@
 
         <div class="form-group">
           <label for="phone">Số điện thoại</label>
-          <input id="phone" type="text" formControlName="phone" placeholder="Ví dụ: 0987654321" />
+          <input
+            id="phone"
+            type="tel"
+            formControlName="phone"
+            placeholder="Ví dụ: 0987 654 321"
+            maxlength="30"
+            inputmode="tel"
+            [class.is-invalid]="editform.controls.phone.touched && editform.controls.phone.invalid"
+          />
+          @if (editform.controls.phone.touched && editform.controls.phone.hasError('pattern')) {
+            <span class="error-msg">Số điện thoại gồm 8–15 chữ số; có thể chèn khoảng trắng.</span>
+          }
         </div>
 
         <div class="form-group full-width">

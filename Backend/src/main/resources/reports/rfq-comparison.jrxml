@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport name="rfq-comparison" language="java" pageWidth="842" pageHeight="595" orientation="Landscape" whenNoDataType="AllSectionsNoDetail" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="18" bottomMargin="18" uuid="419d640e-7372-45c0-97c0-688f7741e900">
+	<style name="ReportText" default="true" fontName="DejaVu Sans" fontSize="8.0"/>
+	<parameter name="RFQ_CODE" class="java.lang.String"/>
+	<parameter name="RFQ_TITLE" class="java.lang.String"/>
+	<parameter name="PR_CODE" class="java.lang.String"/>
+	<parameter name="DEPARTMENT" class="java.lang.String"/>
+	<parameter name="CREATOR" class="java.lang.String"/>
+	<parameter name="STATUS" class="java.lang.String"/>
+	<parameter name="DEADLINE" class="java.lang.String"/>
+	<parameter name="CURRENCY" class="java.lang.String"/>
+	<parameter name="EXPORTED_AT" class="java.lang.String"/>
+	<parameter name="QUOTE_COUNT" class="java.lang.String"/>
+	<parameter name="SCORING_WEIGHTS" class="java.lang.String"/>
+	<parameter name="SELECTED_SUPPLIER" class="java.lang.String"/>
+	<parameter name="SELECTION_REASON" class="java.lang.String"/>
+	<field name="groupKey" class="java.lang.String"/>
+	<field name="supplierName" class="java.lang.String"/>
+	<field name="roundNumber" class="java.lang.String"/>
+	<field name="sku" class="java.lang.String"/>
+	<field name="itemName" class="java.lang.String"/>
+	<field name="quantity" class="java.lang.String"/>
+	<field name="unit" class="java.lang.String"/>
+	<field name="budgetUnitPrice" class="java.lang.String"/>
+	<field name="unitPrice" class="java.lang.String"/>
+	<field name="lineTotal" class="java.lang.String"/>
+	<field name="budgetVariance" class="java.lang.String"/>
+	<field name="subtotalBeforeTax" class="java.lang.String"/>
+	<field name="taxAmount" class="java.lang.String"/>
+	<field name="shippingCost" class="java.lang.String"/>
+	<field name="otherCost" class="java.lang.String"/>
+	<field name="totalAfterTax" class="java.lang.String"/>
+	<field name="deliveryDays" class="java.lang.String"/>
+	<field name="paymentTerms" class="java.lang.String"/>
+	<field name="warranty" class="java.lang.String"/>
+	<field name="validUntil" class="java.lang.String"/>
+	<field name="technicalStatus" class="java.lang.String"/>
+	<field name="totalScore" class="java.lang.String"/>
+	<field name="rank" class="java.lang.String"/>
+	<field name="priceScore" class="java.lang.String"/>
+	<field name="technicalScore" class="java.lang.String"/>
+	<field name="deliveryScore" class="java.lang.String"/>
+	<field name="paymentScore" class="java.lang.String"/>
+	<field name="reputationScore" class="java.lang.String"/>
+	<group name="SupplierGroup" reprintHeaderOnEachPage="true">
+		<expression><![CDATA[$F{groupKey}]]></expression>
+		<groupHeader>
+			<band height="24" splitType="Stretch">
+				<element kind="textField" x="0" y="0" width="802" height="24" forecolor="#FFFFFF" backcolor="#173F73" mode="Opaque" fontName="DejaVu Sans" fontSize="9.0" bold="true" vTextAlign="Middle">
+					<box leftPadding="7"/><expression><![CDATA["NHÀ CUNG CẤP: " + $F{supplierName} + "    |    VÒNG " + $F{roundNumber} + "    |    " + $F{rank} + "    |    TỔNG ĐIỂM: " + $F{totalScore} + " / 100"]]></expression>
+				</element>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="62" splitType="Stretch">
+				<element kind="textField" x="0" y="0" width="802" height="18" forecolor="#0F172A" backcolor="#EFF4F9" mode="Opaque" fontName="DejaVu Sans" fontSize="8.0" bold="true" vTextAlign="Middle">
+					<box leftPadding="6"/><expression><![CDATA["TỔNG TRƯỚC VAT: " + $F{subtotalBeforeTax} + "    |    VAT: " + $F{taxAmount} + "    |    VẬN CHUYỂN: " + $F{shippingCost} + "    |    CHI PHÍ KHÁC: " + $F{otherCost} + "    |    TCO: " + $F{totalAfterTax}]]></expression>
+				</element>
+				<element kind="textField" x="0" y="19" width="802" height="17" forecolor="#334155" fontName="DejaVu Sans" fontSize="8.0" vTextAlign="Middle">
+					<expression><![CDATA["GIAO HÀNG: " + $F{deliveryDays} + "    |    THANH TOÁN: " + $F{paymentTerms} + "    |    BẢO HÀNH: " + $F{warranty} + "    |    HIỆU LỰC ĐẾN: " + $F{validUntil} + "    |    KỸ THUẬT: " + $F{technicalStatus}]]></expression>
+				</element>
+				<element kind="textField" x="0" y="37" width="802" height="20" forecolor="#334155" fontName="DejaVu Sans" fontSize="7.0" vTextAlign="Middle">
+					<expression><![CDATA["ĐIỂM TIÊU CHÍ ( /100): Giá " + $F{priceScore} + " · Kỹ thuật " + $F{technicalScore} + " · Giao hàng " + $F{deliveryScore} + " · Thanh toán " + $F{paymentScore} + " · Uy tín NCC " + $F{reputationScore}]]></expression>
+				</element>
+			</band>
+		</groupFooter>
+	</group>
+	<title height="160" splitType="Stretch">
+		<element kind="staticText" x="0" y="0" width="802" height="15" forecolor="#475569" fontName="DejaVu Sans" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+			<text><![CDATA[ENTERPRISE PROCUREMENT MANAGEMENT SYSTEM]]></text>
+		</element>
+		<element kind="staticText" x="0" y="17" width="802" height="25" forecolor="#173F73" fontName="DejaVu Sans" fontSize="16.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+			<text><![CDATA[BIÊN BẢN SO SÁNH & LỰA CHỌN BÁO GIÁ]]></text>
+		</element>
+		<element kind="textField" x="0" y="44" width="802" height="18" forecolor="#334155" fontName="DejaVu Sans" fontSize="10.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+			<expression><![CDATA[$P{RFQ_CODE} + " · " + $P{RFQ_TITLE}]]></expression>
+		</element>
+		<element kind="textField" x="0" y="67" width="400" height="18" forecolor="#0F172A" backcolor="#EFF4F9" mode="Opaque" fontName="DejaVu Sans" fontSize="8.0" bold="true" vTextAlign="Middle">
+			<box leftPadding="6"><pen lineWidth="0.5" lineColor="#CBD5E1"/></box>
+			<expression><![CDATA["MÃ PR: " + $P{PR_CODE} + "    |    PHÒNG BAN: " + $P{DEPARTMENT}]]></expression>
+		</element>
+		<element kind="textField" x="400" y="67" width="402" height="18" forecolor="#14532D" backcolor="#EFF4F9" mode="Opaque" fontName="DejaVu Sans" fontSize="8.0" bold="true" vTextAlign="Middle">
+			<box leftPadding="6"><pen lineWidth="0.5" lineColor="#CBD5E1"/></box>
+			<expression><![CDATA["TRẠNG THÁI: " + $P{STATUS} + "    |    HẠN NHẬN: " + $P{DEADLINE}]]></expression>
+		</element>
+		<element kind="textField" x="0" y="87" width="400" height="18" forecolor="#0F172A" backcolor="#F8FAFC" mode="Opaque" fontName="DejaVu Sans" fontSize="8.0" vTextAlign="Middle">
+			<box leftPadding="6"><pen lineWidth="0.5" lineColor="#CBD5E1"/></box>
+			<expression><![CDATA["NGƯỜI TẠO: " + $P{CREATOR} + "    |    SỐ NHÀ CUNG CẤP: " + $P{QUOTE_COUNT}]]></expression>
+		</element>
+		<element kind="textField" x="400" y="87" width="402" height="18" forecolor="#0F172A" backcolor="#F8FAFC" mode="Opaque" fontName="DejaVu Sans" fontSize="8.0" vTextAlign="Middle">
+			<box leftPadding="6"><pen lineWidth="0.5" lineColor="#CBD5E1"/></box>
+			<expression><![CDATA["TRỌNG SỐ: " + $P{SCORING_WEIGHTS}]]></expression>
+		</element>
+		<element kind="textField" x="0" y="107" width="802" height="18" forecolor="#14532D" backcolor="#F0FDF4" mode="Opaque" fontName="DejaVu Sans" fontSize="8.0" bold="true" vTextAlign="Middle">
+			<box leftPadding="6"><pen lineWidth="0.5" lineColor="#86EFAC"/></box>
+			<expression><![CDATA["NHÀ CUNG CẤP ĐƯỢC CHỌN: " + $P{SELECTED_SUPPLIER}]]></expression>
+		</element>
+		<element kind="textField" x="0" y="127" width="802" height="24" forecolor="#334155" fontName="DejaVu Sans" fontSize="8.0" textAdjust="StretchHeight" blankWhenNull="true" vTextAlign="Top">
+			<expression><![CDATA["LÝ DO / GHI CHÚ: " + $P{SELECTION_REASON} + "    |    ĐƠN VỊ TIỀN: " + $P{CURRENCY} + "    |    XUẤT LÚC: " + $P{EXPORTED_AT}]]></expression>
+		</element>
+	</title>
+	<pageHeader height="18" splitType="Stretch">
+		<element kind="textField" x="0" y="0" width="802" height="16" forecolor="#64748B" fontName="DejaVu Sans" fontSize="7.0" hTextAlign="Right" vTextAlign="Middle">
+			<expression><![CDATA[$P{RFQ_CODE} + " · BIÊN BẢN SO SÁNH BÁO GIÁ"]]></expression>
+		</element>
+	</pageHeader>
+	<columnHeader height="25" splitType="Stretch">
+		<element kind="staticText" x="0" y="0" width="65" height="25" forecolor="#FFFFFF" backcolor="#334155" mode="Opaque" fontName="DejaVu Sans" fontSize="7.0" bold="true" hTextAlign="Center" vTextAlign="Middle"><text><![CDATA[SKU]]></text></element>
+		<element kind="staticText" x="65" y="0" width="225" height="25" forecolor="#FFFFFF" backcolor="#334155" mode="Opaque" fontName="DejaVu Sans" fontSize="7.0" bold="true" vTextAlign="Middle"><box leftPadding="4"/><text><![CDATA[HẠNG MỤC]]></text></element>
+		<element kind="staticText" x="290" y="0" width="45" height="25" forecolor="#FFFFFF" backcolor="#334155" mode="Opaque" fontName="DejaVu Sans" fontSize="7.0" bold="true" hTextAlign="Center" vTextAlign="Middle"><text><![CDATA[SL]]></text></element>
+		<element kind="staticText" x="335" y="0" width="45" height="25" forecolor="#FFFFFF" backcolor="#334155" mode="Opaque" fontName="DejaVu Sans" fontSize="7.0" bold="true" hTextAlign="Center" vTextAlign="Middle"><text><![CDATA[ĐVT]]></text></element>
+		<element kind="staticText" x="380" y="0" width="105" height="25" forecolor="#FFFFFF" backcolor="#334155" mode="Opaque" fontName="DejaVu Sans" fontSize="7.0" bold="true" hTextAlign="Center" vTextAlign="Middle"><text><![CDATA[NGÂN SÁCH / ĐƠN VỊ]]></text></element>
+		<element kind="staticText" x="485" y="0" width="105" height="25" forecolor="#FFFFFF" backcolor="#334155" mode="Opaque" fontName="DejaVu Sans" fontSize="7.0" bold="true" hTextAlign="Center" vTextAlign="Middle"><text><![CDATA[ĐƠN GIÁ NCC]]></text></element>
+		<element kind="staticText" x="590" y="0" width="115" height="25" forecolor="#FFFFFF" backcolor="#334155" mode="Opaque" fontName="DejaVu Sans" fontSize="7.0" bold="true" hTextAlign="Center" vTextAlign="Middle"><text><![CDATA[THÀNH TIỀN]]></text></element>
+		<element kind="staticText" x="705" y="0" width="97" height="25" forecolor="#FFFFFF" backcolor="#334155" mode="Opaque" fontName="DejaVu Sans" fontSize="7.0" bold="true" hTextAlign="Center" vTextAlign="Middle"><text><![CDATA[CHÊNH NGÂN SÁCH]]></text></element>
+	</columnHeader>
+	<detail>
+		<band height="24" splitType="Stretch">
+			<element kind="textField" x="0" y="0" width="65" height="24" forecolor="#334155" fontName="DejaVu Sans" fontSize="7.0" textAdjust="ScaleFont" vTextAlign="Middle"><box leftPadding="3"><pen lineWidth="0.4" lineColor="#CBD5E1"/></box><expression><![CDATA[$F{sku}]]></expression></element>
+			<element kind="textField" x="65" y="0" width="225" height="24" forecolor="#0F172A" fontName="DejaVu Sans" fontSize="7.0" textAdjust="ScaleFont" vTextAlign="Middle"><box leftPadding="4"><pen lineWidth="0.4" lineColor="#CBD5E1"/></box><expression><![CDATA[$F{itemName}]]></expression></element>
+			<element kind="textField" x="290" y="0" width="45" height="24" forecolor="#334155" fontName="DejaVu Sans" fontSize="7.0" hTextAlign="Center" vTextAlign="Middle"><box><pen lineWidth="0.4" lineColor="#CBD5E1"/></box><expression><![CDATA[$F{quantity}]]></expression></element>
+			<element kind="textField" x="335" y="0" width="45" height="24" forecolor="#334155" fontName="DejaVu Sans" fontSize="7.0" hTextAlign="Center" vTextAlign="Middle"><box><pen lineWidth="0.4" lineColor="#CBD5E1"/></box><expression><![CDATA[$F{unit}]]></expression></element>
+			<element kind="textField" x="380" y="0" width="105" height="24" forecolor="#334155" fontName="DejaVu Sans" fontSize="7.0" hTextAlign="Right" vTextAlign="Middle"><box rightPadding="4"><pen lineWidth="0.4" lineColor="#CBD5E1"/></box><expression><![CDATA[$F{budgetUnitPrice}]]></expression></element>
+			<element kind="textField" x="485" y="0" width="105" height="24" forecolor="#0F172A" fontName="DejaVu Sans" fontSize="7.0" bold="true" hTextAlign="Right" vTextAlign="Middle"><box rightPadding="4"><pen lineWidth="0.4" lineColor="#CBD5E1"/></box><expression><![CDATA[$F{unitPrice}]]></expression></element>
+			<element kind="textField" x="590" y="0" width="115" height="24" forecolor="#334155" fontName="DejaVu Sans" fontSize="7.0" hTextAlign="Right" vTextAlign="Middle"><box rightPadding="4"><pen lineWidth="0.4" lineColor="#CBD5E1"/></box><expression><![CDATA[$F{lineTotal}]]></expression></element>
+			<element kind="textField" x="705" y="0" width="97" height="24" forecolor="#334155" fontName="DejaVu Sans" fontSize="7.0" hTextAlign="Center" vTextAlign="Middle"><box><pen lineWidth="0.4" lineColor="#CBD5E1"/></box><expression><![CDATA[$F{budgetVariance}]]></expression></element>
+		</band>
+	</detail>
+	<pageFooter height="20" splitType="Stretch">
+		<element kind="textField" x="700" y="0" width="102" height="16" forecolor="#64748B" fontName="DejaVu Sans" fontSize="7.0" hTextAlign="Right" vTextAlign="Middle"><expression><![CDATA["Trang " + $V{PAGE_NUMBER}]]></expression></element>
+	</pageFooter>
+	<summary height="110" splitType="Prevent">
+		<element kind="staticText" x="0" y="12" width="802" height="17" forecolor="#173F73" fontName="DejaVu Sans" fontSize="10.0" bold="true" hTextAlign="Center" vTextAlign="Middle"><text><![CDATA[XÁC NHẬN BIÊN BẢN SO SÁNH]]></text></element>
+		<element kind="staticText" x="0" y="33" width="250" height="18" forecolor="#334155" fontName="DejaVu Sans" fontSize="8.0" bold="true" hTextAlign="Center"><text><![CDATA[NGƯỜI LẬP]]></text></element>
+		<element kind="staticText" x="276" y="33" width="250" height="18" forecolor="#334155" fontName="DejaVu Sans" fontSize="8.0" bold="true" hTextAlign="Center"><text><![CDATA[NGƯỜI KIỂM TRA]]></text></element>
+		<element kind="staticText" x="552" y="33" width="250" height="18" forecolor="#334155" fontName="DejaVu Sans" fontSize="8.0" bold="true" hTextAlign="Center"><text><![CDATA[NGƯỜI PHÊ DUYỆT]]></text></element>
+		<element kind="textField" x="0" y="83" width="250" height="18" forecolor="#0F172A" fontName="DejaVu Sans" fontSize="8.0" hTextAlign="Center"><expression><![CDATA[$P{CREATOR}]]></expression></element>
+	</summary>
+</jasperReport>

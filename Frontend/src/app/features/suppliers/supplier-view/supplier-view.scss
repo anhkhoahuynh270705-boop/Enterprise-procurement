@@ -15,7 +15,7 @@
     z-index: 1050;
     background: #ffffff;
     border: 1px solid #777777;
-    border-radius: 8px;
+    border-radius: 2px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -160,7 +160,7 @@
             height: 56px;
             background: #f0f4f8;
             border: 1px solid #c5d3e0;
-            border-radius: 50%;
+            border-radius: 2px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -196,7 +196,7 @@
             .badge-tag {
                 display: inline-block;
                 padding: 2px 8px;
-                border-radius: 4px;
+                border-radius: 2px;
                 font-size: 11px;
                 font-weight: 600;
 
@@ -270,7 +270,7 @@
                     white-space: pre-wrap;
                     background: #fafafa;
                     padding: 6px 8px;
-                    border-radius: 4px;
+                    border-radius: 2px;
                     border: 1px solid #eeeeee;
                     font-size: 12px;
                 }
@@ -291,7 +291,7 @@
             font-size: 13px;
             border: 1px solid #999999;
             background: #ffffff;
-            border-radius: 6px;
+            border-radius: 2px;
             cursor: pointer;
             font-weight: 600;
 

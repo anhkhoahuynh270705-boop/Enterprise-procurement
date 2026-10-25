@@ -7,15 +7,17 @@ import org.springframework.stereotype.Component;
 
 import com.example.shopping.integration.kafka.model.ProcurementEvent;
 
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
+@FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
 public class ProcurementEventPublisher {
 
     public static final String TOPIC_PROCUREMENT_EVENTS = "procurement-events";
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    KafkaTemplate<String, Object> kafkaTemplate;
 
     @Autowired
     public ProcurementEventPublisher(KafkaTemplate<String, Object> kafkaTemplate) {

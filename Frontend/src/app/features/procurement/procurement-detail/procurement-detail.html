@@ -59,8 +59,8 @@
             }
 
             @if (auth.hasRole('ADMIN', 'USER')) {
-              <button type="button" class="btn btn-outline" (click)="exportExcel()">
-                <i class="fa fa-download"></i>
+              <button type="button" class="btn btn-outline excel-action" (click)="exportExcel()">
+                <i class="fa fa-file-excel-o" aria-hidden="true"></i>
                 Xuất Excel
               </button>
             }

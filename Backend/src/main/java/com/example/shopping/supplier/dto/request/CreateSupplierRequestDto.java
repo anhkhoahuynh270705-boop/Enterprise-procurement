@@ -15,7 +15,7 @@ public class CreateSupplierRequestDto {
 
     @NotBlank(message = "Tên nhà cung cấp không được để trống")
     @Size(min = 2, max = 200, message = "Tên nhà cung cấp phải có 2–200 ký tự")
-    @Pattern(regexp = "\\p{L}+(?: \\p{L}+)*", message = "Tên nhà cung cấp chỉ được chứa chữ và một khoảng trắng giữa các từ")
+    @Pattern(regexp = "(?:\\p{L}+|\\(\\p{L}+(?: \\p{L}+)*\\))(?: (?:\\p{L}+|\\(\\p{L}+(?: \\p{L}+)*\\)))*", message = "Tên nhà cung cấp chỉ được chứa chữ, dấu ngoặc đơn và khoảng trắng giữa các từ")
     private String name;
 
     @Pattern(regexp = "^$|\\p{L}+(?: \\p{L}+)*", message = "Người liên hệ chỉ được chứa chữ và một khoảng trắng giữa các từ")
@@ -26,7 +26,7 @@ public class CreateSupplierRequestDto {
     @Size(max = 254, message = "Email tối đa 254 ký tự")
     private String email;
 
-    @Pattern(regexp = "^$|[0-9]{9,15}", message = "Điện thoại gồm 9–15 chữ số, không có chữ hoặc khoảng trắng")
+    @Pattern(regexp = "^$|(?=(?:[^0-9]*[0-9]){8,15}[^0-9]*$)[0-9 ]+", message = "Điện thoại gồm 8–15 chữ số và chỉ được chứa khoảng trắng")
     private String phone;
 
     @Size(max = 255, message = "Địa chỉ tối đa 255 ký tự")

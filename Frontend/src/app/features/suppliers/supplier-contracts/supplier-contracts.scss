@@ -50,7 +50,7 @@
   gap: 7px;
   padding: 8px 16px;
   border: 2px solid #000;
-  border-radius: 8px;
+  border-radius: 2px;
   background: #e4e4e4;
   color: #000;
   font: inherit;
@@ -88,7 +88,7 @@
   margin-bottom: 20px;
   padding: 24px;
   border: 1px solid #dce1e7;
-  border-radius: 10px;
+  border-radius: 2px;
   background: #fff;
 }
 
@@ -131,7 +131,7 @@
     min-height: 42px;
     padding: 10px 14px 10px 40px;
     border: 2px solid #000;
-    border-radius: 8px;
+    border-radius: 2px;
     font: inherit;
     outline: none;
 
@@ -153,7 +153,7 @@
     max-width: 240px;
     padding: 9px 14px;
     border: 2px solid #000;
-    border-radius: 8px;
+    border-radius: 2px;
     background: #fff;
     font: inherit;
     outline: none;
@@ -167,7 +167,7 @@
 .table-card {
   overflow: hidden;
   border: 1px solid #d4d4d4;
-  border-radius: 9px;
+  border-radius: 2px;
   background: #fff;
 }
 
@@ -215,7 +215,7 @@ table {
 .status-badge {
   display: inline-block;
   padding: 5px 9px;
-  border-radius: 20px;
+  border-radius: 2px;
   background: #e5e7eb;
   color: #374151;
   white-space: nowrap;
@@ -246,7 +246,7 @@ table {
   justify-content: center;
   gap: 6px;
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   background: #fff;
   color: #222;
   cursor: pointer;
@@ -322,7 +322,7 @@ table {
   margin-right: 7px;
   border: 2px solid #ccc;
   border-top-color: #222;
-  border-radius: 50%;
+  border-radius: 2px;
   vertical-align: middle;
   animation: spin 0.8s linear infinite;
 }
@@ -344,7 +344,7 @@ table {
     min-height: 40px;
     padding: 9px 20px;
     border: 1px solid #145c2e;
-    border-radius: 6px;
+    border-radius: 2px;
     background: #226b3e;
     color: #fff;
     font-size: 18px;
@@ -385,7 +385,7 @@ table {
     min-height: 40px;
     padding: 8px 10px;
     border: 1px solid #aaa;
-    border-radius: 6px;
+    border-radius: 2px;
     background: #fff;
     color: #222;
     font: inherit;

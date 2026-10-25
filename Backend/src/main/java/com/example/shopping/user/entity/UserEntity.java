@@ -75,6 +75,9 @@ public class UserEntity {
     @Column(name = "avatar_url", length = 2048)
     private String avatarUrl;
 
+    @Column(name = "avatar_public_id", length = 255)
+    private String avatarPublicId;
+
     @Column(name = "avatar_data", columnDefinition = "bytea")
     private byte[] avatarData;
 
@@ -112,5 +115,5 @@ public class UserEntity {
     @Column(name = "employee_status", nullable = false, length = 20)
     private String employeeStatus = "ACTIVE";
 
-   
+
 }

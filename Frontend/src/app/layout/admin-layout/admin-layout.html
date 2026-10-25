@@ -120,13 +120,19 @@
                         >
                       </li>
                     }
-                    <li>
-                      <span class="nav-menu-item is-disabled" aria-disabled="true"
-                        ><i class="fa fa-list-alt menu-icon" aria-hidden="true"></i
-                        ><span class="menu-name">Yêu cầu báo giá &amp; so sánh báo giá</span
-                        ><span class="menu-status">Chưa khả dụng</span></span
-                      >
-                    </li>
+                    @if (authService.hasRole('ADMIN', 'USER', 'CHECKER')) {
+                      <li>
+                        <a
+                          routerLink="/procurement/rfq"
+                          (click)="closeNavMenu()"
+                          class="nav-menu-item"
+                          routerLinkActive="active"
+                          [routerLinkActiveOptions]="{ exact: true }"
+                          ><i class="fa fa-list-alt menu-icon" aria-hidden="true"></i
+                          ><span class="menu-name">Yêu cầu báo giá &amp; so sánh báo giá</span></a
+                        >
+                      </li>
+                    }
                   </ul>
                 }
               </li>
@@ -372,4 +378,4 @@
     <router-outlet></router-outlet>
   </main>
 </div>
-<app-profile-panel #profilePanel />
+<app-profile-panel #profilePanel (avatarUpdated)="onAvatarUpdated($event)" />

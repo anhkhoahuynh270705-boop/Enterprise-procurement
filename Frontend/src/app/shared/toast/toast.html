@@ -1,8 +1,13 @@
 <div class="toast-container" aria-label="Thông báo">
   @for (toast of notifications.toasts(); track toast.id) {
-    <div class="toast" [class.toast-success]="toast.type === 'success'"
-      [class.toast-error]="toast.type === 'error'" [class.toast-warning]="toast.type === 'warning'"
-      [attr.role]="toast.type === 'error' ? 'alert' : 'status'" aria-atomic="true">
+    <div
+      class="toast"
+      [class.toast-success]="toast.type === 'success'"
+      [class.toast-error]="toast.type === 'error'"
+      [class.toast-warning]="toast.type === 'warning'"
+      [attr.role]="toast.type === 'error' ? 'alert' : 'status'"
+      aria-atomic="true"
+    >
       <span class="toast-icon" aria-hidden="true">
         <i
           class="fa"
@@ -11,11 +16,23 @@
         ></i>
       </span>
       <div class="toast-content">
-        <strong>{{ toast.type === 'success' ? 'Thành công' : toast.type === 'error' ? 'Có lỗi xảy ra' : 'Lưu ý' }}</strong>
+        <strong>{{
+          toast.type === 'success'
+            ? 'Thành công'
+            : toast.type === 'error'
+              ? 'Có lỗi xảy ra'
+              : 'Lưu ý'
+        }}</strong>
         <p>{{ toast.message }}</p>
       </div>
-      <button type="button" class="toast-close" aria-label="Đóng thông báo"
-        (click)="notifications.dismiss(toast.id)"><i class="fa fa-times" aria-hidden="true"></i></button>
+      <button
+        type="button"
+        class="toast-close"
+        aria-label="Đóng thông báo"
+        (click)="notifications.dismiss(toast.id)"
+      >
+        <i class="fa fa-times" aria-hidden="true"></i>
+      </button>
     </div>
   }
 </div>

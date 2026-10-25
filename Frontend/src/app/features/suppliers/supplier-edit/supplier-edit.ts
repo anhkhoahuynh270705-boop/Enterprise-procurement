@@ -7,6 +7,12 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { SupplierService } from '../services/supplier.service';
 import { SupplierStatus, UpdateSupplierRequest } from '../models/supplier';
 import { SensitiveInput } from '../../../shared/sensitive/sensitive-input/sensitive-input';
+import {
+  phoneValidator,
+  normalizeSupplierCompanyName,
+  supplierCompanyNameValidator,
+  trimmed,
+} from '../shared/supplier-form.validators';
 
 @Component({
   imports: [SensitiveInput, SensitiveValue, CommonModule, ReactiveFormsModule, RouterLink],
@@ -28,10 +34,17 @@ export class SupplierEdit implements OnInit {
   supplierCode: string = '';
 
   editform = this.fb.nonNullable.group({
-    name: ['', [Validators.required, Validators.maxLength(200)]],
+    name: [
+      '',
+      [
+        supplierCompanyNameValidator(true),
+        trimmed(Validators.minLength(2)),
+        trimmed(Validators.maxLength(200)),
+      ],
+    ],
     contactPerson: [''],
     email: ['', [Validators.email]],
-    phone: [''],
+    phone: ['', phoneValidator()],
     address: [''],
     city: [''],
     country: [''],
@@ -58,7 +71,7 @@ export class SupplierEdit implements OnInit {
       next: (supplier) => {
         this.supplierCode = supplier.code;
         this.editform.patchValue({
-          name: supplier.name,
+          name: normalizeSupplierCompanyName(supplier.name),
           contactPerson: supplier.contactPerson || '',
           email: supplier.email || '',
           phone: supplier.phone || '',
@@ -94,7 +107,7 @@ export class SupplierEdit implements OnInit {
     const optional = (text: string) => text.trim() || undefined;
 
     const updateData: UpdateSupplierRequest = {
-      name: formVal.name.trim(),
+      name: normalizeSupplierCompanyName(formVal.name),
       contactPerson: optional(formVal.contactPerson),
       email: optional(formVal.email),
       phone: optional(formVal.phone),

@@ -42,7 +42,7 @@
     padding: 8px 14px;
     background: #e4e4e4;
     border: 1px solid #888888;
-    border-radius: 8px;
+    border-radius: 2px;
     color: #222222;
     font-size: 14px;
     font-weight: 700;
@@ -78,7 +78,7 @@
     width: 280px;
     background: #ffffff;
     border: 1px solid #777777;
-    border-radius: 8px;
+    border-radius: 2px;
     overflow: hidden;
     animation: dropDownAnim 0.18s ease-out;
 
@@ -200,7 +200,7 @@
     flex-wrap: wrap;
     gap: 16px;
     margin-bottom: 18px;
-    border-radius: 8px;
+    border-radius: 2px;
 }
 
 .search-field {
@@ -222,7 +222,7 @@
         width: 100%;
         min-height: 36px;
         padding: 8px 12px 8px 32px;
-        border-radius: 8px;
+        border-radius: 2px;
         background: #ffffff;
         color: #222222;
         font: inherit;
@@ -245,7 +245,7 @@
     min-height: 36px;
     padding: 8px 16px;
     border: 1px solid #888888;
-    border-radius: 8px;
+    border-radius: 2px;
     background: #e4e4e4;
     color: #222222;
     font: inherit;
@@ -266,7 +266,7 @@
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    border-radius: 8px;
+    border-radius: 2px;
     justify-content: center;
 
     &:hover {
@@ -279,7 +279,7 @@
     background: #d4edda;
     border-color: #5a9e6f;
     color: #1a5c35;
-    border-radius: 8px;
+    border-radius: 2px;
 
     &:hover:not(:disabled) {
         background: #b8dfc8;
@@ -290,7 +290,7 @@
     background: #fff3cd;
     border-color: #c5a200;
     color: #7a5c00;
-    border-radius: 8px;
+    border-radius: 2px;
 
     &:hover:not(:disabled) {
         background: #fce8a0;
@@ -301,7 +301,7 @@
     background: #f8d7da;
     border-color: #c0485a;
     color: #7a1a26;
-    border-radius: 8px;
+    border-radius: 2px;
 
     &:hover:not(:disabled) {
         background: #f1b5bc;
@@ -367,7 +367,7 @@
 .user-panel {
     border: 1px solid #888888;
     background: #ffffff;
-    border-radius: 8px;
+    border-radius: 2px;
     overflow: hidden;
 }
 
@@ -446,7 +446,7 @@ table {
     background: #dddddd;
     color: #222222;
     font-size: 12px;
-    border-radius: 8px;
+    border-radius: 2px;
 }
 
 .status-disabled {
@@ -483,7 +483,7 @@ table {
     display: inline-block;
     margin-left: 6px;
     padding: 2px 7px;
-    border-radius: 10px;
+    border-radius: 2px;
     background: #e0edff;
     color: #1a56db;
     font-size: 11px;
@@ -529,7 +529,7 @@ button:disabled {
     color: #64748b;
     font-size: 13px;
     line-height: 1;
-    border-radius: 4px;
+    border-radius: 2px;
     vertical-align: middle;
     display: inline-flex;
     align-items: center;
@@ -569,7 +569,7 @@ button:disabled {
 .role-count, .role-badge {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: 2px;
   background: #e5edf5;
   color: #334155;
   font-size: 12px;

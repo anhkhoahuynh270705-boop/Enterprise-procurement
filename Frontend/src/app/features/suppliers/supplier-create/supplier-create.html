@@ -30,7 +30,7 @@
             type="text"
             formControlName="name"
             maxlength="200"
-            placeholder="Ví dụ: Công ty TNHH Giải Pháp Công Nghệ ABC"
+            placeholder="Ví dụ: Công ty TNHH ABC"
             [class.is-invalid]="
               Createform.controls.name.touched && Createform.controls.name.invalid
             "
@@ -80,11 +80,11 @@
           <label for="phone">Số điện thoại</label>
           <input
             id="phone"
-            type="text"
+            type="tel"
             formControlName="phone"
-            placeholder="Ví dụ: 0987654321"
-            maxlength="15"
-            inputmode="numeric"
+            placeholder="Ví dụ: 0987 654 321"
+            maxlength="30"
+            inputmode="tel"
           />
           <span class="error-msg">{{ fieldError('phone') }}</span>
         </div>

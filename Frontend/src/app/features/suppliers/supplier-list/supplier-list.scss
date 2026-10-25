@@ -61,7 +61,7 @@
         gap: 0;
         padding: 0;
         border: 1px solid #888888;
-        border-radius: 8px;
+        border-radius: 2px;
         overflow: hidden;
         background: #ffffff;
 
@@ -102,7 +102,7 @@
 .btn {
     min-height: 36px;
     padding: 8px 16px;
-    border-radius: 8px;
+    border-radius: 2px;
     font-size: 14px;
     font-weight: 300;
     cursor: pointer;
@@ -173,7 +173,7 @@
             box-sizing: border-box;
             padding: 10px 14px 10px 40px;
             border: 2px solid #000000;
-            border-radius: 8px;
+            border-radius: 2px;
             font-size: 14px;
             outline: none;
             min-height: 42px;
@@ -201,7 +201,7 @@
         select {
             padding: 10px 16px;
             border: 2px solid #000000;
-            border-radius: 8px;
+            border-radius: 2px;
             font-size: 14px;
             background: #ffffff;
             outline: none;
@@ -225,7 +225,7 @@
     min-height: 42px;
     padding: 0 14px;
     border: 2px solid #000000;
-    border-radius: 8px;
+    border-radius: 2px;
     background: #ffffff;
     color: #222222;
     font: inherit;
@@ -252,7 +252,7 @@
     width: 100%;
     padding: 16px;
     border: 1px solid #888888;
-    border-radius: 8px;
+    border-radius: 2px;
     background: #ffffff;
 }
 
@@ -272,7 +272,7 @@
         min-height: 40px;
         padding: 8px 10px;
         border: 2px solid #000000;
-        border-radius: 8px;
+        border-radius: 2px;
         background: #ffffff;
         color: #222222;
         font: inherit;
@@ -306,7 +306,7 @@
     min-height: 38px;
     padding: 7px 12px;
     border: 1px solid #333333;
-    border-radius: 8px;
+    border-radius: 2px;
     background: #ffffff;
     color: #222222;
     font: inherit;
@@ -321,7 +321,7 @@
 
 .table-card {
     border: 1px solid #888888;
-    border-radius: 8px;
+    border-radius: 2px;
     overflow: hidden;
     background: #ffffff;
     box-shadow: none;
@@ -481,7 +481,7 @@
     height: 28px;
     padding: 0;
     border: none;
-    border-radius: 8px;
+    border-radius: 2px;
     background: transparent;
     color: #555555;
     cursor: pointer;
@@ -552,7 +552,7 @@
 .badge-status {
     display: inline-block;
     padding: 5px 20px;
-    border-radius: 4px;
+    border-radius: 2px;
     font-size: 13px;
     font-weight: 700;
     text-transform: uppercase;
@@ -604,7 +604,7 @@
         min-width: 64px;
         padding: 6px 10px;
         border: 1px solid #888888;
-        border-radius: 8px;
+        border-radius: 2px;
 
         background: #eeeeee;
         color: #111111;
@@ -717,7 +717,7 @@
     max-height: calc(100dvh - 32px);
     padding: 0;
     border: 0;
-    border-radius: 12px;
+    border-radius: 2px;
     background: #f7f9fc;
     color: #222222;
     overflow: auto;
@@ -755,7 +755,7 @@
     max-height: calc(100dvh - 40px);
     overflow: auto;
     border: 1px solid #888888;
-    border-radius: 10px;
+    border-radius: 2px;
     background: #ffffff;
     box-shadow: 0 18px 55px rgb(0 0 0 / 24%);
 }
@@ -794,7 +794,7 @@
     height: 36px;
     place-items: center;
     border: 1px solid #888888;
-    border-radius: 6px;
+    border-radius: 2px;
     background: #ffffff;
     color: #222222;
     cursor: pointer;
@@ -835,7 +835,7 @@
     margin-top: 16px;
     padding: 12px 14px;
     border: 1px solid #d7a0a0;
-    border-radius: 6px;
+    border-radius: 2px;
     background: #fff7f7;
 
     h5 {
@@ -862,7 +862,7 @@
         gap: 6px;
         padding: 14px;
         border: 1px solid #cccccc;
-        border-radius: 7px;
+        border-radius: 2px;
         background: #f7f7f7;
     }
 
@@ -909,5 +909,176 @@
             opacity: 0.45;
             cursor: not-allowed;
         }
+    }
+}
+
+// Excel import and export surfaces
+.supplier-container .excel-action i {
+    color: #287a4b;
+}
+
+.supplier-container .excel-export i {
+    color: #287a4b;
+}
+
+.supplier-import-modal {
+    width: min(720px, 100%);
+    border-color: #d8dee5;
+    box-shadow: 0 24px 70px rgb(16 24 40 / 22%);
+}
+
+.supplier-import-header,
+.supplier-import-footer {
+    background: #f7f8fa;
+}
+
+.supplier-import-header {
+    border-bottom-color: #e7eaee;
+    background: #fff;
+
+    .supplier-import-title {
+        justify-content: flex-start;
+        min-width: 0;
+    }
+
+    .supplier-import-icon {
+        display: grid;
+        flex: 0 0 46px;
+        width: 46px;
+        height: 46px;
+        place-items: center;
+        border: 1px solid #c9e5d3;
+        border-radius: 2px;
+        background: #edf7f0;
+        color: #287a4b;
+        font-size: 20px;
+    }
+
+    .supplier-import-kicker {
+        display: block;
+        margin-bottom: 4px;
+        color: #287a4b;
+        font-size: 10px;
+        font-weight: 750;
+        letter-spacing: 0.09em;
+    }
+
+    h3 {
+        color: #202124;
+        font-size: 17px;
+    }
+
+    p {
+        max-width: 100%;
+        margin-top: 4px;
+        color: #68707b;
+        line-height: 1.4;
+    }
+}
+
+.supplier-import-body {
+    padding: 22px 24px;
+    background: #fff;
+
+    > h4 {
+        margin-bottom: 14px;
+        color: #202124;
+        font-size: 15px;
+    }
+}
+
+.supplier-import-loading,
+.supplier-import-error {
+    min-height: 100px;
+    padding: 18px;
+    border: 1px solid #e2e7ed;
+    border-radius: 2px;
+    background: #f7f8fa;
+}
+
+.supplier-import-loading > i,
+.supplier-import-error > i {
+    font-size: 20px;
+}
+
+.supplier-import-loading > i {
+    color: #287a4b;
+}
+
+.supplier-import-error {
+    border-color: #efd0d0;
+    background: #fff6f6;
+}
+
+.supplier-import-summary {
+    gap: 12px;
+
+    > div {
+        gap: 8px;
+        padding: 16px;
+        border-color: #e2e7ed;
+        background: #f8f9fb;
+    }
+
+    > div:first-child {
+        border-color: #c9e5d3;
+        background: #f3faf5;
+    }
+
+    > div:nth-child(2) {
+        border-color: #efd49e;
+        background: #fffaf0;
+    }
+
+    i {
+        color: #287a4b;
+        font-size: 15px;
+    }
+
+    > div:nth-child(2) i {
+        color: #a66b10;
+    }
+
+    span {
+        color: #5a626d;
+        font-size: 11px;
+        line-height: 1.4;
+    }
+
+    strong {
+        color: #202124;
+        font-size: 26px;
+        line-height: 1;
+    }
+}
+
+.supplier-import-error-list {
+    border-color: #efd0d0;
+    background: #fff7f7;
+
+    ul {
+        line-height: 1.5;
+    }
+}
+
+.supplier-import-footer {
+    justify-content: flex-end;
+    border-top-color: #e7eaee;
+}
+
+@media (max-width: 600px) {
+    .supplier-import-overlay {
+        padding: 10px;
+    }
+
+    .supplier-import-header,
+    .supplier-import-body,
+    .supplier-import-footer {
+        padding-right: 16px;
+        padding-left: 16px;
+    }
+
+    .supplier-import-summary {
+        grid-template-columns: 1fr;
     }
 }

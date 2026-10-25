@@ -47,7 +47,7 @@ button {
   width: 40px;
   height: 40px;
   border: 0;
-  border-radius: 8px;
+  border-radius: 2px;
   background: #f3f4f6;
   font-size: 28px;
 }
@@ -70,7 +70,7 @@ button {
   width: 80px;
   height: 80px;
   margin: auto;
-  border-radius: 50%;
+  border-radius: 2px;
   background: #eaf3ff;
   color: #1155cc;
   font-size: 28px;
@@ -126,7 +126,7 @@ button {
 }
 .role-badge {
   padding: 5px 12px;
-  border-radius: 20px;
+  border-radius: 2px;
   background: #eaf3ff;
   color: #1155cc;
   font-size: 12px;
@@ -152,7 +152,7 @@ dl {
 .retry-button {
   padding: 8px 16px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 2px;
   background: #1155cc;
   color: #fff;
 }
@@ -202,7 +202,7 @@ textarea {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #9ca3af;
-  border-radius: 6px;
+  border-radius: 2px;
   font: inherit;
   background: #fff;
   color: #222;
@@ -235,7 +235,7 @@ small,
   padding: 8px 16px;
   background: #fff;
   border: 1px solid #9ca3af;
-  border-radius: 6px;
+  border-radius: 2px;
 }
 button:disabled {
   opacity: 0.6;
@@ -263,7 +263,7 @@ textarea:focus-visible {
 .face-id-card {
   margin-top: 24px;
   padding: 16px;
-  border-radius: 12px;
+  border-radius: 2px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
 
@@ -285,7 +285,7 @@ textarea:focus-visible {
         font-size: 11px;
         font-weight: 700;
         padding: 3px 8px;
-        border-radius: 999px;
+        border-radius: 2px;
         background: #f1f5f9;
         color: #64748b;
 
@@ -314,7 +314,7 @@ textarea:focus-visible {
     background: #4f46e5;
     color: #fff;
     border: none;
-    border-radius: 8px;
+    border-radius: 2px;
     font-size: 13px;
     font-weight: 600;
     transition: background 0.2s ease;
