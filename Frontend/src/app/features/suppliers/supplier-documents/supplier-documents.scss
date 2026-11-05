@@ -117,6 +117,33 @@ textarea {
     min-width: 180px;
 }
 
+.document-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 18px;
+}
+
+.document-pagination span {
+    color: #64748b;
+}
+
+.document-pagination button {
+    min-height: 38px;
+    padding: 8px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 2px;
+    background: #fff;
+    color: #243247;
+    cursor: pointer;
+}
+
+.document-pagination button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
 .advanced-toggle {
     min-height: 42px;
     white-space: nowrap;
@@ -207,6 +234,8 @@ button[type='submit'].primary {
     background: #226b3e;
     border-color: #145c2e;
     color: #ffffff;
+    display: flex;
+    width: 12%;
 
     &:hover:not(:disabled) {
         background: #145c2e;

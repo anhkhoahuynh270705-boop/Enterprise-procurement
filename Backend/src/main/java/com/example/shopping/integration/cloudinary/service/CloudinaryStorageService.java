@@ -35,11 +35,4 @@ public class CloudinaryStorageService {
         return new UploadedImage(url, id);
     }
 
-    public void deleteImage(String publicId) throws IOException {
-        if (publicId == null || publicId.isBlank()) return;
-        cloudinary.uploader().destroy(publicId, ObjectUtils.asMap(
-                "resource_type", "image",
-                "invalidate", true));
-    }
-
 }

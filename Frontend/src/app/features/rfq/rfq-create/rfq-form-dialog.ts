@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, input, output, inject, signal } from '@angular/core';
+import { Component, ElementRef, ViewChild, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProcurementTicket } from '../../procurement/model/procurement';
 import { RfqItem, RfqScoreWeights, RfqSupplier } from '../model/rfq.models';
 import { RfqFormSaveEvent } from '../model/rfq-form-save.event';
 import { CRITERION_FROM_KEY, DEFAULT_WEIGHTS, dayString } from '../helper/rfq-page.helper';
+import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
 
 @Component({
   selector: 'app-rfq-form-dialog',
@@ -15,6 +16,10 @@ import { CRITERION_FROM_KEY, DEFAULT_WEIGHTS, dayString } from '../helper/rfq-pa
 })
 export class RfqFormDialog {
   private readonly fb = inject(FormBuilder);
+  private readonly dialogs = inject(ConfirmationDialogService);
+
+  @ViewChild('supplierExceptionInput')
+  private supplierExceptionInput?: ElementRef<HTMLTextAreaElement>;
 
   readonly approvedTickets = input<ProcurementTicket[]>([]);
   readonly departments = input<string[]>([]);
@@ -28,6 +33,7 @@ export class RfqFormDialog {
   readonly items = signal<RfqItem[]>([]);
   readonly selectedSupplierIds = signal<string[]>([]);
   readonly supplierException = signal('');
+  readonly supplierExceptionError = signal('');
   readonly formError = signal('');
   readonly weights = signal<RfqScoreWeights>({ ...DEFAULT_WEIGHTS });
   readonly form = this.fb.nonNullable.group({
@@ -59,6 +65,14 @@ export class RfqFormDialog {
     this.selectedSupplierIds.update((ids) =>
       checked ? [...new Set([...ids, supplierId])] : ids.filter((id) => id !== supplierId),
     );
+    if (this.selectedSupplierIds().length >= 3) this.supplierExceptionError.set('');
+  }
+
+  updateSupplierException(value: string): void {
+    this.supplierException.set(value);
+    if (this.supplierExceptionError()) {
+      this.supplierExceptionError.set(this.getSupplierExceptionError());
+    }
   }
 
   updateItem(
@@ -95,7 +109,13 @@ export class RfqFormDialog {
     ]);
   }
 
-  removeItem(index: number): void {
+  async removeItem(index: number): Promise<void> {
+    if (!(await this.dialogs.confirm({
+      title: 'Xóa hạng mục RFQ',
+      message: 'Xóa hạng mục này khỏi yêu cầu báo giá?',
+      confirmText: 'Xóa hạng mục',
+      tone: 'danger',
+    }))) return;
     this.items.update((items) => items.filter((_, currentIndex) => currentIndex !== index));
   }
 
@@ -134,7 +154,7 @@ export class RfqFormDialog {
     this.formError.set('');
   }
 
-  saveForm(submit: boolean): void {
+  async saveForm(submit: boolean): Promise<void> {
     this.form.markAllAsTouched();
     const value = this.form.getRawValue();
     if (this.form.invalid) {
@@ -154,13 +174,23 @@ export class RfqFormDialog {
       this.formError.set('Chọn ít nhất một nhà cung cấp.');
       return;
     }
-    if (this.selectedSupplierIds().length < 3 && this.supplierException().trim().length < 10) {
-      this.formError.set(
-        'Chọn tối thiểu 3 nhà cung cấp hoặc nhập lý do ngoại lệ (tối thiểu 10 ký tự).',
-      );
+    const exceptionError = this.getSupplierExceptionError();
+    if (exceptionError) {
+      this.formError.set('');
+      this.supplierExceptionError.set(exceptionError);
+      this.supplierExceptionInput?.nativeElement.focus();
+      this.supplierExceptionInput?.nativeElement.scrollIntoView({
+        block: 'center',
+        behavior: 'smooth',
+      });
       return;
     }
-    if (submit && !confirm('Trình duyệt yêu cầu báo giá này?')) return;
+    this.supplierExceptionError.set('');
+    if (submit && !(await this.dialogs.confirm({
+      title: 'Trình duyệt RFQ',
+      message: 'Bạn có chắc chắn muốn gửi yêu cầu báo giá này để trình duyệt?',
+      confirmText: 'Gửi trình duyệt',
+    }))) return;
     this.clearServerError.emit();
     this.formError.set('');
     this.save.emit({
@@ -237,5 +267,13 @@ export class RfqFormDialog {
       budgetUnitPrice: item.unitPrice,
       active: true,
     };
+  }
+
+  private getSupplierExceptionError(): string {
+    if (this.selectedSupplierIds().length >= 3) return '';
+    const reason = this.supplierException().trim();
+    if (!reason) return 'Vui lòng nhập lý do ngoại lệ khi mời dưới 3 nhà cung cấp.';
+    if (reason.length < 10) return 'Lý do ngoại lệ phải có ít nhất 10 ký tự.';
+    return '';
   }
 }

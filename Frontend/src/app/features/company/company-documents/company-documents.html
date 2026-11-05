@@ -199,15 +199,15 @@
   <section class="panel" aria-label="Danh sách tài liệu">
     @if (loading()) {
       <p class="empty" role="status">Đang tải tài liệu…</p>
-    } @else if (!filtered().length) {
+    } @else if (!documents().length) {
       <div class="empty">
         <i class="fa fa-folder-open-o" aria-hidden="true"></i>
         <h3>
-          {{ documents().length ? 'Không tìm thấy tài liệu phù hợp' : 'Chưa có tài liệu công ty' }}
+          {{ totalElements || hasActiveFilters ? 'Không tìm thấy tài liệu phù hợp' : 'Chưa có tài liệu công ty' }}
         </h3>
         <p>
           {{
-            documents().length
+            totalElements || hasActiveFilters
               ? 'Thử đổi từ khóa hoặc bộ lọc tìm kiếm.'
               : isAdmin
                 ? 'Đăng tài liệu đầu tiên để chia sẻ với nhân viên.'
@@ -228,7 +228,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (doc of rows; track doc.id) {
+            @for (doc of documents(); track doc.id) {
               <tr>
                 <td class="document-info">
                   <strong>{{ doc.title }}</strong>
@@ -302,7 +302,7 @@
       </button>
 
       <span class="doc-pagination__info">
-        {{ filtered().length }} tài liệu · Trang {{ currentPage + 1 }} / {{ totalPages }}
+        {{ totalElements }} tài liệu · Trang {{ currentPage + 1 }} / {{ totalPages }}
       </span>
 
       <button

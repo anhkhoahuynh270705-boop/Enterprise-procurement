@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.example.shopping.user.dto.request.UpdateProfileRequestDto;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,24 +17,23 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.shopping.common.enums.ErrorEnum;
 import com.example.shopping.common.enums.Role;
-
-import com.example.shopping.integration.keycloak.service.KeycloakAdminService;
-import com.example.shopping.integration.cloudinary.service.CloudinaryStorageService;
 import com.example.shopping.integration.cloudinary.dto.UploadedImage;
+import com.example.shopping.integration.cloudinary.service.CloudinaryStorageService;
+import com.example.shopping.integration.keycloak.service.KeycloakAdminService;
 import com.example.shopping.user.dto.request.CreateUserRequestDto;
+import com.example.shopping.user.dto.request.UpdateProfileRequestDto;
 import com.example.shopping.user.dto.request.UpdateUserRequestDto;
 import com.example.shopping.user.dto.response.UserResponseDto;
 import com.example.shopping.user.entity.UserEntity;
 import com.example.shopping.user.mapper.UserMapper;
+import com.example.shopping.user.normalization.UserNameNormalizer;
 import com.example.shopping.user.repository.UserRepository;
 import com.example.shopping.user.service.UserService;
-import com.example.shopping.user.normalization.UserNameNormalizer;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -166,7 +164,6 @@ public class UserServiceImpl implements UserService {
         if (!user.getUsername().equals(request.getUsername())) {
             throw ErrorEnum.USER_CANNOT_CHANGE_USERNAME.ex();
         }
-
         if (!user.getUsername().equals(request.getUsername())
                 && userRepository.existsByUsername(request.getUsername())) {
             throw ErrorEnum.USER_USERNAME_EXISTS.ex("Username đã tồn tại: " + request.getUsername());
@@ -229,6 +226,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void deleteUser(UUID id) {
         UserEntity user = userRepository.findById(id).filter(account -> !account.isDeleted()).orElse(null);
         if (user == null) {
@@ -241,9 +239,9 @@ public class UserServiceImpl implements UserService {
         keycloakAdminService.deleteKeycloakUser(user.getUsername());
 
         // Soft-delete trong DB
-        user.setEnabled(false);
-        user.setDeleted(true);
-        userRepository.save(user);
+        // user.setEnabled(false);
+        // user.setDeleted(true);
+        userRepository.delete(user);
         log.info("Đã xoá user: {} (id: {})", user.getUsername(), id);
     }
     /* Cannot Delete self account */
@@ -302,7 +300,7 @@ public class UserServiceImpl implements UserService {
             UserEntity saved = userRepository.saveAndFlush(user);
             return userMapper.toDto(saved);
         } catch (IOException e) {
-            log.error("Lỗi khi upload avatar cho user {}", user.getUsername(), e);
+            log.error("Lỗi khi upload avatar cho user", user.getUsername(), e);
             throw ErrorEnum.USER_AVATAR_UPLOAD_ERROR.ex(e);
         }
     }

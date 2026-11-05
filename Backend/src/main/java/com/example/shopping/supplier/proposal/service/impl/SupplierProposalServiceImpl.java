@@ -4,11 +4,13 @@ import com.example.shopping.supplier.proposal.service.SupplierProposalService;
 
 import com.example.shopping.supplier.proposal.dto.request.SupplierProposalRequest;
 import com.example.shopping.supplier.proposal.dto.request.SupplierProposalReviewRequest;
+import com.example.shopping.supplier.proposal.dto.request.SupplierProposalSearchCriteria;
 import com.example.shopping.supplier.proposal.dto.response.SupplierProposalResponseDto;
 import com.example.shopping.supplier.proposal.entity.SupplierProposal;
 import com.example.shopping.supplier.proposal.enums.SupplierProposalStatus;
 import com.example.shopping.supplier.proposal.mapper.SupplierProposalMapper;
 import com.example.shopping.supplier.proposal.repository.SupplierProposalRepository;
+import com.example.shopping.supplier.proposal.repository.specification.SupplierProposalSpecifications;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,6 +19,8 @@ import java.util.stream.Collectors;
 import jakarta.validation.Validator;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.shopping.common.enums.ErrorEnum;
 import com.example.shopping.security.TicketAccess;
@@ -44,6 +48,16 @@ public class SupplierProposalServiceImpl implements SupplierProposalService {
         var rows = (TicketAccess.hasRole("ADMIN") || TicketAccess.hasRole("CHECKER")) ? proposals.findAllByOrderBySubmittedAtDesc()
             : proposals.findBySubmittedByOrderBySubmittedAtDesc(TicketAccess.username());
         return rows.stream().map(mapper::toDto).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<SupplierProposalResponseDto> search(SupplierProposalSearchCriteria criteria, Pageable pageable) {
+        requireRole("ADMIN", "USER", "CHECKER");
+        boolean canViewAll = TicketAccess.hasRole("ADMIN") || TicketAccess.hasRole("CHECKER");
+        return proposals.findAll(
+                        SupplierProposalSpecifications.search(criteria, canViewAll, TicketAccess.username()),
+                        pageable)
+                .map(mapper::toDto);
     }
 
     @Transactional(readOnly = true)

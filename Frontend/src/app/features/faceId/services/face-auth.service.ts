@@ -16,7 +16,7 @@ export class FaceAuthService {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
   private readonly baseUrl = environment.apiBaseUrl + '/face';
-  private readonly faceServiceUrl = 'http://localhost:8000';
+  private readonly faceServiceUrl = environment.faceServiceUrl;
 
   private readonly cookieOptions = {
     withCredentials: true,

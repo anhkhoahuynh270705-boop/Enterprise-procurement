@@ -1,20 +1,17 @@
 import { CommonModule } from '@angular/common';
 import { Component, ChangeDetectorRef, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { debounceTime } from 'rxjs';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
 import { AuthService } from '../../auth/services/auth.service';
-import { ProcurementService } from '../../procurement/service/procurement.service';
-import { Supplier } from '../../suppliers/models/supplier';
 import { SupplierOption } from '../../suppliers/models/supplier-document';
 import { SupplierDocumentService } from '../../suppliers/services/supplier-document.service';
-import { SupplierService } from '../../suppliers/services/supplier.service';
+import { PurchaseOrderCreate } from '../purchase-order-create/purchase-order-create';
 import { PurchaseOrderView } from '../purchase-order-view/purchase-order-view';
 import {
-  ApprovedTicket,
-  CreatePurchaseOrderRequest,
   PurchaseOrder,
   PurchaseOrderStatus,
 } from '../models/purchase-order';
@@ -23,19 +20,18 @@ import { PurchaseOrderService } from '../services/purchase-order.service';
 @Component({
   selector: 'app-purchase-order-list',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, PurchaseOrderView],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, PurchaseOrderCreate, PurchaseOrderView],
   templateUrl: './purchase-order-list.html',
   styleUrl: './purchase-order-list.scss',
 })
 export class PurchaseOrderList implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly toast = inject(ToastService);
+  private readonly dialogs = inject(ConfirmationDialogService);
   private readonly cdr = inject(ChangeDetectorRef);
   readonly auth = inject(AuthService);
   private readonly purchaseOrderService = inject(PurchaseOrderService);
-  private readonly procurementService = inject(ProcurementService);
   private readonly supplierDocumentService = inject(SupplierDocumentService);
-  private readonly supplierService = inject(SupplierService);
   private readonly fb = inject(FormBuilder);
 
   @ViewChild('poView') purchaseOrderView?: PurchaseOrderView;
@@ -53,23 +49,9 @@ export class PurchaseOrderList implements OnInit {
     deliveryFrom: '',
     deliveryTo: '',
   });
-  readonly createForm = this.fb.nonNullable.group({
-    ticketId: ['', Validators.required],
-    supplierId: ['', Validators.required],
-    expectedDeliveryDate: '',
-    notes: ['', Validators.maxLength(1000)],
-    procurementItemIds: this.fb.nonNullable.control<string[]>(
-      [],
-      [Validators.required, Validators.minLength(1)],
-    ),
-  });
-
   orders: PurchaseOrder[] = [];
-  approvedTickets: ApprovedTicket[] = [];
   supplierOptions: SupplierOption[] = [];
-  activeSuppliers: Supplier[] = [];
   loading = false;
-  loadingSources = false;
   loadingSuppliers = false;
   creating = false;
   updatingOrderId: string | null = null;
@@ -77,69 +59,43 @@ export class PurchaseOrderList implements OnInit {
   isAdvancedSearchOpen = false;
   private supplierOptionsLoaded = false;
   private appliedFilters = this.filterForm.getRawValue();
+  private loadSequence = 0;
+  currentPage = 0;
+  readonly pageSize = 10;
+  totalPages = 0;
+  totalElements = 0;
 
   ngOnInit(): void {
     this.filterForm.valueChanges
       .pipe(debounceTime(250), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.appliedFilters = this.filterForm.getRawValue();
+        this.currentPage = 0;
+        this.loadOrders();
         this.cdr.markForCheck();
       });
     this.loadOrders();
     this.loadSupplierOptions();
-    if (this.auth.hasRole('USER', 'ADMIN')) {
-      this.loadActiveSuppliers();
-      this.loadApprovedTicketPage(0, []);
-    }
   }
 
-  get filteredOrders(): PurchaseOrder[] {
-    const filters = this.appliedFilters;
-    const query = this.normalizeSearch(filters.searchQuery);
-    const supplierId = filters.supplierId;
-    const ticket = this.normalizeSearch(filters.ticket);
-    const orderCode = this.normalizeSearch(filters.orderCode);
-    const minimumAmount = this.parseAmount(filters.minimumAmount);
-    const maximumAmount = this.parseAmount(filters.maximumAmount);
-    const isStaffOrChecker = this.auth.hasRole('ADMIN', 'CHECKER');
-    return this.orders.filter((order) => {
-      if (!isStaffOrChecker && order.status !== 'SENT' && order.status !== 'RECEIVED') {
-        return false;
-      }
-      const createdDate = order.createdAt?.slice(0, 10) || '';
-      const deliveryDate = order.expectedDeliveryDate?.slice(0, 10) || '';
-      const normalizedOrder = [
-        order.orderCode,
-        order.ticketCode,
-        order.ticketTitle,
-        order.supplierName,
-        order.supplierCode,
-      ]
-        .map((value) => this.normalizeSearch(value))
-        .join(' ');
+  get hasActiveFilters(): boolean {
+    return Object.values(this.appliedFilters).some((value) => value !== '');
+  }
 
-      return (
-        (!filters.selectedStatus || order.status === filters.selectedStatus) &&
-        (!query || normalizedOrder.includes(query)) &&
-        (!supplierId || order.supplierId === supplierId) &&
-        (!ticket ||
-          this.normalizeSearch(order.ticketCode).includes(ticket) ||
-          this.normalizeSearch(order.ticketTitle).includes(ticket)) &&
-        (!orderCode || this.normalizeSearch(order.orderCode).includes(orderCode)) &&
-        (minimumAmount === null || order.totalAmount >= minimumAmount) &&
-        (maximumAmount === null || order.totalAmount <= maximumAmount) &&
-        (!filters.createdFrom || createdDate >= filters.createdFrom) &&
-        (!filters.createdTo || createdDate <= filters.createdTo) &&
-        (!filters.deliveryFrom || deliveryDate >= filters.deliveryFrom) &&
-        (!filters.deliveryTo || deliveryDate <= filters.deliveryTo)
-      );
-    });
+  canViewOrder(order: PurchaseOrder): boolean {
+    if (this.auth.hasRole('ADMIN', 'CHECKER')) return true;
+    if (order.status === 'SENT' || order.status === 'RECEIVED') return true;
+    const isOwnPendingOrder = order.createdBy === this.auth.getCurrentUser()?.username;
+    return (
+      isOwnPendingOrder &&
+      (order.status === 'PENDING_APPROVAL' || order.status === 'DRAFT')
+    );
   }
 
   resetFilters(): void {
-    this.filterForm.reset({
+    const emptyFilters: typeof this.appliedFilters = {
       searchQuery: '',
-      selectedStatus: '',
+      selectedStatus: '' as '' | PurchaseOrderStatus,
       supplierId: '',
       ticket: '',
       orderCode: '',
@@ -149,13 +105,12 @@ export class PurchaseOrderList implements OnInit {
       createdTo: '',
       deliveryFrom: '',
       deliveryTo: '',
-    });
-    this.appliedFilters = this.filterForm.getRawValue();
+    };
+    this.filterForm.reset(emptyFilters, { emitEvent: false });
+    this.appliedFilters = emptyFilters;
+    this.currentPage = 0;
+    this.loadOrders();
     this.cdr.markForCheck();
-  }
-
-  private normalizeSearch(value: string | null | undefined): string {
-    return (value || '').trim().toLocaleLowerCase('vi');
   }
 
   private parseAmount(value: string): number | null {
@@ -171,36 +126,56 @@ export class PurchaseOrderList implements OnInit {
     }
   }
 
-  get selectedTicket(): ApprovedTicket | undefined {
-    const ticketId = this.createForm.controls.ticketId.value;
-    return this.approvedTickets.find((ticket) => ticket.id === ticketId);
-  }
-
-  get availableItems() {
-    const ticket = this.selectedTicket;
-    if (!ticket) return [];
-    const allocatedIds = new Set(
-      this.orders
-        .filter((order) => order.status !== 'CANCELLED' && order.status !== 'REJECTED')
-        .flatMap((order) => order.items.map((item) => item.procurementItemId)),
-    );
-    return ticket.items.filter((item) => item.id && !allocatedIds.has(item.id));
-  }
-
   loadOrders(): void {
+    const sequence = ++this.loadSequence;
     this.loading = true;
-    this.purchaseOrderService.getPurchaseOrders().subscribe({
+    const filters = this.appliedFilters;
+    this.purchaseOrderService.searchPurchaseOrders({
+      keyword: filters.searchQuery.trim() || undefined,
+      status: filters.selectedStatus || undefined,
+      supplierId: filters.supplierId || undefined,
+      ticket: filters.ticket.trim() || undefined,
+      orderCode: filters.orderCode.trim() || undefined,
+      minimumAmount: this.parseAmount(filters.minimumAmount) ?? undefined,
+      maximumAmount: this.parseAmount(filters.maximumAmount) ?? undefined,
+      createdFrom: filters.createdFrom || undefined,
+      createdTo: filters.createdTo || undefined,
+      deliveryFrom: filters.deliveryFrom || undefined,
+      deliveryTo: filters.deliveryTo || undefined,
+      page: this.currentPage,
+      size: this.pageSize,
+    }).subscribe({
       next: (response) => {
-        this.orders = response.data || [];
+        if (sequence !== this.loadSequence) return;
+        const result = response.data;
+        const lastPage = Math.max((result.totalPages || 0) - 1, 0);
+        if (this.currentPage > lastPage) {
+          this.currentPage = lastPage;
+          this.loadOrders();
+          return;
+        }
+        this.orders = result.content || [];
+        this.totalElements = result.totalElements || 0;
+        this.totalPages = result.totalPages || 0;
         this.loading = false;
         this.cdr.detectChanges();
       },
       error: (error) => {
+        if (sequence !== this.loadSequence) return;
+        this.orders = [];
+        this.totalElements = 0;
+        this.totalPages = 0;
         this.toast.error(error.error?.message || 'Không thể tải danh sách đơn đặt hàng.');
         this.loading = false;
         this.cdr.detectChanges();
       },
     });
+  }
+
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages || this.loading) return;
+    this.currentPage = page;
+    this.loadOrders();
   }
 
   private loadSupplierOptions(): void {
@@ -222,50 +197,8 @@ export class PurchaseOrderList implements OnInit {
     });
   }
 
-  private loadActiveSuppliers(): void {
-    this.supplierService.getSuppliers().subscribe({
-      next: (suppliers) => {
-        const allSuppliers = suppliers || [];
-        this.activeSuppliers = allSuppliers.filter((supplier) => supplier.status === 'ACTIVE');
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
-        this.toast.error(error.error?.message || 'Không thể tải danh sách nhà cung cấp.');
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  private loadApprovedTicketPage(page: number, loaded: ApprovedTicket[]): void {
-    this.loadingSources = true;
-    this.procurementService.getTicketPage('APPROVED', page, 100).subscribe({
-      next: (response) => {
-        const result = [...loaded, ...(response.data?.content || [])];
-        if (page + 1 < (response.data?.totalPages || 0)) {
-          this.loadApprovedTicketPage(page + 1, result);
-          return;
-        }
-        this.approvedTickets = result;
-        this.loadingSources = false;
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
-        this.toast.error(error.error?.message || 'Không thể tải các phiếu đã được duyệt.');
-        this.loadingSources = false;
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
   openCreateForm(): void {
     if (!this.auth.hasRole('USER', 'ADMIN')) return;
-    this.createForm.reset({
-      ticketId: '',
-      supplierId: '',
-      expectedDeliveryDate: '',
-      notes: '',
-      procurementItemIds: [],
-    });
     this.isCreateFormOpen = true;
   }
 
@@ -274,57 +207,29 @@ export class PurchaseOrderList implements OnInit {
     this.isCreateFormOpen = false;
   }
 
-  onTicketSelected(): void {
-    const itemIds = this.availableItems
-      .map((item) => item.id)
-      .filter((id): id is string => Boolean(id));
-    this.createForm.controls.procurementItemIds.setValue(itemIds);
+  onCreateFormStateChange(creating: boolean): void {
+    this.creating = creating;
   }
 
-  toggleItem(itemId: string, checked: boolean): void {
-    const itemIds = new Set(this.createForm.controls.procurementItemIds.value);
-    if (checked) itemIds.add(itemId);
-    else itemIds.delete(itemId);
-    this.createForm.controls.procurementItemIds.setValue([...itemIds]);
+  onOrderCreated(): void {
+    this.isCreateFormOpen = false;
+    this.loadOrders();
   }
 
-  createOrder(): void {
-    if (!this.auth.hasRole('USER', 'ADMIN')) return;
-    if (this.creating) return;
-    if (this.createForm.invalid) {
-      this.createForm.markAllAsTouched();
-      this.toast.warning('Chọn phiếu, nhà cung cấp và ít nhất một hạng mục để tạo đơn.');
-      return;
-    }
-    const formValue = this.createForm.getRawValue();
-    const request: CreatePurchaseOrderRequest = {
-      ticketId: formValue.ticketId,
-      supplierId: formValue.supplierId,
-      procurementItemIds: formValue.procurementItemIds,
-      expectedDeliveryDate: formValue.expectedDeliveryDate || undefined,
-      notes: formValue.notes.trim() || undefined,
-    };
-    this.creating = true;
-    this.purchaseOrderService.createPurchaseOrder(request).subscribe({
-      next: (response) => {
-        this.toast.success(`Đã tạo đơn đặt hàng ${response.data.orderCode}.`);
-        this.isCreateFormOpen = false;
-        this.creating = false;
-        this.loadOrders();
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
-        this.toast.error(error.error?.message || 'Tạo đơn đặt hàng thất bại.');
-        this.creating = false;
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  updateStatus(order: PurchaseOrder, status: PurchaseOrderStatus): void {
+  async updateStatus(order: PurchaseOrder, status: PurchaseOrderStatus): Promise<void> {
     if (!this.auth.hasRole('ADMIN', 'CHECKER')) return;
     if (this.updatingOrderId) return;
-    if (status === 'CANCELLED' && !confirm(`Hủy đơn đặt hàng ${order.orderCode}?`)) return;
+    if (status === 'CANCELLED' && !(await this.dialogs.confirm({
+      title: 'Hủy đơn đặt hàng',
+      message: `Hủy đơn đặt hàng ${order.orderCode}?`,
+      confirmText: 'Hủy đơn hàng',
+      tone: 'danger',
+    }))) return;
+    if (status === 'RECEIVED' && !(await this.dialogs.confirm({
+      title: 'Xác nhận đã nhận hàng',
+      message: `Xác nhận đơn ${order.orderCode} đã được giao và nhận đủ hàng?`,
+      confirmText: 'Xác nhận nhận hàng',
+    }))) return;
     this.updatingOrderId = order.id;
     this.purchaseOrderService.updateStatus(order.id, status).subscribe({
       next: () => {
@@ -348,10 +253,8 @@ export class PurchaseOrderList implements OnInit {
   }
 
   onOrderReviewed(updatedOrder: PurchaseOrder): void {
-    this.orders = this.orders.map((existing) =>
-      existing.id === updatedOrder.id ? updatedOrder : existing,
-    );
-    this.cdr.detectChanges();
+    void updatedOrder;
+    this.loadOrders();
   }
 
   statusLabel(status: PurchaseOrderStatus): string {

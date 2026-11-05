@@ -157,11 +157,22 @@
           <label class="exception-field"
             >Lý do ngoại lệ khi mời dưới 3 NCC <span>*</span>
             <textarea
+              #supplierExceptionInput
+              id="rfq-edit-supplier-exception"
               rows="2"
+              [attr.aria-invalid]="supplierExceptionError() ? 'true' : null"
+              [attr.aria-describedby]="
+                supplierExceptionError() ? 'rfq-edit-supplier-exception-error' : null
+              "
               [value]="supplierException()"
-              (input)="supplierException.set($any($event.target).value)"
+              (input)="updateSupplierException($any($event.target).value)"
               placeholder="Nhập lý do, tối thiểu 10 ký tự"
             ></textarea>
+            @if (supplierExceptionError()) {
+              <small id="rfq-edit-supplier-exception-error" class="field-error" role="alert">
+                {{ supplierExceptionError() }}
+              </small>
+            }
           </label>
         }
       </section>

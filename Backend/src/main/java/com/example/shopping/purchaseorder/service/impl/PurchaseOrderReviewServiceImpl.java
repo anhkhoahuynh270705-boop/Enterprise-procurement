@@ -11,6 +11,8 @@ import com.example.shopping.common.enums.ErrorEnum;
 import com.example.shopping.purchaseorder.entity.PurchaseOrder;
 import com.example.shopping.purchaseorder.enums.PurchaseOrderStatus;
 import com.example.shopping.purchaseorder.repository.PurchaseOrderRepository;
+import com.example.shopping.workflow.camunda.event.WorkflowReviewEvent;
+import com.example.shopping.workflow.camunda.event.WorkflowReviewEventPublisher;
 
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -21,6 +23,7 @@ import lombok.experimental.FieldDefaults;
 public class PurchaseOrderReviewServiceImpl {
 
     PurchaseOrderRepository purchaseOrderRepository;
+    WorkflowReviewEventPublisher eventPublisher;
 
     @Transactional
     @CacheEvict(cacheNames = PurchaseOrderCache.CACHE_NAME, allEntries = true)
@@ -47,5 +50,16 @@ public class PurchaseOrderReviewServiceImpl {
         order.setReviewComment(normalizedComment.isBlank() ? null : normalizedComment);
         order.setUpdatedAt(reviewedAt);
         purchaseOrderRepository.save(order);
+        eventPublisher.publish(new WorkflowReviewEvent(
+                "PURCHASE_ORDER",
+                order.getId(),
+                order.getOrderCode(),
+                "Đơn đặt hàng " + order.getOrderCode(),
+                order.getCreatedBy(),
+                reviewer,
+                order.getStatus().name(),
+                order.getReviewComment(),
+                order.getTotalAmount(),
+                reviewedAt));
     }
 }

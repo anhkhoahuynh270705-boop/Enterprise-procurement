@@ -1,6 +1,5 @@
 package com.example.shopping.integration.mail.factory;
 
-import com.example.shopping.common.enums.ErrorEnum;
 import com.example.shopping.integration.mail.service.NotificationService;
 
 import java.util.List;
@@ -19,15 +18,6 @@ public class NotificationServiceFactory {
     public NotificationServiceFactory(List<NotificationService> serviceList) {
         this.services = serviceList.stream()
                 .collect(Collectors.toMap(NotificationService::getChannel, s -> s));
-    }
-
-    public NotificationService getService(NotificationChannel channel) {
-        NotificationService service = services.get(channel);
-        if (service == null) {
-            throw ErrorEnum.NOTIFICATION_CHANNEL_NOT_FOUND.ex(
-                    "Không tìm thấy NotificationService cho kênh: " + channel);
-        }
-        return service;
     }
 
     public List<NotificationService> getAllServices() {

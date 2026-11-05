@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
-import { CompanyDocument } from '../model/company.model';
+import { CompanyDocument, CompanyDocumentPage, CompanyDocumentSearchParams } from '../model/company.model';
 
 @Injectable({
   providedIn: 'root',
@@ -12,6 +12,28 @@ export class CompanyDocumentService {
 
   list() {
     return this.http.get<CompanyDocument[]>(this.url);
+  }
+
+  searchPage(filters: CompanyDocumentSearchParams) {
+    let params = new HttpParams()
+      .set('page', filters.page)
+      .set('size', filters.size);
+
+    const keys = [
+      'keyword',
+      'category',
+      'uploadedBy',
+      'uploadedFrom',
+      'uploadedTo',
+      'fileType',
+    ] as const;
+
+    for (const key of keys) {
+      const value = filters[key];
+      if (value) params = params.set(key, value);
+    }
+
+    return this.http.get<CompanyDocumentPage>(`${this.url}/page`, { params });
   }
   upload(title: string, category: string, description: string, file: File) {
     const body = new FormData();

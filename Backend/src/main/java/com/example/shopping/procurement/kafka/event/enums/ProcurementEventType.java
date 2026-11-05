@@ -1,4 +1,4 @@
-package com.example.shopping.integration.kafka.event.enums;
+package com.example.shopping.procurement.kafka.event.enums;
 
 public enum ProcurementEventType {
     TICKET_CREATED,

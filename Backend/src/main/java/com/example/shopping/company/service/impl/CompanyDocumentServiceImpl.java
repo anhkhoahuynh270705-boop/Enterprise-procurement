@@ -1,17 +1,21 @@
 package com.example.shopping.company.service.impl;
 
 import com.example.shopping.company.dto.CompanyDocumentDto;
+import com.example.shopping.company.dto.CompanyDocumentSearchCriteria;
 import com.example.shopping.company.entity.CompanyDocument;
 import com.example.shopping.company.entity.CompanyDocumentContent;
 import com.example.shopping.company.mapper.CompanyDocumentMapper;
 import com.example.shopping.company.repository.CompanyDocumentContentRepository;
 import com.example.shopping.company.repository.CompanyDocumentRepository;
+import com.example.shopping.company.repository.specification.CompanyDocumentSpecifications;
 import com.example.shopping.company.service.CompanyDocumentService;
 import com.example.shopping.security.TicketAccess;
 import com.example.shopping.supplier.document.validation.SupplierDocumentValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 import com.example.shopping.common.enums.ErrorEnum;
 import java.io.IOException;
@@ -35,6 +39,13 @@ public class CompanyDocumentServiceImpl implements CompanyDocumentService {
     public List<CompanyDocumentDto> list() {
         TicketAccess.requireReader();
         return documents.findByDeletedFalseOrderByUploadedAtDesc().stream().map(mapper::toDto).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CompanyDocumentDto> search(CompanyDocumentSearchCriteria criteria, Pageable pageable) {
+        TicketAccess.requireReader();
+        return documents.findAll(CompanyDocumentSpecifications.search(criteria), pageable)
+                .map(mapper::toDto);
     }
 
     @Transactional

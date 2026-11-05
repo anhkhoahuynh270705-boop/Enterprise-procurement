@@ -9,12 +9,14 @@ import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.shopping.integration.kafka.event.ProcurementEventPublisher;
-import com.example.shopping.integration.kafka.model.ProcurementEvent;
-import com.example.shopping.integration.kafka.event.enums.ProcurementEventType;
-import com.example.shopping.procurement.enums.ProcurementStatus;
 import com.example.shopping.procurement.entity.ProcurementTicket;
+import com.example.shopping.procurement.enums.ProcurementStatus;
+import com.example.shopping.procurement.kafka.event.ProcurementEventPublisher;
+import com.example.shopping.procurement.kafka.event.enums.ProcurementEventType;
+import com.example.shopping.procurement.kafka.model.ProcurementEvent;
 import com.example.shopping.procurement.repository.ProcurementTicketRepository;
+import com.example.shopping.workflow.camunda.event.WorkflowReviewEvent;
+import com.example.shopping.workflow.camunda.event.WorkflowReviewEventPublisher;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +28,7 @@ public class ApprovalNotificationDelegate implements JavaDelegate {
 
     private final ProcurementTicketRepository ticketRepository;
     private final ProcurementEventPublisher eventPublisher;
+    private final WorkflowReviewEventPublisher workflowReviewEventPublisher;
     private final CacheManager cacheManager;
 
     @Override
@@ -66,6 +69,10 @@ public class ApprovalNotificationDelegate implements JavaDelegate {
                         .build();
 
                 eventPublisher.publishEvent(event);
+                workflowReviewEventPublisher.publish(new WorkflowReviewEvent(
+                        "PROCUREMENT_TICKET", ticket.getId(), ticket.getTicketCode(), ticket.getTitle(),
+                        ticket.getMakerUsername(), checkerUsername, ticket.getStatus().name(), checkerComment,
+                        ticket.getTotalAmount(), ticket.getApprovedAt()));
             }
         }
     }

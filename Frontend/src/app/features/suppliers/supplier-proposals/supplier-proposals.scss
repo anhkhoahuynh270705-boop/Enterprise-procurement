@@ -50,6 +50,18 @@ p {
   margin-bottom: 20px;
 }
 
+.proposal-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.proposal-pagination span {
+  color: #626974;
+}
+
 fieldset {
   border: 0;
   margin: 0;

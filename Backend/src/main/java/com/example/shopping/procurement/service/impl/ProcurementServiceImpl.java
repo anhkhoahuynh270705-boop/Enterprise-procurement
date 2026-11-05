@@ -15,9 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.shopping.common.enums.ErrorEnum;
-import com.example.shopping.integration.kafka.event.ProcurementEventPublisher;
-import com.example.shopping.integration.kafka.event.enums.ProcurementEventType;
-import com.example.shopping.integration.kafka.model.ProcurementEvent;
 import com.example.shopping.procurement.dto.request.CreateProcurementTicketRequestDto;
 import com.example.shopping.procurement.dto.request.ProcurementItemRequestDto;
 import com.example.shopping.procurement.dto.request.UpdateProcurementTicketRequestDto;
@@ -25,6 +22,9 @@ import com.example.shopping.procurement.dto.response.ProcurementTicketResponseDt
 import com.example.shopping.procurement.entity.ProcurementItem;
 import com.example.shopping.procurement.entity.ProcurementTicket;
 import com.example.shopping.procurement.enums.ProcurementStatus;
+import com.example.shopping.procurement.kafka.event.ProcurementEventPublisher;
+import com.example.shopping.procurement.kafka.event.enums.ProcurementEventType;
+import com.example.shopping.procurement.kafka.model.ProcurementEvent;
 import com.example.shopping.procurement.mapper.ProcurementMapper;
 import com.example.shopping.procurement.repository.ProcurementTicketRepository;
 import com.example.shopping.procurement.service.ProcurementService;

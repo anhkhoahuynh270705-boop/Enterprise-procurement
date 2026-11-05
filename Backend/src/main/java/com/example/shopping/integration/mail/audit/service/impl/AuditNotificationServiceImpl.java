@@ -1,13 +1,14 @@
 package com.example.shopping.integration.mail.audit.service.impl;
 
-import com.example.shopping.integration.mail.audit.AuditNotificationService;
 import org.springframework.stereotype.Service;
-import com.example.shopping.integration.kafka.model.ProcurementEvent;
+
+import com.example.shopping.integration.mail.audit.AuditNotificationService;
 import com.example.shopping.integration.mail.enums.NotificationChannel;
-import lombok.extern.slf4j.Slf4j;
+import com.example.shopping.procurement.kafka.model.ProcurementEvent;
 
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service

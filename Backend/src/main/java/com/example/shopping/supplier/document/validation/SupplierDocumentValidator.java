@@ -1,14 +1,20 @@
 package com.example.shopping.supplier.document.validation;
 
-import com.example.shopping.supplier.document.model.ValidatedSupplierDocument;
-
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.zip.*;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import com.example.shopping.common.enums.ErrorEnum;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.example.shopping.common.enums.ErrorEnum;
+import com.example.shopping.supplier.document.model.ValidatedSupplierDocument;
 
 public final class SupplierDocumentValidator {
     public static final int MAX_BYTES = 10 * 1024 * 1024;
@@ -79,7 +85,7 @@ public final class SupplierDocumentValidator {
             return false; 
         }
     }
-    private static org.springframework.web.server.ResponseStatusException invalid(String message) {
+    private static ResponseStatusException invalid(String message) {
         return ErrorEnum.SUPPLIER_DOCUMENT_INVALID.ex(message);
     }
 }

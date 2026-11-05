@@ -31,10 +31,14 @@ public class PurchaseOrderCache {
     @Transactional(readOnly = true)
     public List<PurchaseOrderResponse> getPurchaseOrders(PurchaseOrderStatus status) {
         boolean isStaffOrChecker = TicketAccess.hasRole("ADMIN") || TicketAccess.hasRole("CHECKER");
+        String currentUsername = TicketAccess.username();
         return purchaseOrderRepository.findAllByOrderByCreatedAtDesc().stream()
                 .filter(order -> isStaffOrChecker
                         || order.getStatus() == PurchaseOrderStatus.SENT
-                        || order.getStatus() == PurchaseOrderStatus.RECEIVED)
+                        || order.getStatus() == PurchaseOrderStatus.RECEIVED
+                        || (currentUsername.equals(order.getCreatedBy())
+                                && (order.getStatus() == PurchaseOrderStatus.PENDING_APPROVAL
+                                        || order.getStatus() == PurchaseOrderStatus.DRAFT)))
                 .filter(order -> status == null || order.getStatus() == status)
                 .map(purchaseOrderMapper::toResponse)
                 .toList();

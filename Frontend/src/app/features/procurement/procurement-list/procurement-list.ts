@@ -1,4 +1,5 @@
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
 import { AuthService } from '../../auth/services/auth.service';
 import { Component, OnInit, inject, ChangeDetectorRef, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -18,6 +19,7 @@ import { debounceTime } from 'rxjs';
 })
 export class ProcurementList implements OnInit {
   private readonly toast = inject(ToastService);
+  private readonly dialogs = inject(ConfirmationDialogService);
   private normalize(value: string | null | undefined): string {
     return (value ?? '').trim().toLocaleLowerCase('vi');
   }
@@ -207,8 +209,12 @@ export class ProcurementList implements OnInit {
     this.loadData();
   }
 
-  submitTicket(ticket: ProcurementTicket): void {
-    if (!confirm(`Bạn có chắc chắn muốn nộp phiếu lên quản lý phê duyệt?`)) {
+  async submitTicket(ticket: ProcurementTicket): Promise<void> {
+    if (!(await this.dialogs.confirm({
+      title: 'Nộp phiếu mua sắm',
+      message: 'Bạn có chắc chắn muốn nộp phiếu lên quản lý phê duyệt?',
+      confirmText: 'Nộp phiếu',
+    }))) {
       return;
     }
     this.isLoading = true;
@@ -246,7 +252,7 @@ export class ProcurementList implements OnInit {
     );
   }
 
-  deleteTicket(ticket: ProcurementTicket): void {
+  async deleteTicket(ticket: ProcurementTicket): Promise<void> {
     if (ticket.status === 'APPROVED') {
       this.toast.warning('Phiếu đã được duyệt không thể xóa.');
       return;
@@ -257,7 +263,12 @@ export class ProcurementList implements OnInit {
       );
       return;
     }
-    if (!confirm(`Xóa phiếu ? Thao tác này không thể hoàn tác.`)) {
+    if (!(await this.dialogs.confirm({
+      title: 'Xóa phiếu mua sắm',
+      message: 'Bạn có chắc chắn muốn xóa phiếu này? Thao tác này không thể hoàn tác.',
+      confirmText: 'Xóa phiếu',
+      tone: 'danger',
+    }))) {
       return;
     }
     this.procurementService.deleteTicket(ticket.id).subscribe({
@@ -347,7 +358,7 @@ export class ProcurementList implements OnInit {
     this.cdr.detectChanges();
   }
 
-  submitReview(approved: boolean): void {
+  async submitReview(approved: boolean): Promise<void> {
     if (!this.selectedTask || this.isReviewing) return;
 
     const comment = this.reviewForm.controls.comment.value.trim();
@@ -360,6 +371,15 @@ export class ProcurementList implements OnInit {
       this.reviewError = 'Nhận xét tối đa 2000 ký tự.';
       return;
     }
+
+    if (!(await this.dialogs.confirm({
+      title: approved ? 'Duyệt phiếu mua sắm' : 'Từ chối phiếu mua sắm',
+      message: approved
+        ? `Xác nhận duyệt phiếu ${this.selectedTask.ticket?.ticketCode || 'đang chọn'}?`
+        : `Xác nhận từ chối phiếu ${this.selectedTask.ticket?.ticketCode || 'đang chọn'}?`,
+      confirmText: approved ? 'Duyệt phiếu' : 'Từ chối',
+      tone: approved ? 'primary' : 'danger',
+    }))) return;
 
     this.isReviewing = true;
     this.reviewActionType = approved ? 'APPROVE' : 'REJECT';

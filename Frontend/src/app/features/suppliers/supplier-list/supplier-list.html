@@ -121,7 +121,7 @@
   <section class="table-card" aria-labelledby="list-title">
     <div class="card-header">
       <h3 id="list-title">Danh sách nhà cung cấp</h3>
-      <p>Tổng số {{ filteredSuppliers.length }} nhà cung cấp · Trang {{ currentPage + 1 }}/{{ totalPages || 1 }}</p>
+      <p>Tổng số {{ totalElements }} nhà cung cấp · Trang {{ currentPage + 1 }}/{{ totalPages || 1 }}</p>
     </div>
 
     <div class="table-responsive">
@@ -139,7 +139,7 @@
                 <i
                   class="fa"
                   [ngClass]="
-                    visibleIds.size > 0 && visibleIds.size === filteredSuppliers.length
+                    allPageIdsVisible
                       ? 'fa-eye-slash'
                       : 'fa-eye'
                   "

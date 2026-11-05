@@ -63,4 +63,28 @@ export interface PurchaseOrderApiResponse<T> {
   timestamp: string;
 }
 
+export interface PurchaseOrderSearchParams {
+  keyword?: string;
+  status?: PurchaseOrderStatus;
+  supplierId?: string;
+  ticket?: string;
+  orderCode?: string;
+  minimumAmount?: number;
+  maximumAmount?: number;
+  createdFrom?: string;
+  createdTo?: string;
+  deliveryFrom?: string;
+  deliveryTo?: string;
+  page: number;
+  size: number;
+}
+
+export interface PurchaseOrderPage {
+  content: PurchaseOrder[];
+  number: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
 export type ApprovedTicket = ProcurementTicket;

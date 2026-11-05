@@ -12,6 +12,8 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import com.example.shopping.common.enums.ErrorEnum;
 
@@ -20,6 +22,7 @@ import com.example.shopping.procurement.entity.ProcurementTicket;
 import com.example.shopping.procurement.enums.ProcurementStatus;
 import com.example.shopping.procurement.repository.ProcurementTicketRepository;
 import com.example.shopping.purchaseorder.dto.request.CreatePurchaseOrderRequest;
+import com.example.shopping.purchaseorder.dto.request.PurchaseOrderSearchCriteria;
 import com.example.shopping.purchaseorder.dto.request.ReviewPurchaseOrderRequest;
 import com.example.shopping.purchaseorder.dto.response.PurchaseOrderResponse;
 import com.example.shopping.purchaseorder.entity.PurchaseOrder;
@@ -27,6 +30,7 @@ import com.example.shopping.purchaseorder.entity.PurchaseOrderItem;
 import com.example.shopping.purchaseorder.enums.PurchaseOrderStatus;
 import com.example.shopping.purchaseorder.mapper.PurchaseOrderMapper;
 import com.example.shopping.purchaseorder.repository.PurchaseOrderRepository;
+import com.example.shopping.purchaseorder.repository.specification.PurchaseOrderSpecifications;
 import com.example.shopping.purchaseorder.service.PurchaseOrderService;
 import com.example.shopping.security.TicketAccess;
 import com.example.shopping.supplier.entity.SupplierEntity;
@@ -56,6 +60,34 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     public List<PurchaseOrderResponse> getPurchaseOrders(PurchaseOrderStatus status) {
         TicketAccess.requireReader();
         return purchaseOrderCache.getPurchaseOrders(status);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PurchaseOrderResponse> searchPurchaseOrders(
+            PurchaseOrderSearchCriteria criteria,
+            Pageable pageable) {
+        TicketAccess.requireReader();
+        boolean canViewAll = TicketAccess.hasRole("ADMIN") || TicketAccess.hasRole("CHECKER");
+        return purchaseOrderRepository.findAll(
+                        PurchaseOrderSpecifications.search(criteria, TicketAccess.username(), canViewAll),
+                        pageable)
+                .map(purchaseOrderMapper::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UUID> getOrderedProcurementItemIds(UUID ticketId) {
+        if (!TicketAccess.hasRole("USER") && !TicketAccess.hasRole("ADMIN")) {
+            throw ErrorEnum.ACCESS_DENIED.ex("Bạn không có quyền tạo đơn đặt hàng.");
+        }
+        ProcurementTicket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> ErrorEnum.TICKET_NOT_FOUND.ex());
+        TicketAccess.requireRead(ticket);
+        if (ticket.getStatus() != ProcurementStatus.APPROVED) {
+            throw ErrorEnum.TICKET_NOT_APPROVED.ex();
+        }
+        return purchaseOrderRepository.findOrderedProcurementItemIdsByTicketId(ticketId);
     }
 
     @Override

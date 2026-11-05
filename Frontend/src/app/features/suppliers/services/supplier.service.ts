@@ -6,11 +6,13 @@ import {
   CreateSupplierRequest,
   Supplier,
   SupplierImportApiResponse,
+  SupplierSearchParams,
   UpdateSupplierRequest,
 } from '../models/supplier';
+import { ApiResponse, PageResult } from '../../procurement/model/procurement';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class SupplierService {
   private readonly apiUrl = environment.apiBaseUrl + '/suppliers';
@@ -28,10 +30,6 @@ export class SupplierService {
     return this.http.get<Supplier>(`${this.apiUrl}/${id}`);
   }
 
-  getSupplierByCode(code: string): Observable<Supplier> {
-    return this.http.get<Supplier>(`${this.apiUrl}/code/${code}`);
-  }
-
   createSupplier(data: CreateSupplierRequest): Observable<Supplier> {
     return this.http.post<Supplier>(this.apiUrl, data);
   }
@@ -40,25 +38,47 @@ export class SupplierService {
     return this.http.put<Supplier>(`${this.apiUrl}/${id}`, data);
   }
 
+  searchPage(filters: SupplierSearchParams): Observable<ApiResponse<PageResult<Supplier>>> {
+    let params = new HttpParams().set('page', filters.page).set('size', filters.size);
+    const keys = [
+      'keyword',
+      'status',
+      'supplierId',
+      'supplierCode',
+      'contactPerson',
+      'taxCode',
+      'email',
+      'phone',
+      'city',
+    ] as const;
+    for (const key of keys) {
+      const value = filters[key];
+      if (value) {
+        params = params.set(key, value);
+      }
+    }
+    return this.http.get<ApiResponse<PageResult<Supplier>>>(`${this.apiUrl}/page`, { params });
+  }
+
   deleteSupplier(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
   exportAllSuppliers(format: 'EXCEL' | 'PDF' = 'EXCEL'): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/export-all?format=${format}`, {
-      responseType: 'blob'
+      responseType: 'blob',
     });
   }
 
   exportSupplier(id: string, format: 'PDF' | 'EXCEL' = 'PDF'): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/export/${id}?format=${format}`, {
-      responseType: 'blob'
+      responseType: 'blob',
     });
   }
 
   downloadTemplate(): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/template`, {
-      responseType: 'blob'
+      responseType: 'blob',
     });
   }
 

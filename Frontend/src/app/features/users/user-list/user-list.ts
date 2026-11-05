@@ -1,4 +1,5 @@
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
 import { Component, inject, OnInit, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Users } from '../models/user';
@@ -16,6 +17,7 @@ import { ViewUser } from '../view-user/view-user';
 })
 export class UserList implements OnInit {
   private readonly toast = inject(ToastService);
+  private readonly dialogs = inject(ConfirmationDialogService);
 
   users: Users[] = [];
   filteredUsers: Users[] = [];
@@ -129,14 +131,19 @@ export class UserList implements OnInit {
   deletingId: string | number | null = null;
   togglingId: string | number | null = null;
 
-  deleteUser(id: string | number): void {
+  async deleteUser(id: string | number): Promise<void> {
     if (this.deletingId) return;
     const target = this.users.find((u) => u.id === id);
     if (target && this.isSelf(target)) {
       this.toast.warning('Bạn không thể xóa chính mình!');
       return;
     }
-    if (!confirm('Bạn có chắc chắn muốn xóa user này?')) return;
+    if (!(await this.dialogs.confirm({
+      title: 'Xóa người dùng',
+      message: 'Bạn có chắc chắn muốn xóa người dùng này?',
+      confirmText: 'Xóa người dùng',
+      tone: 'danger',
+    }))) return;
 
     this.deletingId = id;
     this.userService.deleteUser(id).subscribe({
@@ -156,7 +163,7 @@ export class UserList implements OnInit {
     });
   }
 
-  toggleUser(id: string | number): void {
+  async toggleUser(id: string | number): Promise<void> {
     if (this.togglingId) return;
     const target = this.users.find((u) => u.id === id);
 
@@ -165,7 +172,12 @@ export class UserList implements OnInit {
     }
     if (target?.enabled) {
       const msg = `Tài khoản "${target?.username}" sẽ bị vô hiệu hóa và đăng xuất khỏi hệ thống. Tiếp tục?`;
-      if (!confirm(msg)) return;
+      if (!(await this.dialogs.confirm({
+        title: 'Vô hiệu hóa tài khoản',
+        message: msg,
+        confirmText: 'Vô hiệu hóa',
+        tone: 'danger',
+      }))) return;
     }
     this.togglingId = id;
     this.userService.toggleUserStatus(id).subscribe({

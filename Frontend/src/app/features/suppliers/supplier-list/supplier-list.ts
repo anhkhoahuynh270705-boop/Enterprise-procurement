@@ -1,5 +1,6 @@
 import { SensitiveValue } from '../../../shared/sensitive/sensitive-value/sensitive-value';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
 import { Component, OnInit, ChangeDetectorRef, DestroyRef, inject, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
@@ -7,7 +8,7 @@ import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime } from 'rxjs';
 import { SupplierService } from '../services/supplier.service';
-import { Supplier, SupplierImportResult } from '../models/supplier';
+import { Supplier, SupplierImportResult, SupplierStatus } from '../models/supplier';
 import { SupplierView } from '../supplier-view/supplier-view';
 import { SupplierProposals } from '../supplier-proposals/supplier-proposals';
 import { SupplierProposalService } from '../services/supplier-proposal.service';
@@ -28,6 +29,7 @@ import { SupplierProposalService } from '../services/supplier-proposal.service';
 export class SupplierList implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly toast = inject(ToastService);
+  private readonly dialogs = inject(ConfirmationDialogService);
 
   showProposals = false;
   @ViewChild('proposalDialog')
@@ -38,16 +40,15 @@ export class SupplierList implements OnInit {
 
   pendingProposalCount: number | null = null;
   private readonly proposalService = inject(SupplierProposalService);
-  suppliers: Supplier[] = [];
   supplierOptions: Supplier[] = [];
   cityOptions: { value: string; label: string }[] = [];
-  filteredSuppliers: Supplier[] = [];
   pagedSuppliers: Supplier[] = [];
 
   // Pagination
   currentPage = 0;
   pageSize = 10;
   totalPages = 0;
+  totalElements = 0;
 
   private readonly fb = inject(FormBuilder);
   readonly filtersForm = this.fb.nonNullable.group({
@@ -71,6 +72,11 @@ export class SupplierList implements OnInit {
   importResult: SupplierImportResult | null = null;
   deletingId: string | null = null;
   visibleIds = new Set<string | number>();
+
+  get allPageIdsVisible(): boolean {
+    return this.pagedSuppliers.length > 0 &&
+      this.pagedSuppliers.every((supplier) => this.visibleIds.has(supplier.id));
+  }
 
   @ViewChild(SupplierView)
   viewSupplierRef!: SupplierView;
@@ -125,12 +131,12 @@ export class SupplierList implements OnInit {
     this.loading = true;
     this.supplierService.getSuppliers().subscribe({
       next: (suppliers) => {
-        this.suppliers = suppliers || [];
-        this.supplierOptions = [...this.suppliers].sort((a, b) =>
+        const allSuppliers = suppliers || [];
+        this.supplierOptions = [...allSuppliers].sort((a, b) =>
           a.name.localeCompare(b.name, 'vi'),
         );
         const cities = new Map<string, string>();
-        this.suppliers.forEach((supplier) => {
+        allSuppliers.forEach((supplier) => {
           const city = supplier.city?.trim();
           const normalizedCity = this.normalizeSearch(city);
           if (city && normalizedCity && !cities.has(normalizedCity)) {
@@ -139,13 +145,59 @@ export class SupplierList implements OnInit {
         });
         this.cityOptions = [...cities].map(([value, label]) => ({ value, label }))
           .sort((a, b) => a.label.localeCompare(b.label, 'vi'));
-        this.applyFilter();
-        this.loading = false;
+        this.loadSupplierPage();
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Lỗi khi tải danh sách nhà cung cấp:', err);
         this.loading = false;
+        this.loadSupplierPage();
+      },
+    });
+  }
+
+  private loadSupplierPage(): void {
+    const filters = this.filtersForm.getRawValue();
+    this.loading = true;
+
+    this.supplierService.searchPage({
+      keyword: filters.searchKeyword || undefined,
+      status: filters.selectedStatus === 'ALL'
+        ? undefined
+        : filters.selectedStatus as SupplierStatus,
+      supplierId: filters.supplierId || undefined,
+      supplierCode: filters.supplierCode || undefined,
+      contactPerson: filters.contactPerson || undefined,
+      taxCode: filters.taxCode || undefined,
+      email: filters.email || undefined,
+      phone: filters.phone || undefined,
+      city: filters.city || undefined,
+      page: this.currentPage,
+      size: this.pageSize,
+    }).subscribe({
+      next: ({ data }) => {
+        const lastPage = Math.max(data.totalPages - 1, 0);
+        if (this.currentPage > lastPage) {
+          this.currentPage = lastPage;
+          this.loadSupplierPage();
+          return;
+        }
+
+        this.pagedSuppliers = data.content || [];
+        this.totalElements = data.totalElements || 0;
+        this.totalPages = data.totalPages || 0;
+        this.visibleIds.clear();
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Lỗi khi tải trang nhà cung cấp:', error);
+        this.pagedSuppliers = [];
+        this.totalElements = 0;
+        this.totalPages = 0;
+        this.loading = false;
+        this.toast.error(error.error?.message || 'Không thể tải danh sách nhà cung cấp.');
+        this.cdr.detectChanges();
       },
     });
   }
@@ -164,13 +216,11 @@ export class SupplierList implements OnInit {
   }
 
   toggleAllIds(): void {
-    if (
-      this.filteredSuppliers.length > 0 &&
-      this.visibleIds.size === this.filteredSuppliers.length
-    ) {
+    const pageIds = this.pagedSuppliers.map((supplier) => supplier.id);
+    if (pageIds.length > 0 && pageIds.every((id) => this.visibleIds.has(id))) {
       this.visibleIds.clear();
     } else {
-      this.filteredSuppliers.forEach((s) => this.visibleIds.add(s.id));
+      pageIds.forEach((id) => this.visibleIds.add(id));
     }
     this.cdr.detectChanges();
   }
@@ -199,61 +249,24 @@ export class SupplierList implements OnInit {
       email: '',
       phone: '',
       city: '',
-    });
-    this.applyFilter();
+    }, { emitEvent: false });
+    this.currentPage = 0;
+    this.loadSupplierPage();
   }
 
   applyFilter(): void {
-    const filters = this.filtersForm.getRawValue();
-    const keyword = this.normalizeSearch(filters.searchKeyword);
-    this.filteredSuppliers = this.suppliers.filter((supplier) => {
-      const searchableValues = [
-        supplier.name,
-        supplier.code,
-        supplier.contactPerson,
-        supplier.taxCode,
-        supplier.email,
-        supplier.phone,
-        supplier.address,
-        supplier.city,
-        supplier.country,
-      ].map((value) => this.normalizeSearch(value));
-
-      return (
-        (!keyword || searchableValues.some((value) => value.includes(keyword))) &&
-        (filters.selectedStatus === 'ALL' || supplier.status === filters.selectedStatus) &&
-        (!filters.supplierId || supplier.id === filters.supplierId) &&
-        this.matchesField(supplier.code, filters.supplierCode) &&
-        this.matchesField(supplier.contactPerson, filters.contactPerson) &&
-        this.matchesField(supplier.taxCode, filters.taxCode) &&
-        this.matchesField(supplier.email, filters.email) &&
-        this.matchesField(supplier.phone, filters.phone) &&
-        (!filters.city || this.normalizeSearch(supplier.city) === filters.city)
-      );
-    });
     this.currentPage = 0;
-    this.updatePaging();
+    this.loadSupplierPage();
   }
 
   private normalizeSearch(value: string | null | undefined): string {
     return (value || '').trim().toLocaleLowerCase('vi-VN');
   }
 
-  private matchesField(value: string | undefined, filter: string): boolean {
-    const query = this.normalizeSearch(filter);
-    return !query || this.normalizeSearch(value).includes(query);
-  }
-
-  updatePaging(): void {
-    this.totalPages = Math.ceil(this.filteredSuppliers.length / this.pageSize);
-    const start = this.currentPage * this.pageSize;
-    this.pagedSuppliers = this.filteredSuppliers.slice(start, start + this.pageSize);
-  }
-
   goToPage(page: number): void {
     if (page < 0 || page >= this.totalPages) return;
     this.currentPage = page;
-    this.updatePaging();
+    this.loadSupplierPage();
   }
 
   addSupplier(): void {
@@ -270,18 +283,21 @@ export class SupplierList implements OnInit {
     }
   }
 
-  deleteSupplier(id: string): void {
+  async deleteSupplier(id: string): Promise<void> {
     if (this.deletingId) return;
-    if (!confirm('Bạn có chắc chắn muốn xóa nhà cung cấp này không?')) return;
+    if (!(await this.dialogs.confirm({
+      title: 'Xóa nhà cung cấp',
+      message: 'Bạn có chắc chắn muốn xóa nhà cung cấp này không?',
+      confirmText: 'Xóa nhà cung cấp',
+      tone: 'danger',
+    }))) return;
 
     this.deletingId = id;
     this.supplierService.deleteSupplier(id).subscribe({
       next: () => {
-        this.suppliers = this.suppliers.filter((s) => s.id !== id);
         this.toast.success('Xóa nhà cung cấp thành công');
-        this.applyFilter();
         this.deletingId = null;
-        this.cdr.detectChanges();
+        this.loadSuppliers();
       },
       error: (err) => {
         console.error('Lỗi khi xóa nhà cung cấp:', err);

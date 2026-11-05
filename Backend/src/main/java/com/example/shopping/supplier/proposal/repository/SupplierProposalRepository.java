@@ -8,9 +8,15 @@ import java.util.Optional;
 import java.util.UUID;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.repository.query.Param;
 
-public interface SupplierProposalRepository extends JpaRepository<SupplierProposal, UUID> {
+public interface SupplierProposalRepository extends JpaRepository<SupplierProposal, UUID>, JpaSpecificationExecutor<SupplierProposal> {
+    @Override
+    Page<SupplierProposal> findAll(Specification<SupplierProposal> specification, Pageable pageable);
+
     boolean existsByPendingTaxCode(String taxCode);
     List<SupplierProposal> findAllByOrderBySubmittedAtDesc();
     List<SupplierProposal> findBySubmittedByOrderBySubmittedAtDesc(String username);

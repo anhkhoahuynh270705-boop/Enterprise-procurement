@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
 import { AuthService } from '../../auth/services/auth.service';
 import { PurchaseOrder, PurchaseOrderStatus } from '../models/purchase-order';
 import { PurchaseOrderService } from '../services/purchase-order.service';
@@ -24,6 +25,7 @@ export class PurchaseOrderView {
   private readonly fb = inject(FormBuilder);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly toast = inject(ToastService);
+  private readonly dialogs = inject(ConfirmationDialogService);
   private readonly purchaseOrderService = inject(PurchaseOrderService);
   readonly auth = inject(AuthService);
 
@@ -70,7 +72,7 @@ export class PurchaseOrderView {
     }
   }
 
-  submitReview(approved: boolean): void {
+  async submitReview(approved: boolean): Promise<void> {
     const current = this.order;
     if (!current || !this.auth.hasRole('ADMIN', 'CHECKER') || this.isSubmitting) return;
 
@@ -84,6 +86,15 @@ export class PurchaseOrderView {
       this.reviewError = 'Nhận xét tối đa 2000 ký tự.';
       return;
     }
+
+    if (!(await this.dialogs.confirm({
+      title: approved ? 'Duyệt đơn đặt hàng' : 'Từ chối đơn đặt hàng',
+      message: approved
+        ? `Duyệt đơn ${current.orderCode} và chuyển sang gửi nhà cung cấp?`
+        : `Xác nhận từ chối đơn ${current.orderCode}?`,
+      confirmText: approved ? 'Duyệt đơn' : 'Từ chối đơn',
+      tone: approved ? 'primary' : 'danger',
+    }))) return;
 
     this.isSubmitting = true;
     this.reviewError = '';

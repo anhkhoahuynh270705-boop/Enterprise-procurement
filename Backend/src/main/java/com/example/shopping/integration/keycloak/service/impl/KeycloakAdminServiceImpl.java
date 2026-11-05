@@ -5,6 +5,7 @@ import com.example.shopping.integration.keycloak.service.KeycloakAdminService;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -23,6 +24,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.example.shopping.common.enums.ErrorEnum;
 import com.example.shopping.integration.keycloak.config.KeycloakConfig;
 import com.example.shopping.common.enums.Role;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -74,7 +76,7 @@ public class KeycloakAdminServiceImpl implements KeycloakAdminService {
         String mappings = base + "/users/" + users.get(0).get("id") + "/role-mappings/realm";
         var current = restTemplate.exchange(mappings, HttpMethod.GET, request,
             new ParameterizedTypeReference<List<Map<String, Object>>>() { }).getBody();
-        var applicationRoles = java.util.Set.of("ADMIN", "USER", "CHECKER", "MAKER", "ROLE_ADMIN", "ROLE_USER", "ROLE_CHECKER", "ROLE_MAKER");
+        var applicationRoles = Set.of("ADMIN", "USER", "CHECKER", "MAKER", "ROLE_ADMIN", "ROLE_USER", "ROLE_CHECKER", "ROLE_MAKER");
         var removed = current == null ? List.<Map<String, Object>>of() : current.stream()
             .filter(value -> applicationRoles.contains(value.get("name")) && !roleName.equals(value.get("name"))).toList();
         if (!removed.isEmpty()) {
@@ -250,6 +252,7 @@ public class KeycloakAdminServiceImpl implements KeycloakAdminService {
         }
     }
     
+    /* Change password for the first time login to new account */
     public void resetTemporaryPassword(String username, String newPassword) {
       HttpHeaders headers = new HttpHeaders();
       headers.setBearerAuth(getAdminToken());

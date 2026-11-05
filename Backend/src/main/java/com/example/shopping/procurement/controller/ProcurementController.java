@@ -3,7 +3,6 @@ package com.example.shopping.procurement.controller;
 import java.util.List;
 import java.util.UUID;
 
-import com.example.shopping.admin.auditlog.annotation.Audited;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -21,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.shopping.admin.auditlog.annotation.Audited;
 import com.example.shopping.common.dto.response.ApiResponse;
 import com.example.shopping.procurement.dto.request.CreateProcurementTicketRequestDto;
 import com.example.shopping.procurement.dto.request.UpdateProcurementTicketRequestDto;
@@ -29,11 +29,10 @@ import com.example.shopping.procurement.enums.ProcurementStatus;
 import com.example.shopping.procurement.service.ProcurementService;
 
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
 import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
@@ -139,7 +138,7 @@ public class ProcurementController {
             @PathVariable UUID id,
             @AuthenticationPrincipal Jwt jwt) {
         String username = extractUsername(jwt);
-        procurementService.deleteTicket(id, username);
+        procurementService.deleteTicket(id, username); 
         return ResponseEntity.ok(ApiResponse.success(null, "Xóa phiếu mua sắm thành công"));
     }
 

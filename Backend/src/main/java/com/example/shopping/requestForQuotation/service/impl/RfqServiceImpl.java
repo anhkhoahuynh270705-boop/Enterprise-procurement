@@ -1,6 +1,7 @@
 package com.example.shopping.requestForQuotation.service.impl;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.ArrayList;
@@ -43,14 +44,9 @@ import com.example.shopping.requestForQuotation.dto.request.ScoreRequest;
 import com.example.shopping.requestForQuotation.dto.request.SelectRfqWinnersRequest;
 import com.example.shopping.requestForQuotation.dto.request.UpdateRfqQuoteScoresRequest;
 import com.example.shopping.requestForQuotation.dto.request.UpdateRfqRequest;
-import com.example.shopping.requestForQuotation.dto.response.InvitedSupplierResponse;
-import com.example.shopping.requestForQuotation.dto.response.ItemAwardResponse;
-import com.example.shopping.requestForQuotation.dto.response.ItemResponse;
-import com.example.shopping.requestForQuotation.dto.response.RfqAuditLogResponse;
 import com.example.shopping.requestForQuotation.dto.response.RfqDetailResponse;
 import com.example.shopping.requestForQuotation.dto.response.RfqQuoteRoundResponse;
 import com.example.shopping.requestForQuotation.dto.response.RfqSummaryResponse;
-import com.example.shopping.requestForQuotation.dto.response.ScoreCriterionResponse;
 import com.example.shopping.requestForQuotation.entity.Rfq;
 import com.example.shopping.requestForQuotation.entity.RfqAuditLog;
 import com.example.shopping.requestForQuotation.entity.RfqInvitedSupplier;
@@ -66,19 +62,19 @@ import com.example.shopping.requestForQuotation.enums.RfqReviewDecision;
 import com.example.shopping.requestForQuotation.enums.RfqScoringCriterion;
 import com.example.shopping.requestForQuotation.enums.RfqStatus;
 import com.example.shopping.requestForQuotation.kafka.event.RfqInitialApprovalEvent;
-import com.example.shopping.requestForQuotation.mapper.SupplierInvitationMapper;
+import com.example.shopping.requestForQuotation.mapper.RfqMapper;
 import com.example.shopping.requestForQuotation.repository.RfqAuditLogRepository;
 import com.example.shopping.requestForQuotation.repository.RfqInvitationTokenRepository;
 import com.example.shopping.requestForQuotation.repository.RfqInvitedSupplierRepository;
 import com.example.shopping.requestForQuotation.repository.RfqQuoteRoundRepository;
 import com.example.shopping.requestForQuotation.repository.RfqRepository;
+import com.example.shopping.requestForQuotation.repository.specification.RfqSpecifications;
 import com.example.shopping.requestForQuotation.service.RfqService;
 import com.example.shopping.supplier.entity.SupplierEntity;
 import com.example.shopping.supplier.enums.SupplierStatus;
 import com.example.shopping.supplier.repository.SupplierRepository;
 import com.example.shopping.user.repository.UserRepository;
 
-import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
@@ -103,8 +99,57 @@ public class RfqServiceImpl implements RfqService {
     ProcurementTicketRepository ticketRepository;
     SupplierRepository supplierRepository;
     UserRepository userRepository;
-    SupplierInvitationMapper quoteMapper;
+    RfqMapper rfqMapper;
     ApplicationEventPublisher eventPublisher;
+
+     private void revokeTokens(Rfq rfq) {
+        rfq.getInvitedSuppliers().forEach(invite -> invitationTokenRepository.revokeActiveTokens(invite.getId()));
+    }
+
+    private BigDecimal estimate(List<RfqItem> items) {
+        return items.stream().map(item -> item.getBudgetUnitPrice()
+                        .multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private void addAudit(Rfq rfq, String username, String action, Map<String, Object> details) {
+        RfqAuditLog auditLog = new RfqAuditLog(
+                rfq, username, action, details, LocalDateTime.now());
+        auditLogRepository.save(auditLog);
+        rfq.getAuditLogs().add(auditLog);
+    }
+
+    private Rfq getEntity(UUID id) {
+        return rfqRepository.findById(id).orElseThrow(() -> ErrorEnum.RFQ_NOT_FOUND.ex());
+    }
+
+    private void requireOwner(Rfq rfq, String username, boolean isAdmin) {
+        if (!isAdmin && !Objects.equals(rfq.getCreatedBy(), username)) throw ErrorEnum.ACCESS_DENIED.ex();
+    }
+
+    private String generateRfqCode() {
+        return "RFQ-" + Year.now().getValue() + "-" + UUID.randomUUID().toString()
+                .replace("-", "").substring(0, 8).toUpperCase(Locale.ROOT);
+    }
+
+    private String clean(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private RfqSummaryResponse toSummary(Rfq rfq) {
+        return rfqMapper.toSummary(rfq, creatorName(rfq));
+    }
+
+    private RfqDetailResponse toDetail(Rfq rfq) {
+        return rfqMapper.toDetail(rfq, creatorName(rfq), rankedQuoteResponses(rfq));
+    }
+
+    private String creatorName(Rfq rfq) {
+        return userRepository.findByUsername(rfq.getCreatedBy())
+                .map(user -> user.getFullName())
+                .filter(name -> name != null && !name.isBlank())
+                .orElse(rfq.getCreatedBy());
+    }
 
     @Override
     @Transactional
@@ -143,7 +188,10 @@ public class RfqServiceImpl implements RfqService {
         rfq.setEstimatedValue(estimate(items));
         rfq.setScoreCriteria(buildCriteria(rfq, request.scoreCriteria()));
         rfq.setInvitedSuppliers(buildInvites(rfq, request.supplierIds(), now));
-        if (request.submitForApproval()) rfq.setSubmittedAt(now);
+        if (request.submitForApproval()) 
+        {
+            rfq.setSubmittedAt(now);
+        }
         Rfq saved = rfqRepository.save(rfq);
         addAudit(saved, username, "CREATED", Map.of("status", saved.getStatus().name()));
         return toDetail(saved);
@@ -185,38 +233,23 @@ public class RfqServiceImpl implements RfqService {
     @Override
     @Transactional(readOnly = true)
     public Page<RfqSummaryResponse> search(RfqSearchRequest request) {
-        String keyword = trimToNull(request.keyword());
-        String department = trimToNull(request.department());
-        String createdBy = trimToNull(request.createdBy());
-        Specification<Rfq> spec = (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
-            if (request.status() != null)
-                predicates.add(cb.equal(root.get("status"), request.status()));
-            if (department != null)
-                predicates.add(cb.like(cb.lower(root.get("department")),
-                    "%" + department.toLowerCase(Locale.ROOT) + "%"));
-            if (createdBy != null)
-                predicates.add(cb.equal(root.get("createdBy"), createdBy));
-            if (request.createdFrom() != null)
-                predicates.add(cb.greaterThanOrEqualTo(
-                    root.get("createdAt"), request.createdFrom().atStartOfDay()));
-            if (request.createdTo() != null)
-                predicates.add(cb.lessThan(
-                    root.get("createdAt"), request.createdTo().plusDays(1).atStartOfDay()));
-            if (keyword != null) {
-                String pattern = "%" + keyword.toLowerCase(Locale.ROOT) + "%";
-                var ticket = root.join("procurementTicket", jakarta.persistence.criteria.JoinType.LEFT);
-                predicates.add(cb.or(
-                        cb.like(cb.lower(root.get("rfqCode")), pattern),
-                        cb.like(cb.lower(root.get("title")), pattern),
-                        cb.like(cb.lower(ticket.get("ticketCode")), pattern),
-                        cb.like(cb.lower(ticket.get("title")), pattern)));
-                query.distinct(true);
-            }
-            return cb.and(predicates.toArray(Predicate[]::new));
-        };
+        return search(request, List.of(), null, null, null, false);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<RfqSummaryResponse> search(
+            RfqSearchRequest request,
+            List<RfqStatus> statuses,
+            String creatorKeyword,
+            String kpiFilter,
+            String currentUsername,
+            boolean excludeCreator) {
+        Specification<Rfq> spec = RfqSpecifications.search(
+                request, statuses, creatorKeyword, kpiFilter, currentUsername, excludeCreator);
         PageRequest page = PageRequest.of(request.page(), request.size(),
-                Sort.by(Sort.Direction.DESC, "createdAt"));
+                Sort.by(Sort.Direction.DESC, "createdAt")
+                        .and(Sort.by(Sort.Direction.DESC, "id")));
         return rfqRepository.findAll(spec, page).map(this::toSummary);
     }
 
@@ -251,8 +284,11 @@ public class RfqServiceImpl implements RfqService {
         Rfq rfq = getEntity(rfqId);
         boolean initialReview = rfq.getStatus() == RfqStatus.PENDING_RFQ_APPROVAL;
         boolean resultReview = rfq.getStatus() == RfqStatus.PENDING_RESULT_APPROVAL;
-        if (!initialReview && !resultReview) throw ErrorEnum.RFQ_CANNOT_REVIEW.ex();
-        if (Objects.equals(rfq.getCreatedBy(), checkerUsername)) throw ErrorEnum.RFQ_SELF_REVIEW.ex();
+        
+        if (!initialReview && !resultReview) 
+            throw ErrorEnum.RFQ_CANNOT_REVIEW.ex();
+        if (Objects.equals(rfq.getCreatedBy(), checkerUsername)) 
+            throw ErrorEnum.RFQ_SELF_REVIEW.ex();
 
         LocalDateTime now = LocalDateTime.now();
         rfq.setReviewedBy(checkerUsername);
@@ -329,7 +365,8 @@ public class RfqServiceImpl implements RfqService {
             throw ErrorEnum.RFQ_NOT_OPEN.ex();
         }
         Set<UUID> selectedIds = new HashSet<>(request.supplierIds());
-        if (selectedIds.size() != request.supplierIds().size()) throw ErrorEnum.RFQ_SUPPLIER_SELECTION_INVALID.ex();
+        if (selectedIds.size() != request.supplierIds().size()) 
+            throw ErrorEnum.RFQ_SUPPLIER_SELECTION_INVALID.ex();
         for (UUID supplierId : selectedIds) {
             RfqInvitedSupplier invite = invitedSupplierRepository.findByRfq_IdAndSupplier_Id(rfqId, supplierId)
                     .orElseThrow(() -> ErrorEnum.RFQ_INVITATION_NOT_FOUND.ex());
@@ -352,7 +389,7 @@ public class RfqServiceImpl implements RfqService {
     @Override
     @Transactional
     public RfqDetailResponse updateQuoteScores(UUID rfqId, UUID quoteRoundId,
-                                               UpdateRfqQuoteScoresRequest request, String username) {
+    UpdateRfqQuoteScoresRequest request, String username) {
         Rfq rfq = getEntity(rfqId);
         requireOwner(rfq, username, false);
         if (rfq.getStatus() != RfqStatus.COMPARING) throw ErrorEnum.RFQ_QUOTE_CANNOT_SCORE.ex();
@@ -598,101 +635,9 @@ public class RfqServiceImpl implements RfqService {
         award.setSelectedAt(now);
     }
 
-    private void revokeTokens(Rfq rfq) {
-        rfq.getInvitedSuppliers().forEach(invite -> invitationTokenRepository.revokeActiveTokens(invite.getId()));
-    }
-
-    private BigDecimal estimate(List<RfqItem> items) {
-        return items.stream().map(item -> item.getBudgetUnitPrice()
-                        .multiply(BigDecimal.valueOf(item.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    private void addAudit(Rfq rfq, String username, String action, Map<String, Object> details) {
-        RfqAuditLog auditLog = new RfqAuditLog(
-                rfq, username, action, details, LocalDateTime.now());
-        auditLogRepository.save(auditLog);
-        rfq.getAuditLogs().add(auditLog);
-    }
-
-    private Rfq getEntity(UUID id) {
-        return rfqRepository.findById(id).orElseThrow(() -> ErrorEnum.RFQ_NOT_FOUND.ex());
-    }
-
-    private void requireOwner(Rfq rfq, String username, boolean isAdmin) {
-        if (!isAdmin && !Objects.equals(rfq.getCreatedBy(), username)) throw ErrorEnum.ACCESS_DENIED.ex();
-    }
-
-    private String generateRfqCode() {
-        return "RFQ-" + Year.now().getValue() + "-" + UUID.randomUUID().toString()
-                .replace("-", "").substring(0, 8).toUpperCase(Locale.ROOT);
-    }
-
-    private String clean(String value) {
-        return value == null || value.isBlank() ? null : value.trim();
-    }
-
-    private String trimToNull(String value) { return clean(value); }
-
-    private RfqSummaryResponse toSummary(Rfq rfq) {
-        int invited = rfq.getInvitedSuppliers().size();
-        int responded = (int) rfq.getInvitedSuppliers().stream()
-                .filter(i -> i.getStatus() == RfqInviteStatus.RESPONDED).count();
-        String creatorName = creatorName(rfq);
-        return new RfqSummaryResponse(rfq.getId(), rfq.getRfqCode(), rfq.getTitle(),
-                rfq.getProcurementTicket().getId(), rfq.getProcurementTicket().getTicketCode(),
-                rfq.getDepartment(), responded, invited, rfq.getDeadline(), rfq.getEstimatedValue(),
-                rfq.getStatus(), rfq.getCreatedBy(), creatorName, rfq.getCreatedAt());
-    }
-
-    private RfqDetailResponse toDetail(Rfq rfq) {
-        List<ItemResponse> items = rfq.getItems().stream().map(i -> new ItemResponse(i.getId(),
-                i.getProcurementItem() == null ? null : i.getProcurementItem().getId(), i.getSku(),
-                i.getItemName(), i.getCategory(), i.getQuantity(), i.getUnit(), i.getBudgetUnitPrice(),
-                Boolean.TRUE.equals(i.getActive()))).toList();
-
-        List<InvitedSupplierResponse> invites = rfq.getInvitedSuppliers().stream().map(i ->
-                new InvitedSupplierResponse(i.getSupplier().getId(), i.getSupplier().getCode(),
-                        i.getSupplier().getName(), i.getStatus(), i.getInvitedAt(), i.getRespondedAt())).toList();
-
-        List<ScoreCriterionResponse> criteria = rfq.getScoreCriteria().stream()
-                .map(c -> new ScoreCriterionResponse(c.getCriterion(), c.getWeightPercent())).toList();
-
-        List<RfqQuoteRoundResponse> rounds = rankedQuoteResponses(rfq);
-
-        List<ItemAwardResponse> awards = rfq.getItemAwards().stream().map(a -> new ItemAwardResponse(
-                a.getRfqItem().getId(), a.getSupplier().getId(), a.getSupplier().getName(), a.getReason(),
-                a.getSelectedBy(), a.getSelectedAt())).toList();
-
-        List<RfqAuditLogResponse> history = rfq.getAuditLogs().stream()
-                .sorted(Comparator.comparing(
-                        RfqAuditLog::getCreatedAt,
-                        Comparator.nullsLast(Comparator.naturalOrder())))
-                .map(a -> new RfqAuditLogResponse(a.getId(), a.getActorUsername(), a.getAction(),
-                        a.getDetails(), a.getCreatedAt())).toList();
-        ProcurementTicket ticket = rfq.getProcurementTicket();
-
-        return new RfqDetailResponse(rfq.getId(), rfq.getRfqCode(), rfq.getTitle(), ticket.getId(),
-                ticket.getTicketCode(), ticket.getTitle(), rfq.getDepartment(), rfq.getStatus(),
-                rfq.getDeadline(), rfq.getQuoteValidityDays(), rfq.getDeliveryLocation(),
-                rfq.getDeliveryWindow(), rfq.getCurrency(), rfq.getEstimatedValue(), rfq.getCreatedBy(),
-                creatorName(rfq),
-                rfq.getCreatedAt(), rfq.getSubmittedAt(), rfq.getReviewedBy(), rfq.getReviewedAt(),
-                rfq.getReviewReason(), rfq.getSelectedSupplier() == null ? null : rfq.getSelectedSupplier().getId(),
-                rfq.getSelectedSupplier() == null ? null : rfq.getSelectedSupplier().getName(),
-                rfq.getSelectionReason(), rfq.getExceptionReason(), items, invites, criteria, rounds, awards, history);
-    }
-
-    private String creatorName(Rfq rfq) {
-        return userRepository.findByUsername(rfq.getCreatedBy())
-                .map(user -> user.getFullName())
-                .filter(name -> name != null && !name.isBlank())
-                .orElse(rfq.getCreatedBy());
-    }
-
     private List<RfqQuoteRoundResponse> rankedQuoteResponses(Rfq rfq) {
         List<RfqQuoteRoundResponse> mapped = rfq.getQuoteRounds().stream()
-                .map(quoteMapper::toQuoteResponse).toList();
+                .map(rfqMapper::toQuoteResponse).toList();
         Map<UUID, BigDecimal> totals = new HashMap<>();
         for (RfqQuoteRound round : rfq.getQuoteRounds()) {
             BigDecimal score = weightedScore(rfq, round);
@@ -708,12 +653,7 @@ public class RfqServiceImpl implements RfqService {
         List<RfqQuoteRoundResponse> result = new ArrayList<>(mapped.size());
         for (RfqQuoteRoundResponse response : mapped) {
             BigDecimal total = totals.get(response.id());
-            result.add(new RfqQuoteRoundResponse(response.id(), response.supplierId(), response.supplierCode(),
-                    response.supplierName(), response.roundNumber(), response.status(), response.submittedAt(),
-                    response.validUntil(), response.deliveryDays(), response.paymentTerms(), response.warranty(),
-                    response.technicalStatus(), response.subtotalBeforeTax(), response.taxAmount(),
-                    response.shippingCost(), response.otherCost(), response.totalAfterTax(), total,
-                    ranks.get(response.id()), response.incomplete(), response.items(), response.scores()));
+            result.add(rfqMapper.withScoreAndRank(response, total, ranks.get(response.id())));
         }
         return result;
     }
@@ -729,6 +669,6 @@ public class RfqServiceImpl implements RfqService {
             weighted = weighted.add(score.multiply(criterion.getWeightPercent())
                     .divide(ONE_HUNDRED, 4, java.math.RoundingMode.HALF_UP));
         }
-        return weighted.setScale(2, java.math.RoundingMode.HALF_UP);
+        return weighted.setScale(2, RoundingMode.HALF_UP);
     }
 }

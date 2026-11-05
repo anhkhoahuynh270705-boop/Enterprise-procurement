@@ -3,6 +3,7 @@ import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../auth/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
 import { SupplierDocumentService } from '../services/supplier-document.service';
 import { SupplierContractService } from '../services/supplier-contract.service';
 import { SupplierOption } from '../models/supplier-document';
@@ -24,6 +25,7 @@ import {
 export class SupplierContracts implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
+  private readonly dialogs = inject(ConfirmationDialogService);
   private readonly fb = inject(FormBuilder);
   private readonly contractService = inject(SupplierContractService);
   private readonly supplierDocumentService = inject(SupplierDocumentService);
@@ -277,9 +279,14 @@ export class SupplierContracts implements OnInit {
     });
   }
 
-  delete(contract: SupplierContract): void {
+  async delete(contract: SupplierContract): Promise<void> {
     if (!this.isAdmin || this.deletingId) return;
-    if (!confirm(`Xóa hợp đồng ${contract.contractNumber}? File đính kèm cũng sẽ bị xóa.`)) return;
+    if (!(await this.dialogs.confirm({
+      title: 'Xóa hợp đồng nhà cung cấp',
+      message: `Xóa hợp đồng ${contract.contractNumber}? File đính kèm cũng sẽ bị xóa.`,
+      confirmText: 'Xóa hợp đồng',
+      tone: 'danger',
+    }))) return;
     this.deletingId = contract.id;
     this.contractService.delete(contract.id).subscribe({
       next: () => {

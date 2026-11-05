@@ -1,7 +1,8 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
-import { SupplierProposal, SupplierProposalRequest } from '../models/supplier-proposal';
+import { PageResult } from '../../procurement/model/procurement';
+import { SupplierProposal, SupplierProposalRequest, SupplierProposalSearchParams } from '../models/supplier-proposal';
 
 @Injectable({
   providedIn: 'root',
@@ -10,8 +11,11 @@ export class SupplierProposalService {
   private readonly http = inject(HttpClient);
   private readonly url = environment.apiBaseUrl + '/supplier-proposals';
 
-  list() {
-    return this.http.get<SupplierProposal[]>(this.url);
+  searchPage(filters: SupplierProposalSearchParams) {
+    let params = new HttpParams().set('page', filters.page).set('size', filters.size);
+    if (filters.keyword) params = params.set('keyword', filters.keyword);
+    if (filters.status) params = params.set('status', filters.status);
+    return this.http.get<PageResult<SupplierProposal>>(`${this.url}/page`, { params });
   }
   pendingCount() {
     return this.http.get<{ count: number }>(this.url + '/pending-count');

@@ -1,5 +1,6 @@
 import { SensitiveValue } from '../../../shared/sensitive/sensitive-value/sensitive-value';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -9,7 +10,7 @@ import { ProcurementService } from '../service/procurement.service';
 import { SupplierService } from '../../suppliers/services/supplier.service';
 import { Supplier } from '../../suppliers/models/supplier';
 
-const itemNamePattern = /^[\p{L}\p{M}\p{N}]+(?: +[\p{L}\p{M}\p{N}]+)*$/u;
+const itemNamePattern = /^[/\p{L}/\p{M}/\p{N}()]+(?: +[/\p{L}/\p{M}/\p{N}()]+)*$/u;
 
 @Component({
   selector: 'app-procurement-create',
@@ -20,6 +21,7 @@ const itemNamePattern = /^[\p{L}\p{M}\p{N}]+(?: +[\p{L}\p{M}\p{N}]+)*$/u;
 })
 export class ProcurementCreate implements OnInit {
   private readonly toast = inject(ToastService);
+  private readonly dialogs = inject(ConfirmationDialogService);
 
   private fb = inject(FormBuilder);
   private procurementService = inject(ProcurementService);
@@ -91,7 +93,7 @@ export class ProcurementCreate implements OnInit {
   }
 
   createItemRow(): FormGroup {
-    return this.fb.group({
+    return this.fb.nonNullable.group({
       itemCode: [''],
       itemName: ['', [Validators.required, Validators.pattern(itemNamePattern)]],
       category: ['Hardware'],
@@ -107,8 +109,14 @@ export class ProcurementCreate implements OnInit {
     this.items.push(this.createItemRow());
   }
 
-  removeItem(index: number): void {
+  async removeItem(index: number): Promise<void> {
     if (this.items.length > 1) {
+      if (!(await this.dialogs.confirm({
+        title: 'Xóa dòng hàng',
+        message: 'Xóa hạng mục này khỏi phiếu đang tạo?',
+        confirmText: 'Xóa hạng mục',
+        tone: 'danger',
+      }))) return;
       this.items.removeAt(index);
     } else {
       this.toast.warning('Đề nghị mua sắm phải có ít nhất 1 mặt hàng.');
@@ -130,12 +138,18 @@ export class ProcurementCreate implements OnInit {
     return sum;
   }
 
-  onSubmit(submitImmediately: boolean): void {
+  async onSubmit(submitImmediately: boolean): Promise<void> {
     if (this.ticketForm.invalid) {
       this.ticketForm.markAllAsTouched();
       this.toast.error('Vui lòng kiểm tra lại các trường thông tin bắt buộc (*).');
       return;
     }
+
+    if (submitImmediately && !(await this.dialogs.confirm({
+      title: 'Nộp phiếu mua sắm',
+      message: 'Tạo phiếu và gửi lên Checker để phê duyệt ngay?',
+      confirmText: 'Nộp duyệt',
+    }))) return;
 
     this.isLoading = true;
 

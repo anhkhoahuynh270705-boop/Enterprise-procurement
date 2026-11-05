@@ -26,7 +26,7 @@ import com.example.shopping.requestForQuotation.entity.RfqQuoteItem;
 import com.example.shopping.requestForQuotation.entity.RfqQuoteRound;
 import com.example.shopping.requestForQuotation.enums.RfqInviteStatus;
 import com.example.shopping.requestForQuotation.enums.RfqQuoteStatus;
-import com.example.shopping.requestForQuotation.mapper.SupplierInvitationMapper;
+import com.example.shopping.requestForQuotation.mapper.RfqMapper;
 import com.example.shopping.requestForQuotation.repository.RfqInvitedSupplierRepository;
 import com.example.shopping.requestForQuotation.repository.RfqItemRepository;
 import com.example.shopping.requestForQuotation.repository.RfqQuoteRoundRepository;
@@ -45,7 +45,7 @@ public class SupplierQuoteSubmissionServiceImpl implements SupplierQuoteSubmissi
     RfqInvitedSupplierRepository invitedSupplierRepository;
     RfqItemRepository rfqItemRepository;
     RfqQuoteRoundRepository quoteRoundRepository;
-    SupplierInvitationMapper mapper;
+    RfqMapper rfqMapper;
 
     @Override
     @Transactional
@@ -145,8 +145,7 @@ public class SupplierQuoteSubmissionServiceImpl implements SupplierQuoteSubmissi
         invite.setStatus(RfqInviteStatus.RESPONDED);
         invite.setRespondedAt(now);
         tokenService.consume(token, now);
-
-        return mapper.toQuoteResponse(saved);
+        return rfqMapper.toQuoteResponse(saved);
     }
 
 }

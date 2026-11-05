@@ -275,6 +275,10 @@
       </h2>
       <div class="actions">
         <label class="filter"
+          >Tìm kiếm
+          <input type="search" formControlName="keyword" placeholder="Tên, mã số thuế, người gửi…" />
+        </label>
+        <label class="filter"
           >Trạng thái
           <select formControlName="filter">
             <option value="ALL">Tất cả</option>
@@ -377,6 +381,17 @@
             }
           </tbody>
         </table>
+      </div>
+    }
+    @if (totalPages > 1) {
+      <div class="proposal-pagination">
+        <button type="button" class="secondary" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 0 || loading">
+          Trang trước
+        </button>
+        <span>{{ totalElements }} đề xuất · Trang {{ currentPage + 1 }} / {{ totalPages }}</span>
+        <button type="button" class="secondary" (click)="goToPage(currentPage + 1)" [disabled]="currentPage >= totalPages - 1 || loading">
+          Trang sau
+        </button>
       </div>
     }
   </section>

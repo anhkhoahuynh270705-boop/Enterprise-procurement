@@ -3,6 +3,7 @@ package com.example.shopping.common.enums;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+
 public enum ErrorEnum {
 
     // Auth
@@ -140,8 +141,6 @@ public enum ErrorEnum {
     CAMUNDA_TASK_NOT_FOUND          (HttpStatus.NOT_FOUND,              "Không tìm thấy nhiệm vụ Camunda."),
     CAMUNDA_TICKET_ID_NOT_FOUND     (HttpStatus.NOT_FOUND,              "Không tìm thấy ticketId cho processInstanceId."),
 
-    // Notification 
-    NOTIFICATION_CHANNEL_NOT_FOUND  (HttpStatus.BAD_REQUEST,            "Không tìm thấy NotificationService cho kênh này."),
     COMPANY_DOCUMENT_INVALID        (HttpStatus.BAD_REQUEST,            "Tiêu đề, danh mục hoặc mô tả không hợp lệ."),
     COMPANY_DOCUMENT_NOT_FOUND      (HttpStatus.NOT_FOUND,              "Không tìm thấy tài liệu công ty."),
     ACCESS_DENIED                   (HttpStatus.FORBIDDEN,               "Bạn không có quyền thực hiện thao tác này."),

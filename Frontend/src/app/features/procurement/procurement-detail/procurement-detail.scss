@@ -721,7 +721,6 @@ select:focus-visible {
 
 .review-panel {
   background: #ffffff;
-  border: 1px solid #dce1e7;
   border-radius: 2px;
   padding: 24px;
   margin-top: 20px;
@@ -832,11 +831,6 @@ select:focus-visible {
     color: #222222;
     resize: vertical;
     font: inherit;
-
-    &:focus {
-      border-color: #2365a8;
-      outline: 2px solid #c6dcfa;
-    }
   }
 
   .radio-group {
