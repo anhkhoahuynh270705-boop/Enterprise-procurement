@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { forkJoin, Observable, of, switchMap } from 'rxjs';
+import { Observable, of, switchMap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse, PageResult } from '../../procurement/model/procurement';
 import {
@@ -21,14 +21,18 @@ export class RfqApiService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiBaseUrl}/rfqs`;
 
-  search(params: RfqSearchParams): Observable<ApiResponse<PageResult<RfqSummaryDto>>> {
+  search(
+    params: RfqSearchParams,
+    statuses: RfqStatus[] = [],
+  ): Observable<ApiResponse<PageResult<RfqSummaryDto>>> {
     let httpParams = new HttpParams()
       .set('page', params.page)
       .set('size', params.size);
-    for (const key of ['keyword', 'status', 'department', 'createdBy', 'createdFrom', 'createdTo'] as const) {
+    for (const key of ['keyword', 'status', 'department', 'createdBy', 'creator', 'kpi', 'excludeCreator', 'createdFrom', 'createdTo'] as const) {
       const value = params[key];
       if (value !== undefined && value !== null && value !== '') httpParams = httpParams.set(key, value);
     }
+    for (const status of statuses) httpParams = httpParams.append('statuses', status);
     return this.http.get<ApiResponse<PageResult<RfqSummaryDto>>>(this.apiUrl, { params: httpParams });
   }
 
@@ -51,13 +55,6 @@ export class RfqApiService {
 
   exportComparisonPdf(id: string): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/${id}/export/comparison/pdf`, { responseType: 'blob' });
-  }
-
-  searchStatuses(
-    params: RfqSearchParams,
-    statuses: RfqStatus[],
-  ): Observable<ApiResponse<PageResult<RfqSummaryDto>>[]> {
-    return forkJoin(statuses.map((status) => this.search({ ...params, status, page: 0, size: 100 })));
   }
 
   getById(id: string): Observable<ApiResponse<RfqDetailDto>> {

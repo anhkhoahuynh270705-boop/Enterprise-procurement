@@ -1,11 +1,11 @@
-package com.example.shopping.integration.kafka.event;
+package com.example.shopping.procurement.kafka.event;
 
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
-import com.example.shopping.integration.kafka.model.ProcurementEvent;
 import com.example.shopping.integration.mail.factory.NotificationServiceFactory;
 import com.example.shopping.integration.mail.service.NotificationService;
+import com.example.shopping.procurement.kafka.model.ProcurementEvent;
 
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;

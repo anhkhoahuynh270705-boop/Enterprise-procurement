@@ -132,6 +132,9 @@ export interface RfqSearchParams {
   status?: RfqStatus | '';
   department?: string;
   createdBy?: string;
+  creator?: string;
+  kpi?: string;
+  excludeCreator?: boolean;
   createdFrom?: string;
   createdTo?: string;
   page: number;
@@ -206,11 +209,11 @@ export interface RfqDetailDto extends RfqSummaryDto {
     totalScore?: number;
     rank?: number;
     incomplete: boolean;
-    items: Array<{ 
-      rfqItemId: string; 
-      quoted: boolean; 
-      unitPrice?: number; 
-      note?: string 
+    items: Array<{
+      rfqItemId: string;
+      quoted: boolean;
+      unitPrice?: number;
+      note?: string;
     }>;
     scores: Array<{
       criterion: RfqCriterion;
@@ -268,6 +271,7 @@ export interface CreateRfqRequest {
 }
 
 export type UpdateRfqRequest = Omit<CreateRfqRequest, 'procurementTicketId' | 'submitForApproval'>;
+
 export interface RfqDecisionRequest {
   decision: 'APPROVE' | 'RETURN' | 'REJECT';
   reason: string;
@@ -284,4 +288,3 @@ export interface SelectRfqWinnersRequest {
   itemWinners?: Array<{ rfqItemId: string; supplierId: string; reason?: string }>;
   submitForApproval: boolean;
 }
-

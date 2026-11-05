@@ -67,8 +67,12 @@ public class RfqController {
     public ResponseEntity<ApiResponse<Page<RfqSummaryResponse>>> search(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) RfqStatus status,
+            @RequestParam(required = false) List<RfqStatus> statuses,
             @RequestParam(required = false) String department,
             @RequestParam(required = false) String createdBy,
+            @RequestParam(required = false) String creator,
+            @RequestParam(required = false) String kpi,
+            @RequestParam(defaultValue = "false") boolean excludeCreator,
             @RequestParam(required = false) LocalDate createdFrom,
             @RequestParam(required = false) LocalDate createdTo,
             @RequestParam(defaultValue = "0") int page,
@@ -82,8 +86,14 @@ public class RfqController {
                 request.keyword(), request.status(), request.department(), TicketAccess.username(),
                 request.createdFrom(), request.createdTo(), request.page(), request.size());
 
+        List<RfqStatus> effectiveStatuses = request.status() != null
+                ? List.of(request.status())
+                : statuses == null ? List.of() : statuses.stream().distinct().toList();
+
         return ResponseEntity.ok(ApiResponse.success(
-                rfqService.search(scopedRequest), "Lấy danh sách yêu cầu báo giá thành công."));
+                rfqService.search(scopedRequest, effectiveStatuses, creator, kpi,
+                        TicketAccess.username(), excludeCreator),
+                "Lấy danh sách yêu cầu báo giá thành công."));
     }
 
     @GetMapping(value = "/export", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")

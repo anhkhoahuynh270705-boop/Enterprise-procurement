@@ -1,11 +1,11 @@
-package com.example.shopping.integration.kafka.model;
+package com.example.shopping.procurement.kafka.model;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import com.example.shopping.integration.kafka.event.enums.ProcurementEventType;
+import com.example.shopping.procurement.kafka.event.enums.ProcurementEventType;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

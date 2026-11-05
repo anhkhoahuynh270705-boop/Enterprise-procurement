@@ -1,0 +1,83 @@
+@if (dialogs.active(); as dialog) {
+  <div class="confirmation-backdrop" (click)="cancel()" (keydown.escape)="cancel()">
+    <section
+      class="confirmation-panel"
+      role="alertdialog"
+      aria-modal="true"
+      [attr.aria-labelledby]="'confirmation-title-' + dialog.id"
+      [attr.aria-describedby]="'confirmation-message-' + dialog.id"
+      tabindex="-1"
+      (click)="$event.stopPropagation()"
+      (keydown.escape)="cancel()"
+      (keydown)="trapFocus($event)"
+    >
+      <div class="confirmation-icon" [class.danger]="dialog.tone === 'danger'" aria-hidden="true">
+        <i
+          class="fa"
+          [class.fa-exclamation-triangle]="dialog.tone === 'danger'"
+          [class.fa-question]="dialog.tone !== 'danger'"
+        ></i>
+      </div>
+      <div class="confirmation-content">
+        <h2 [id]="'confirmation-title-' + dialog.id">{{ dialog.title }}</h2>
+        <p [id]="'confirmation-message-' + dialog.id">{{ dialog.message }}</p>
+
+        @if (dialog.kind === 'prompt') {
+          <label class="prompt-field">
+            {{ dialog.label }}
+            <textarea
+              autofocus
+              rows="3"
+              [value]="promptValue()"
+              [attr.aria-invalid]="promptError() ? 'true' : null"
+              [attr.aria-describedby]="promptError() ? 'confirmation-prompt-error' : null"
+              [placeholder]="dialog.placeholder ?? ''"
+              (input)="updatePrompt($any($event.target).value)"
+              (keydown.control.enter)="submitPrompt()"
+            ></textarea>
+            @if (promptError()) {
+              <small id="confirmation-prompt-error" class="prompt-error" role="alert">
+                {{ promptError() }}
+              </small>
+            }
+            @if (dialog.minLength > 1) {
+              <small class="prompt-hint">Tối thiểu {{ dialog.minLength }} ký tự</small>
+            }
+          </label>
+        }
+
+        <footer class="confirmation-actions">
+          <button
+            type="button"
+            class="dialog-button secondary"
+            [attr.autofocus]="dialog.kind === 'confirm' ? '' : null"
+            (click)="cancel()"
+          >
+            {{ dialog.cancelText }}
+          </button>
+          @if (dialog.kind === 'confirm') {
+            <button
+              type="button"
+              class="dialog-button"
+              [class.danger]="dialog.tone === 'danger'"
+              [class.primary]="dialog.tone !== 'danger'"
+              (click)="confirm()"
+            >
+              {{ dialog.confirmText }}
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="dialog-button"
+              [class.danger]="dialog.tone === 'danger'"
+              [class.primary]="dialog.tone !== 'danger'"
+              (click)="submitPrompt()"
+            >
+              {{ dialog.confirmText }}
+            </button>
+          }
+        </footer>
+      </div>
+    </section>
+  </div>
+}

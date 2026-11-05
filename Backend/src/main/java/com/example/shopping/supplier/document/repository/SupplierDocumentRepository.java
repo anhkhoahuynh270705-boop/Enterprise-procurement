@@ -6,9 +6,16 @@ import com.example.shopping.supplier.document.enums.SupplierDocumentStatus;
 import java.util.*;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.repository.query.Param;
 
-public interface SupplierDocumentRepository extends JpaRepository<SupplierDocument, UUID> {
+public interface SupplierDocumentRepository extends JpaRepository<SupplierDocument, UUID>, JpaSpecificationExecutor<SupplierDocument> {
+    @Override
+    @EntityGraph(attributePaths = "supplier")
+    Page<SupplierDocument> findAll(Specification<SupplierDocument> specification, Pageable pageable);
+
     @EntityGraph(attributePaths = "supplier")
     List<SupplierDocument> findAllByOrderBySubmittedAtDesc();
     @EntityGraph(attributePaths = "supplier")

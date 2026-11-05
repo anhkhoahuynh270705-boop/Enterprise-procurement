@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.time.LocalDateTime;
 
 import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.engine.TaskService;
@@ -194,16 +193,6 @@ public class WorkflowTaskServiceImpl implements WorkflowTaskService {
                 checkerUsername, taskId, approved);
 
         taskService.complete(taskId, completeVars);
-        ticket.setCheckerUsername(checkerUsername);
-        ticket.setCheckerComment(comment);
-        if(approved) {
-            ticket.setStatus(ProcurementStatus.APPROVED);
-            ticket.setApprovedAt(LocalDateTime.now());
-        } else{
-            ticket.setStatus(ProcurementStatus.REJECTED);
-            ticket.setApprovedAt(LocalDateTime.now());
-        }
-        ticketRepository.save(ticket);
         log.info("Checker hoàn tất phiếu :", checkerUsername, ticket.getTicketCode(), approved);
     }
 

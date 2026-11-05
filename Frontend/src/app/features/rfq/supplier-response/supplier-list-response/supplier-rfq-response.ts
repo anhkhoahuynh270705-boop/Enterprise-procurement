@@ -18,6 +18,7 @@ import {
 } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ConfirmationDialogService } from '../../../../core/services/confirmation-dialog.service';
 import { SupplierResponseService } from '../service/supplier-response.service';
 import { RfqTechnicalStatus } from '../../model/rfq.models';
 import {
@@ -43,6 +44,7 @@ export class SupplierRfqResponsePage {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly route = inject(ActivatedRoute);
   private readonly supplierResponse = inject(SupplierResponseService);
+  private readonly dialogs = inject(ConfirmationDialogService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -114,7 +116,7 @@ export class SupplierRfqResponsePage {
       });
   }
 
-  submitQuote(): void {
+  async submitQuote(): Promise<void> {
     this.quoteForm.markAllAsTouched();
     const value = this.quoteForm.getRawValue();
     const items = value.items;
@@ -134,6 +136,11 @@ export class SupplierRfqResponsePage {
       this.error.set('Vui lòng nhập đơn giá hợp lệ cho các hạng mục đã chào.');
       return;
     }
+    if (!(await this.dialogs.confirm({
+      title: 'Gửi báo giá',
+      message: 'Xác nhận gửi báo giá này cho bên mời? Sau khi gửi, báo giá sẽ được lưu thành một vòng báo giá mới.',
+      confirmText: 'Gửi báo giá',
+    }))) return;
     this.error.set('');
     this.isSubmitting.set(true);
     const request: SupplierQuoteSubmissionRequest = {

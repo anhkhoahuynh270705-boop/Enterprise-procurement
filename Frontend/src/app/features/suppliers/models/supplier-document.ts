@@ -20,3 +20,18 @@ export interface SupplierDocument {
     reviewedAt: string | null;
     reviewComment: string | null;
 }
+
+export interface SupplierDocumentSearchParams {
+    supplierId?: string;
+    status?: DocumentStatus;
+    keyword?: string;
+    submittedBy?: string;
+    reviewedBy?: string;
+    reviewComment?: string;
+    submittedFrom?: string;
+    submittedTo?: string;
+    reviewedFrom?: string;
+    reviewedTo?: string;
+    page: number;
+    size: number;
+}

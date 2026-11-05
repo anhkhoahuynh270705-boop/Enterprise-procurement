@@ -4,8 +4,6 @@ import {
   ElementRef,
   OnDestroy,
   OnInit,
-  computed,
-  effect,
   inject,
   signal,
   viewChild,
@@ -19,6 +17,7 @@ import { AuthService } from '../../auth/services/auth.service';
 import { CompanyDocumentService } from '../services/company-document.service';
 import { CompanyDocument } from '../model/company.model';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
 
 @Component({
   selector: 'app-company-documents',
@@ -29,6 +28,7 @@ import { ToastService } from '../../../core/services/toast.service';
 export class CompanyDocuments implements OnInit, OnDestroy {
   private readonly service = inject(CompanyDocumentService);
   private readonly toast = inject(ToastService);
+  private readonly dialogs = inject(ConfirmationDialogService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly sanitizer = inject(DomSanitizer);
   readonly isAdmin = inject(AuthService).hasRole('ADMIN');
@@ -66,70 +66,43 @@ export class CompanyDocuments implements OnInit, OnDestroy {
   });
   readonly advancedFilters = signal(this.advancedForm.getRawValue());
 
+  get hasActiveFilters(): boolean {
+    const filters = this.advancedFilters();
+    return !!this.search().trim() || Object.values(filters).some((value) => !!value);
+  }
+
   readonly form = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.maxLength(200)]],
     category: ['POLICY', Validators.required],
     description: ['', Validators.maxLength(2000)],
   });
-  readonly filtered = computed(() => {
-    const query = this.search().trim().toLocaleLowerCase('vi');
-    const filters = this.advancedFilters();
-    const uploadedBy = filters.uploadedBy.trim().toLocaleLowerCase('vi');
-    return this.documents().filter(
-      (doc) => {
-        const searchableText = `${doc.title} ${doc.filename} ${doc.description} ${doc.uploadedBy} ${this.categoryLabel(doc.category)}`
-          .toLocaleLowerCase('vi');
-        const uploadedDate = doc.uploadedAt?.slice(0, 10) ?? '';
-        const contentType = doc.contentType?.toLocaleLowerCase('vi') ?? '';
-        const matchesFileType =
-          !filters.fileType ||
-          (filters.fileType === 'PDF' && contentType === 'application/pdf') ||
-          (filters.fileType === 'WORD' && (contentType.includes('word') || contentType === 'application/msword')) ||
-          (filters.fileType === 'EXCEL' && (contentType.includes('spreadsheet') || contentType.includes('excel'))) ||
-          (filters.fileType === 'IMAGE' && contentType.startsWith('image/'));
-
-        return (
-          (!filters.category || doc.category === filters.category) &&
-          (!query || searchableText.includes(query)) &&
-          (!uploadedBy || doc.uploadedBy.toLocaleLowerCase('vi').includes(uploadedBy)) &&
-          (!filters.uploadedFrom || uploadedDate >= filters.uploadedFrom) &&
-          (!filters.uploadedTo || uploadedDate <= filters.uploadedTo) &&
-          matchesFileType
-        );
-      },
-    );
-  });
-
-  // Pagination
   currentPage = 0;
   pageSize = 10;
   totalPages = 0;
-  rows: CompanyDocument[] = [];
+  totalElements = 0;
+  private loadSequence = 0;
 
   constructor() {
     this.searchInput
       .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
-      .subscribe((query) => this.search.set(query));
+      .subscribe((query) => {
+        this.search.set(query);
+        this.currentPage = 0;
+        this.load();
+      });
     this.advancedForm.valueChanges
       .pipe(debounceTime(250), takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.advancedFilters.set(this.advancedForm.getRawValue()));
-    effect(() => {
-      const _ = this.filtered();
-      this.currentPage = 0;
-      this.updatePaging();
-    });
-  }
-
-  updatePaging(): void {
-    this.totalPages = Math.max(1, Math.ceil(this.filtered().length / this.pageSize));
-    const start = this.currentPage * this.pageSize;
-    this.rows = this.filtered().slice(start, start + this.pageSize);
+      .subscribe(() => {
+        this.advancedFilters.set(this.advancedForm.getRawValue());
+        this.currentPage = 0;
+        this.load();
+      });
   }
 
   goToPage(page: number): void {
     if (page < 0 || page >= this.totalPages) return;
     this.currentPage = page;
-    this.updatePaging();
+    this.load();
   }
 
   onSearchInput(value: string): void {
@@ -152,8 +125,10 @@ export class CompanyDocuments implements OnInit, OnDestroy {
       uploadedTo: '',
       fileType: '',
     };
-    this.advancedForm.reset(emptyFilters);
+    this.advancedForm.reset(emptyFilters, { emitEvent: false });
     this.advancedFilters.set(emptyFilters);
+    this.currentPage = 0;
+    this.load();
   }
 
   ngOnInit(): void {
@@ -164,19 +139,42 @@ export class CompanyDocuments implements OnInit, OnDestroy {
   }
 
   load(): void {
-    if (this.loading() || this.uploading() || this.busy()) return;
+    if (this.uploading()) return;
+    const sequence = ++this.loadSequence;
     this.loading.set(true);
     this.error.set('');
     this.service
-      .list()
+      .searchPage({
+        keyword: this.search().trim() || undefined,
+        category: this.advancedFilters().category || undefined,
+        uploadedBy: this.advancedFilters().uploadedBy.trim() || undefined,
+        uploadedFrom: this.advancedFilters().uploadedFrom || undefined,
+        uploadedTo: this.advancedFilters().uploadedTo || undefined,
+        fileType: this.advancedFilters().fileType || undefined,
+        page: this.currentPage,
+        size: this.pageSize,
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (docs) => {
-          this.documents.set(docs);
+        next: (result) => {
+          if (sequence !== this.loadSequence) return;
+          const lastPage = Math.max(result.totalPages - 1, 0);
+          if (this.currentPage > lastPage) {
+            this.currentPage = lastPage;
+            this.load();
+            return;
+          }
+          this.documents.set(result.content || []);
+          this.totalElements = result.totalElements || 0;
+          this.totalPages = result.totalPages || 0;
           this.loading.set(false);
         },
         error: () => {
+          if (sequence !== this.loadSequence) return;
           this.loading.set(false);
+          this.documents.set([]);
+          this.totalElements = 0;
+          this.totalPages = 0;
           this.error.set('Không tải được tài liệu. Vui lòng thử lại.');
         },
       });
@@ -219,7 +217,7 @@ export class CompanyDocuments implements OnInit, OnDestroy {
       this.form.controls.title.setValue(file.name.replace(/\.[^.]+$/, '').slice(0, 200));
   }
 
-  upload(): void {
+  async upload(): Promise<void> {
     if (!this.isAdmin || this.uploading() || this.loading() || this.busy()) return;
     this.form.markAllAsTouched();
     const value = this.form.getRawValue(),
@@ -228,6 +226,11 @@ export class CompanyDocuments implements OnInit, OnDestroy {
       this.toast.error('Vui lòng điền đầy đủ thông tin và chọn file hợp lệ trước khi đăng.');
       return;
     }
+    if (!(await this.dialogs.confirm({
+      title: 'Đăng tài liệu công ty',
+      message: `Xác nhận đăng tài liệu “${value.title.trim()}” lên thư viện công ty?`,
+      confirmText: 'Đăng tài liệu',
+    }))) return;
     this.uploading.set(true);
     this.error.set('');
     this.success.set('');
@@ -235,14 +238,14 @@ export class CompanyDocuments implements OnInit, OnDestroy {
       .upload(value.title.trim(), value.category, value.description.trim(), file)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (doc) => {
-          this.documents.update((docs) => [doc, ...docs]);
+        next: () => {
           this.uploading.set(false);
           this.form.reset({ title: '', category: 'POLICY', description: '' });
           this.file.set(null);
           if (this.fileInput()) this.fileInput()!.nativeElement.value = '';
           this.showUpload.set(false);
           this.resetFilters();
+          this.success.set('Đăng tài liệu thành công.');
           this.toast.success('Đăng tài liệu thành công');
         },
         error: (err) => {
@@ -300,15 +303,20 @@ export class CompanyDocuments implements OnInit, OnDestroy {
     }
   }
 
-  remove(doc: CompanyDocument): void {
+  async remove(doc: CompanyDocument): Promise<void> {
     if (
       !this.isAdmin ||
       this.busy() ||
       this.loading() ||
-      this.uploading() ||
-      !confirm(`Gỡ tài liệu “${doc.title}” khỏi thư viện công ty?`)
+      this.uploading()
     )
       return;
+    if (!(await this.dialogs.confirm({
+      title: 'Gỡ tài liệu công ty',
+      message: `Gỡ tài liệu “${doc.title}” khỏi thư viện công ty?`,
+      confirmText: 'Gỡ tài liệu',
+      tone: 'danger',
+    }))) return;
     this.busy.set(doc.id);
     this.error.set('');
     this.success.set('');
@@ -317,9 +325,9 @@ export class CompanyDocuments implements OnInit, OnDestroy {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.documents.update((docs) => docs.filter((item) => item.id !== doc.id));
           this.busy.set('');
           this.success.set('Đã gỡ tài liệu khỏi thư viện.');
+          this.load();
         },
         error: () => {
           this.busy.set('');

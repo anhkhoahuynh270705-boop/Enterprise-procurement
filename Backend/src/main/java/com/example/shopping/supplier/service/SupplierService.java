@@ -4,7 +4,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import com.example.shopping.supplier.dto.request.CreateSupplierRequestDto;
+import com.example.shopping.supplier.dto.request.SupplierSearchCriteria;
 import com.example.shopping.supplier.dto.request.UpdateSupplierRequestDto;
 import com.example.shopping.supplier.dto.response.SupplierResponseDto;
 
@@ -22,5 +26,6 @@ public interface SupplierService {
 
     SupplierResponseDto updateSupplier(UUID id, UpdateSupplierRequestDto request);
 
+    Page<SupplierResponseDto> searchPage( SupplierSearchCriteria criteria, Pageable pageable);
     void deleteSupplier(UUID id);
 }

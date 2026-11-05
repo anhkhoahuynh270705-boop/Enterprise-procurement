@@ -1,4 +1,5 @@
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
 import { AuthService } from '../../auth/services/auth.service';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -17,6 +18,7 @@ import { ProcurementService } from '../service/procurement.service';
 })
 export class ProcurementDetail implements OnInit {
   private readonly toast = inject(ToastService);
+  private readonly dialogs = inject(ConfirmationDialogService);
 
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -126,11 +128,15 @@ export class ProcurementDetail implements OnInit {
     });
   }
 
-  submitTicket(): void {
+  async submitTicket(): Promise<void> {
     if (!this.ticket) {
       return;
     }
-    const confirmed = confirm(`Bạn có chắc chắn muốn nộp phiếu lên cấp quản lý phê duyệt?`);
+    const confirmed = await this.dialogs.confirm({
+      title: 'Nộp phiếu mua sắm',
+      message: 'Bạn có chắc chắn muốn nộp phiếu lên cấp quản lý phê duyệt?',
+      confirmText: 'Nộp phiếu',
+    });
     if (!confirmed) {
       return;
     }
@@ -183,7 +189,7 @@ export class ProcurementDetail implements OnInit {
     });
   }
 
-  submitReview(approved: boolean): void {
+  async submitReview(approved: boolean): Promise<void> {
     if (!this.ticket) {
       return;
     }
@@ -206,6 +212,14 @@ export class ProcurementDetail implements OnInit {
       this.reviewForm.controls.comment.markAsTouched();
       return;
     }
+    if (!(await this.dialogs.confirm({
+      title: approved ? 'Duyệt phiếu mua sắm' : 'Từ chối phiếu mua sắm',
+      message: approved
+        ? `Xác nhận duyệt phiếu ${this.ticket.ticketCode}?`
+        : `Xác nhận từ chối phiếu ${this.ticket.ticketCode}?`,
+      confirmText: approved ? 'Duyệt phiếu' : 'Từ chối',
+      tone: approved ? 'primary' : 'danger',
+    }))) return;
     this.isReviewing = true;
     this.procurementService
       .reviewTask(taskId, { approved, comment })
@@ -282,7 +296,7 @@ export class ProcurementDetail implements OnInit {
     );
   }
 
-  deleteTicket(): void {
+  async deleteTicket(): Promise<void> {
     if (!this.ticket) {
       return;
     }
@@ -294,7 +308,12 @@ export class ProcurementDetail implements OnInit {
       this.toast.warning('Bạn không có quyền xóa phiếu này.');
       return;
     }
-    const confirmed = confirm(`Xóa vĩnh viễn phiếu ?`);
+    const confirmed = await this.dialogs.confirm({
+      title: 'Xóa phiếu mua sắm',
+      message: 'Bạn có chắc chắn muốn xóa vĩnh viễn phiếu này? Thao tác này không thể hoàn tác.',
+      confirmText: 'Xóa phiếu',
+      tone: 'danger',
+    });
     if (!confirmed) {
       return;
     }

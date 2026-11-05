@@ -5,6 +5,7 @@ import com.example.shopping.supplier.document.dto.response.SupplierDocumentDto;
 import com.example.shopping.supplier.document.dto.response.SupplierDocumentDownloadDto;
 import com.example.shopping.supplier.document.dto.response.SupplierOptionDto;
 import com.example.shopping.supplier.document.dto.request.SupplierDocumentReviewRequest;
+import com.example.shopping.supplier.document.dto.request.SupplierDocumentSearchCriteria;
 import com.example.shopping.supplier.document.enums.SupplierDocumentStatus;
 import com.example.shopping.supplier.document.service.SupplierDocumentService;
 import com.example.shopping.supplier.document.mapper.SupplierDocumentMapper;
@@ -12,6 +13,7 @@ import com.example.shopping.supplier.document.entity.SupplierDocument;
 import com.example.shopping.supplier.document.entity.SupplierDocumentContent;
 import com.example.shopping.supplier.document.repository.SupplierDocumentRepository;
 import com.example.shopping.supplier.document.repository.SupplierDocumentContentRepository;
+import com.example.shopping.supplier.document.repository.specification.SupplierDocumentSpecifications;
 import com.example.shopping.supplier.document.validation.SupplierDocumentValidator;
 
 import java.io.IOException;
@@ -20,6 +22,8 @@ import java.util.*;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import com.example.shopping.security.TicketAccess;
@@ -56,6 +60,16 @@ public class SupplierDocumentServiceImpl implements SupplierDocumentService {
         var rows = reviewer() ? documents.findAllByOrderBySubmittedAtDesc()
             : documents.findByStatusOrSubmittedByOrderBySubmittedAtDesc(SupplierDocumentStatus.APPROVED, TicketAccess.username());
         return rows.stream().map(mapper::toDto).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<SupplierDocumentDto> search(SupplierDocumentSearchCriteria criteria, Pageable pageable) {
+        TicketAccess.requireReader();
+        return documents.findAll(
+                        SupplierDocumentSpecifications.search(criteria, reviewer(), TicketAccess.username()),
+                        pageable)
+                .map(mapper::toDto);
     }
 
     @Override

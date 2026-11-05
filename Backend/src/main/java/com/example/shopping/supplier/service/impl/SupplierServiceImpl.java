@@ -5,26 +5,29 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.stereotype.Service;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.shopping.common.enums.ErrorEnum;
-
+import com.example.shopping.supplier.document.repository.SupplierDocumentRepository;
 import com.example.shopping.supplier.dto.request.CreateSupplierRequestDto;
+import com.example.shopping.supplier.dto.request.SupplierSearchCriteria;
 import com.example.shopping.supplier.dto.request.UpdateSupplierRequestDto;
 import com.example.shopping.supplier.dto.response.SupplierResponseDto;
 import com.example.shopping.supplier.entity.SupplierEntity;
 import com.example.shopping.supplier.mapper.SupplierMapper;
 import com.example.shopping.supplier.repository.SupplierRepository;
+import com.example.shopping.supplier.repository.specification.SupplierSpecifications;
 import com.example.shopping.supplier.service.SupplierService;
-import com.example.shopping.supplier.document.repository.SupplierDocumentRepository;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -68,6 +71,16 @@ public class SupplierServiceImpl implements SupplierService {
             return getAllSuppliers();
         }
         return supplierCache.search(keyword.trim());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<SupplierResponseDto> searchPage(
+            SupplierSearchCriteria criteria,
+            Pageable pageable) {
+        return supplierRepository
+                .findAll(SupplierSpecifications.search(criteria), pageable)
+                .map(supplierMapper::toDto);
     }
 
     @Override

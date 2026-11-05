@@ -1,4 +1,5 @@
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
 import { Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -14,10 +15,11 @@ import { AuthService } from '../services/auth.service';
 })
 export class ForgotPassword {
   private readonly toast = inject(ToastService);
+  private readonly dialogs = inject(ConfirmationDialogService);
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
 
-  forgotForm: FormGroup = this.fb.group({
+  forgotForm: FormGroup = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
   });
 
@@ -28,13 +30,18 @@ export class ForgotPassword {
     return this.forgotForm.controls;
   }
 
-  onSubmit(): void {
+  async onSubmit(): Promise<void> {
     if (this.forgotForm.invalid) {
       this.forgotForm.markAllAsTouched();
       return;
     }
+    const email = String(this.forgotForm.get('email')?.value ?? '').trim();
+    if (!(await this.dialogs.confirm({
+      title: 'Gửi email đặt lại mật khẩu',
+      message: `Gửi hướng dẫn đặt lại mật khẩu đến ${email}?`,
+      confirmText: 'Gửi email',
+    }))) return;
     this.isLoading = true;
-    const { email } = this.forgotForm.value;
     this.authService.forgotPassword({ email }).subscribe({
       next: () => {
         this.isLoading = false;

@@ -124,11 +124,11 @@
                     <td class="value"><strong style="color: #0f172a;" th:text="${totalAmount} + ' ' + ${currency}">0 VND</strong></td>
                 </tr>
                 <tr>
-                    <td class="label">Người tạo (Maker):</td>
+                    <td class="label">Người tạo:</td>
                     <td class="value" th:text="${makerUsername}">maker</td>
                 </tr>
                 <tr th:if="${checkerUsername != null and !checkerUsername.isEmpty()}">
-                    <td class="label">Người duyệt (Checker):</td>
+                    <td class="label">Người duyệt:</td>
                     <td class="value" th:text="${checkerUsername}">checker</td>
                 </tr>
                 <tr th:if="${comment != null and !comment.isEmpty()}">

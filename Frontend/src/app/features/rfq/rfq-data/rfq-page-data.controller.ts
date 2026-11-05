@@ -6,7 +6,6 @@ import {
   CRITERION_FROM_KEY,
   dayString,
   DetailTab,
-  isOpenStatus,
   KpiFilter,
   RfqTab,
 } from '../helper/rfq-page.helper';
@@ -21,63 +20,7 @@ import {
 } from '../model/rfq.models';
 
 export abstract class RfqPageDataController extends RfqPageCore {
-  protected matchesTab(rfq: RfqRecord, tab: RfqTab): boolean {
-    switch (tab) {
-      case 'MINE':
-        return rfq.createdBy === this.username;
-      case 'PENDING_ME':
-        return this.canCurrentUserReview(rfq);
-      case 'DRAFT':
-        return rfq.status === 'DRAFT';
-      case 'PENDING':
-        return ['PENDING_RFQ_APPROVAL', 'PENDING_RESULT_APPROVAL'].includes(rfq.status);
-      case 'RECEIVING':
-        return ['SENT', 'RECEIVING_QUOTES', 'CLOSED_QUOTES'].includes(rfq.status);
-      case 'COMPARING':
-        return rfq.status === 'COMPARING';
-      case 'SELECTED':
-        return ['SELECTED_SUPPLIER', 'PO_CREATED'].includes(rfq.status);
-      case 'CLOSED':
-        return ['CANCELED', 'REJECTED', 'EXPIRED'].includes(rfq.status);
-      default:
-        return true;
-    }
-  }
-  protected matchesKpi(rfq: RfqRecord, kpi: KpiFilter): boolean {
-    switch (kpi) {
-      case 'M_DRAFT':
-        return rfq.createdBy === this.username && rfq.status === 'DRAFT';
-      case 'M_RETURNED':
-        return rfq.createdBy === this.username && rfq.status === 'RETURNED';
-      case 'M_WAITING':
-        return (
-          rfq.createdBy === this.username &&
-          ['SENT', 'RECEIVING_QUOTES', 'CLOSED_QUOTES'].includes(rfq.status)
-        );
-      case 'M_COMPARE':
-        return (
-          rfq.createdBy === this.username &&
-          ['COMPARING', 'PENDING_RESULT_APPROVAL'].includes(rfq.status)
-        );
-      case 'C_RFQ':
-        return this.canCurrentUserReview(rfq) && rfq.status === 'PENDING_RFQ_APPROVAL';
-      case 'C_RESULT':
-        return this.canCurrentUserReview(rfq) && rfq.status === 'PENDING_RESULT_APPROVAL';
-      case 'C_OVERDUE':
-        return this.canCurrentUserReview(rfq) && this.hoursSince(rfq.createdAt) > 24;
-      case 'C_APPROVED':
-        return !!rfq.reviewedAt && this.isCurrentMonth(rfq.reviewedAt);
-      case 'A_OPEN':
-        return isOpenStatus(rfq.status);
-      case 'A_PENDING':
-        return ['PENDING_RFQ_APPROVAL', 'PENDING_RESULT_APPROVAL'].includes(rfq.status);
-      case 'A_OVERDUE':
-        return isOpenStatus(rfq.status) && this.deadlineIsPast(rfq.deadline);
-      case 'A_VALUE':
-        return isOpenStatus(rfq.status);
-    }
-  }
-
+  private listLoadSequence = 0;
   protected loadReferenceData(): void {
     this.procurement
       .getTicketPage('APPROVED', 0, 100)
@@ -116,24 +59,42 @@ export abstract class RfqPageDataController extends RfqPageCore {
   }
 
   protected loadRfqs(deepLinkCode?: string): void {
+    const sequence = ++this.listLoadSequence;
     this.isLoading.set(true);
     this.loadError.set('');
     const filters = this.filtersForm.getRawValue();
+    const selectedStatus = (filters.status as RfqStatus) || undefined;
+    const tabStatus = !deepLinkCode && !selectedStatus ? this.tabStatus(this.activeTab()) : undefined;
+    const kpiStatus = !deepLinkCode && !selectedStatus && !tabStatus
+      ? this.kpiStatus(this.activeKpi())
+      : undefined;
+    const groupedStatuses = !deepLinkCode && !selectedStatus && !tabStatus && !kpiStatus
+      ? this.groupedStatuses()
+      : [];
     const params = {
       keyword: deepLinkCode || filters.query || undefined,
-      status:
-        (filters.status as RfqStatus) ||
-        this.tabStatus(this.activeTab()) ||
-        this.kpiStatus(this.activeKpi()),
-      department: filters.department || undefined,
-      createdBy: filters.creator || undefined,
-      createdFrom: filters.from || undefined,
-      createdTo: filters.to || undefined,
-      page: this.page() - 1,
-      size: this.pageSize(),
+      status: deepLinkCode ? undefined : selectedStatus || tabStatus || kpiStatus,
+      department: deepLinkCode ? undefined : filters.department || undefined,
+      creator: deepLinkCode ? undefined : filters.creator.trim() || undefined,
+      kpi: deepLinkCode ? undefined : this.activeKpi() || undefined,
+      excludeCreator: !deepLinkCode && (
+        this.activeTab() === 'PENDING_ME' ||
+        ['C_RFQ', 'C_RESULT', 'C_OVERDUE'].includes(this.activeKpi() || '')
+      ),
+      createdFrom: deepLinkCode ? undefined : filters.from || undefined,
+      createdTo: deepLinkCode ? undefined : filters.to || undefined,
+      page: deepLinkCode ? 0 : this.page() - 1,
+      size: deepLinkCode ? 100 : this.pageSize(),
     };
-    const groupedStatuses = !filters.status && !deepLinkCode ? this.groupedStatuses() : [];
     const finishLoading = (records: RfqRecord[], total: number) => {
+      if (!deepLinkCode) {
+        const lastPage = Math.max(1, Math.ceil(total / this.pageSize()));
+        if (this.page() > lastPage) {
+          this.page.set(lastPage);
+          this.loadRfqs();
+          return;
+        }
+      }
       this.rfqs.set(records);
       this.totalElements.set(total);
       this.isLoading.set(false);
@@ -147,36 +108,18 @@ export abstract class RfqPageDataController extends RfqPageCore {
       this.isLoading.set(false);
       this.loadError.set(this.errorMessage(error));
     };
-    if (groupedStatuses.length > 1) {
-      this.api.searchStatuses(params, groupedStatuses)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: (pages) => {
-            const records = pages
-              .flatMap(({ data }) => data.content ?? [])
-              .map((row) => RfqPageMapper.fromSummary(row))
-              .filter((rfq) =>
-                this.matchesTab(rfq, this.activeTab()) &&
-                (!this.activeKpi() || this.matchesKpi(rfq, this.activeKpi()!)) &&
-                (!filters.creator || rfq.createdBy.toLowerCase().includes(filters.creator.trim().toLowerCase())),
-              )
-              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            const offset = (this.page() - 1) * this.pageSize();
-            finishLoading(records.slice(offset, offset + this.pageSize()), records.length);
-          },
-          error: showError,
-        });
-    } else {
-      this.api.search(params)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: ({ data }) => {
-            const records = (data.content ?? []).map((row) => RfqPageMapper.fromSummary(row));
-            finishLoading(records, data.totalElements ?? records.length);
-          },
-          error: showError,
-        });
-    }
+    this.api.search(params, groupedStatuses)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ data }) => {
+          if (sequence !== this.listLoadSequence) return;
+          const records = (data.content ?? []).map((row) => RfqPageMapper.fromSummary(row));
+          finishLoading(records, data.totalElements ?? records.length);
+        },
+        error: (error) => {
+          if (sequence === this.listLoadSequence) showError(error);
+        },
+      });
   }
 
   protected loadDetail(id: string): void {

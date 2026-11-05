@@ -69,3 +69,17 @@ export interface SupplierImportApiResponse {
   data: SupplierImportResult;
   timestamp: string;
 }
+
+export interface SupplierSearchParams {
+  keyword?: string;
+  status?: SupplierStatus;
+  supplierId?: string;
+  supplierCode?: string;
+  contactPerson?: string;
+  taxCode?: string;
+  email?: string;
+  phone?: string;
+  city?: string;
+  page: number;
+  size: number;
+}

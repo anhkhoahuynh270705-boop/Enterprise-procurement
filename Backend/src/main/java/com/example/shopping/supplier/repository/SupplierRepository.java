@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -14,7 +15,7 @@ import com.example.shopping.supplier.entity.SupplierEntity;
 import com.example.shopping.supplier.enums.SupplierStatus;
 
 @Repository
-public interface SupplierRepository extends JpaRepository<SupplierEntity, UUID> {
+public interface SupplierRepository extends JpaRepository<SupplierEntity, UUID>, JpaSpecificationExecutor<SupplierEntity> {
 
     Optional<SupplierEntity> findByCode(String code);
 

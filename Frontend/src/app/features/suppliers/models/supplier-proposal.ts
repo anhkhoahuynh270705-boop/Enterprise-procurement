@@ -26,3 +26,10 @@ export interface SupplierProposal extends SupplierProposalRequest {
   supplierId?: string;
   camundaProcessInstanceId?: string;
 }
+
+export interface SupplierProposalSearchParams {
+  keyword?: string;
+  status?: ProposalStatus;
+  page: number;
+  size: number;
+}

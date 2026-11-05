@@ -51,13 +51,13 @@
       <bpmn:incoming>Flow_ProposalRejected</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:serviceTask id="ServiceTask_ApproveProposal"
-                      name="Approve Supplier Proposal"
+                      name="Cập nhật đề xuất đã duyệt &amp; phát sự kiện"
                       camunda:delegateExpression="${approveSupplierProposalDelegate}">
       <bpmn:incoming>Flow_ProposalApproved</bpmn:incoming>
       <bpmn:outgoing>Flow_ApproveProposalToEnd</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:serviceTask id="ServiceTask_RejectProposal"
-                      name="Reject Supplier Proposal"
+                      name="Cập nhật đề xuất bị từ chối &amp; phát sự kiện"
                       camunda:delegateExpression="${rejectSupplierProposalDelegate}">
       <bpmn:incoming>Flow_ProposalRejected</bpmn:incoming>
       <bpmn:outgoing>Flow_RejectProposalToEnd</bpmn:outgoing>

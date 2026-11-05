@@ -10,6 +10,7 @@ import { ProcurementService } from '../../procurement/service/procurement.servic
 import { SupplierService } from '../../suppliers/services/supplier.service';
 import { PurchaseOrderService } from '../../purchase-orders/services/purchase-order.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
 import { RfqApiService } from '../service/rfq-api.service';
 import {
   DEFAULT_WEIGHTS,
@@ -39,6 +40,7 @@ export abstract class RfqPageCore {
   protected readonly supplierService = inject(SupplierService);
   protected readonly purchaseOrders = inject(PurchaseOrderService);
   protected readonly toast = inject(ToastService);
+  protected readonly dialogs = inject(ConfirmationDialogService);
 
   readonly role = signal<RfqRole>(this.mapRole(this.auth.getCurrentUser()?.role));
   readonly username = this.auth.getCurrentUser()?.username ?? '';
@@ -214,18 +216,7 @@ export abstract class RfqPageCore {
     ];
   });
 
-  readonly filteredRfqs = computed(() => {
-    const filters = this.filtersForm.getRawValue();
-    return this.rfqs().filter((rfq) => {
-      const tabMatches = this.matchesTab(rfq, this.activeTab());
-      const kpiMatches = !this.activeKpi() || this.matchesKpi(rfq, this.activeKpi()!);
-      const creatorMatches =
-        !filters.creator ||
-        rfq.createdBy.toLowerCase().includes(filters.creator.trim().toLowerCase());
-      return tabMatches && kpiMatches && creatorMatches;
-    });
-  });
-  readonly pageRows = computed(() => this.filteredRfqs());
+  readonly pageRows = computed(() => this.rfqs());
 
   abstract canCurrentUserReview(rfq: RfqRecord): boolean;
   abstract currentQuotes(rfq: RfqRecord): SupplierQuote[];
@@ -233,14 +224,13 @@ export abstract class RfqPageCore {
   abstract priceAt(quote: SupplierQuote, itemId: string): number | null;
   abstract quoteSubtotal(rfq: RfqRecord, quote: SupplierQuote): number;
   abstract totalCost(rfq: RfqRecord, quote: SupplierQuote): number;
-  protected abstract matchesTab(rfq: RfqRecord, tab: RfqTab): boolean;
-  protected abstract matchesKpi(rfq: RfqRecord, kpi: KpiFilter): boolean;
   protected abstract loadReferenceData(): void;
   protected abstract loadRfqs(deepLinkCode?: string): void;
   protected abstract loadDetail(id: string): void;
   protected abstract initializeWinnerDraft(rfq: RfqRecord): void;
 
   initializePage(): void {
+    const initialDeepLink = this.route.snapshot.queryParamMap.get('rfq');
     this.activeTab.set(
       this.role() === 'MAKER' ? 'MINE' : this.role() === 'CHECKER' ? 'PENDING_ME' : 'ALL',
     );
@@ -262,7 +252,7 @@ export abstract class RfqPageCore {
         this.loadRfqs();
       });
     this.loadReferenceData();
-    this.loadRfqs();
+    if (!initialDeepLink) this.loadRfqs();
   }
 
   setTab(tab: RfqTab): void {

@@ -6,12 +6,14 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.example.shopping.purchaseorder.entity.PurchaseOrder;
 
-public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, UUID> {
+public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, UUID>,
+        JpaSpecificationExecutor<PurchaseOrder> {
 
     @EntityGraph(attributePaths = {"ticket", "supplier", "items"})
     List<PurchaseOrder> findAllByOrderByCreatedAtDesc();
@@ -28,4 +30,10 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, UU
             "AND poi.purchaseOrder.status <> PurchaseOrderStatus.CANCELLED " +
             "AND poi.purchaseOrder.status <> PurchaseOrderStatus.REJECTED")
     List<UUID> findAlreadyOrderedProcurementItemIds(@Param("itemIds") List<UUID> itemIds);
+
+    @Query("SELECT DISTINCT item.id FROM PurchaseOrderItem poi JOIN poi.procurementItem item " +
+            "WHERE poi.purchaseOrder.ticket.id = :ticketId " +
+            "AND poi.purchaseOrder.status <> PurchaseOrderStatus.CANCELLED " +
+            "AND poi.purchaseOrder.status <> PurchaseOrderStatus.REJECTED")
+    List<UUID> findOrderedProcurementItemIdsByTicketId(@Param("ticketId") UUID ticketId);
 }

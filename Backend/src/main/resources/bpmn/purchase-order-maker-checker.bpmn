@@ -20,7 +20,6 @@
             </camunda:validation>
           </camunda:formField>
         </camunda:formData>
-        <camunda:taskListener delegateExpression="${purchaseOrderReviewTaskListener}" event="complete" />
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_SubmitToChecker</bpmn:incoming>
       <bpmn:outgoing>Flow_CheckerToDecision</bpmn:outgoing>
@@ -30,20 +29,30 @@
       <bpmn:outgoing>Flow_PurchaseOrderApproved</bpmn:outgoing>
       <bpmn:outgoing>Flow_PurchaseOrderRejected</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:endEvent id="EndEvent_PurchaseOrderApproved" name="Đơn được duyệt">
+    <bpmn:serviceTask id="ServiceTask_ApprovePurchaseOrder" name="Cập nhật đơn đã duyệt &amp; phát sự kiện" camunda:delegateExpression="${purchaseOrderApprovalDelegate}">
       <bpmn:incoming>Flow_PurchaseOrderApproved</bpmn:incoming>
+      <bpmn:outgoing>Flow_ApprovePurchaseOrderToEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="ServiceTask_RejectPurchaseOrder" name="Cập nhật đơn bị từ chối &amp; phát sự kiện" camunda:delegateExpression="${purchaseOrderRejectionDelegate}">
+      <bpmn:incoming>Flow_PurchaseOrderRejected</bpmn:incoming>
+      <bpmn:outgoing>Flow_RejectPurchaseOrderToEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="EndEvent_PurchaseOrderApproved" name="Đơn được duyệt">
+      <bpmn:incoming>Flow_ApprovePurchaseOrderToEnd</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:endEvent id="EndEvent_PurchaseOrderRejected" name="Đơn bị từ chối">
-      <bpmn:incoming>Flow_PurchaseOrderRejected</bpmn:incoming>
+      <bpmn:incoming>Flow_RejectPurchaseOrderToEnd</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="Flow_SubmitToChecker" sourceRef="StartEvent_SubmitPurchaseOrder" targetRef="UserTask_CheckerReviewPurchaseOrder" />
     <bpmn:sequenceFlow id="Flow_CheckerToDecision" sourceRef="UserTask_CheckerReviewPurchaseOrder" targetRef="Gateway_PurchaseOrderDecision" />
-    <bpmn:sequenceFlow id="Flow_PurchaseOrderApproved" name="Đồng ý" sourceRef="Gateway_PurchaseOrderDecision" targetRef="EndEvent_PurchaseOrderApproved">
+    <bpmn:sequenceFlow id="Flow_PurchaseOrderApproved" name="Đồng ý" sourceRef="Gateway_PurchaseOrderDecision" targetRef="ServiceTask_ApprovePurchaseOrder">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approved == true || approved == 'true'}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_PurchaseOrderRejected" name="Từ chối" sourceRef="Gateway_PurchaseOrderDecision" targetRef="EndEvent_PurchaseOrderRejected">
+    <bpmn:sequenceFlow id="Flow_PurchaseOrderRejected" name="Từ chối" sourceRef="Gateway_PurchaseOrderDecision" targetRef="ServiceTask_RejectPurchaseOrder">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approved == false || approved == 'false'}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ApprovePurchaseOrderToEnd" sourceRef="ServiceTask_ApprovePurchaseOrder" targetRef="EndEvent_PurchaseOrderApproved" />
+    <bpmn:sequenceFlow id="Flow_RejectPurchaseOrderToEnd" sourceRef="ServiceTask_RejectPurchaseOrder" targetRef="EndEvent_PurchaseOrderRejected" />
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_PurchaseOrder">
     <bpmndi:BPMNPlane id="BPMNPlane_PurchaseOrder" bpmnElement="purchase-order-maker-checker">
@@ -63,16 +72,24 @@
           <dc:Bounds x="542" y="183" width="69" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_ApprovePurchaseOrder_di" bpmnElement="ServiceTask_ApprovePurchaseOrder">
+        <dc:Bounds x="575" y="80" width="130" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_RejectPurchaseOrder_di" bpmnElement="ServiceTask_RejectPurchaseOrder">
+        <dc:Bounds x="575" y="230" width="130" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="EndEvent_PurchaseOrderApproved_di" bpmnElement="EndEvent_PurchaseOrderApproved">
-        <dc:Bounds x="690" y="112" width="36" height="36" />
+        <dc:Bounds x="780" y="102" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="669" y="155" width="78" height="27" />
+          <dc:Bounds x="759" y="145" width="78" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="EndEvent_PurchaseOrderRejected_di" bpmnElement="EndEvent_PurchaseOrderRejected">
-        <dc:Bounds x="690" y="252" width="36" height="36" />
+        <dc:Bounds x="780" y="252" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="669" y="295" width="78" height="27" />
+          <dc:Bounds x="759" y="295" width="78" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_SubmitToChecker_di" bpmnElement="Flow_SubmitToChecker">
@@ -85,8 +102,8 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_PurchaseOrderApproved_di" bpmnElement="Flow_PurchaseOrderApproved">
         <di:waypoint x="515" y="165" />
-        <di:waypoint x="515" y="130" />
-        <di:waypoint x="690" y="130" />
+        <di:waypoint x="515" y="120" />
+        <di:waypoint x="575" y="120" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="545" y="103" width="62" height="14" />
         </bpmndi:BPMNLabel>
@@ -94,10 +111,18 @@
       <bpmndi:BPMNEdge id="Flow_PurchaseOrderRejected_di" bpmnElement="Flow_PurchaseOrderRejected">
         <di:waypoint x="515" y="215" />
         <di:waypoint x="515" y="270" />
-        <di:waypoint x="690" y="270" />
+        <di:waypoint x="575" y="270" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="545" y="276" width="62" height="14" />
         </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ApprovePurchaseOrderToEnd_di" bpmnElement="Flow_ApprovePurchaseOrderToEnd">
+        <di:waypoint x="705" y="120" />
+        <di:waypoint x="780" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_RejectPurchaseOrderToEnd_di" bpmnElement="Flow_RejectPurchaseOrderToEnd">
+        <di:waypoint x="705" y="270" />
+        <di:waypoint x="780" y="270" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

@@ -20,13 +20,6 @@ export class ProcurementService {
   private readonly workflowUrl = environment.apiBaseUrl + '/workflow/camunda';
   private http = inject(HttpClient);
 
-  getAllTickets(status?: string, maker?: string): Observable<ApiResponse<ProcurementTicket[]>> {
-    let params = new HttpParams();
-    if (status) params = params.set('status', status);
-    if (maker) params = params.set('maker', maker);
-    return this.http.get<ApiResponse<ProcurementTicket[]>>(`${this.apiUrl}/tickets`, { params });
-  }
-
   getTicketPage(status: string | undefined, page: number, size: number): Observable<ApiResponse<PageResult<ProcurementTicket>>> {
     let params = new HttpParams()
       .set('page', page)

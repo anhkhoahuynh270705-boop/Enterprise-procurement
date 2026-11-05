@@ -1,5 +1,6 @@
 import { SensitiveValue } from '../../../shared/sensitive/sensitive-value/sensitive-value';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -19,6 +20,7 @@ const itemNamePattern = /^[\p{L}\p{M}\p{N}]+(?: +[\p{L}\p{M}\p{N}]+)*$/u;
 })
 export class ProcurementEdit implements OnInit {
   private readonly toast = inject(ToastService);
+  private readonly dialogs = inject(ConfirmationDialogService);
 
   private fb = inject(FormBuilder);
   private procurementService = inject(ProcurementService);
@@ -106,7 +108,7 @@ export class ProcurementEdit implements OnInit {
           ];
           ticket.items.forEach((it) => {
             this.items.push(
-              this.fb.group({
+              this.fb.nonNullable.group({
                 itemCode: [it.itemCode || ''],
                 itemName: [it.itemName, [Validators.required, Validators.pattern(itemNamePattern)]],
                 category: [it.category || 'Hardware'],
@@ -147,7 +149,7 @@ export class ProcurementEdit implements OnInit {
   }
 
   createItemRow(): FormGroup {
-    return this.fb.group({
+    return this.fb.nonNullable.group({
       itemCode: [''],
       itemName: ['', [Validators.required, Validators.pattern(itemNamePattern)]],
       category: ['Hardware'],
@@ -163,8 +165,14 @@ export class ProcurementEdit implements OnInit {
     this.items.push(this.createItemRow());
   }
 
-  removeItem(index: number): void {
+  async removeItem(index: number): Promise<void> {
     if (this.items.length > 1) {
+      if (!(await this.dialogs.confirm({
+        title: 'Xóa dòng hàng',
+        message: 'Xóa hạng mục này khỏi phiếu đang chỉnh sửa?',
+        confirmText: 'Xóa hạng mục',
+        tone: 'danger',
+      }))) return;
       this.items.removeAt(index);
     } else {
       this.toast.warning('Đề nghị mua sắm phải có ít nhất 1 mặt hàng.');

@@ -5,6 +5,7 @@ import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl } from '@
 import { Gender, UpdateMyProfileRequest, UserResponse } from '../../features/auth/model/auth';
 import { FaceAuthService } from '../faceId/services/face-auth.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
 import { FaceEnrollComponent } from '../faceId/face-enroll/face-enroll';
 import { UserService } from '../../core/services/user.service';
 import { pastDate } from './helper/profile-panel.helper';
@@ -21,6 +22,7 @@ export class ProfilePanel implements OnDestroy {
   private readonly userService = inject(UserService);
   private readonly faceAuth = inject(FaceAuthService);
   private readonly toast = inject(ToastService);
+  private readonly dialogs = inject(ConfirmationDialogService);
   readonly fb = inject(FormBuilder);
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
   private request?: Subscription;
@@ -62,8 +64,14 @@ export class ProfilePanel implements OnDestroy {
     this.editing.set(true);
   }
 
-  cancelEdit(): void {
+  async cancelEdit(): Promise<void> {
     if (this.saving()) return;
+    if (this.form.dirty && !(await this.dialogs.confirm({
+      title: 'Hủy chỉnh sửa hồ sơ',
+      message: 'Hủy các thay đổi chưa lưu trong hồ sơ?',
+      confirmText: 'Hủy chỉnh sửa',
+      tone: 'danger',
+    }))) return;
     this.editing.set(false);
     this.saveError.set('');
   }

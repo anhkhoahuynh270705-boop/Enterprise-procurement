@@ -170,7 +170,7 @@
     @if (loading) {
       <p role="status">Đang tải tài liệu…</p>
     } @else {
-      <p>{{ filtered.length }} tài liệu</p>
+      <p>{{ totalElements }} tài liệu</p>
       <div class="table-scroll">
         <table>
           <thead>
@@ -266,6 +266,17 @@
             }
           </tbody>
         </table>
+      </div>
+    }
+    @if (totalPages > 1) {
+      <div class="document-pagination">
+        <button type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 0 || loading">
+          Trang trước
+        </button>
+        <span>{{ totalElements }} tài liệu · Trang {{ currentPage + 1 }} / {{ totalPages }}</span>
+        <button type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage >= totalPages - 1 || loading">
+          Trang sau
+        </button>
       </div>
     }
   </section>

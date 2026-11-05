@@ -81,30 +81,50 @@ export class RfqPageWorkflowController extends RfqPageDataController {
       });
   }
 
-  cancelRfq(rfq: RfqRecord): void {
-    if (!this.canCancel(rfq) || !confirm(`Hủy ${rfq.code}? Thao tác này không thể hoàn tác.`))
-      return;
-    const reason = window.prompt('Nhập lý do hủy (tối thiểu 5 ký tự):')?.trim() ?? '';
-    if (reason.length < 5) {
-      this.toast.warning('Lý do hủy cần tối thiểu 5 ký tự.');
-      return;
-    }
+  async cancelRfq(rfq: RfqRecord): Promise<void> {
+    if (!this.canCancel(rfq)) return;
+    if (!(await this.dialogs.confirm({
+      title: 'Hủy yêu cầu báo giá',
+      message: `Hủy ${rfq.code}? Thao tác này không thể hoàn tác.`,
+      confirmText: 'Hủy RFQ',
+      tone: 'danger',
+    }))) return;
+    const reason = await this.dialogs.prompt({
+      title: 'Lý do hủy RFQ',
+      message: `Nhập lý do hủy ${rfq.code}.`,
+      label: 'Lý do',
+      placeholder: 'Nhập lý do hủy (tối thiểu 5 ký tự)',
+      minLength: 5,
+      validationMessage: 'Lý do hủy cần tối thiểu 5 ký tự.',
+      confirmText: 'Xác nhận hủy',
+      tone: 'danger',
+    });
+    if (reason === null) return;
     this.mutateDetail(this.api.cancel(rfq.id, { reason }), 'Đã hủy yêu cầu báo giá.');
   }
 
-  requestRequote(rfq: RfqRecord): void {
+  async requestRequote(rfq: RfqRecord): Promise<void> {
     if (
       this.role() !== 'MAKER' ||
       rfq.createdBy !== this.username ||
       !['CLOSED_QUOTES', 'COMPARING'].includes(rfq.status)
     )
       return;
-    if (!confirm(`Yêu cầu các nhà cung cấp đã mời chào giá lại cho ${rfq.code}?`)) return;
-    const reason = window.prompt('Nhập lý do yêu cầu chào lại (tối thiểu 5 ký tự):')?.trim() ?? '';
-    if (reason.length < 5) {
-      this.toast.warning('Lý do yêu cầu chào lại cần tối thiểu 5 ký tự.');
-      return;
-    }
+    if (!(await this.dialogs.confirm({
+      title: 'Yêu cầu chào giá lại',
+      message: `Yêu cầu các nhà cung cấp đã mời chào giá lại cho ${rfq.code}?`,
+      confirmText: 'Tiếp tục',
+    }))) return;
+    const reason = await this.dialogs.prompt({
+      title: 'Lý do yêu cầu chào giá lại',
+      message: `Nhập lý do mở vòng báo giá mới cho ${rfq.code}.`,
+      label: 'Lý do',
+      placeholder: 'Nhập lý do (tối thiểu 5 ký tự)',
+      minLength: 5,
+      validationMessage: 'Lý do yêu cầu chào lại cần tối thiểu 5 ký tự.',
+      confirmText: 'Gửi yêu cầu',
+    });
+    if (reason === null) return;
     this.api
       .requestRequote(rfq.id, rfq.invitedSupplierIds, reason)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -119,13 +139,22 @@ export class RfqPageWorkflowController extends RfqPageDataController {
       });
   }
 
-  closeQuotes(rfq: RfqRecord): void {
-    if (!confirm(`Đóng nhận báo giá cho ${rfq.code}?`)) return;
-    const reason = window.prompt('Nhập lý do đóng nhận báo giá (tối thiểu 5 ký tự):')?.trim() ?? '';
-    if (reason.length < 5) {
-      this.toast.warning('Lý do cần tối thiểu 5 ký tự.');
-      return;
-    }
+  async closeQuotes(rfq: RfqRecord): Promise<void> {
+    if (!(await this.dialogs.confirm({
+      title: 'Đóng nhận báo giá',
+      message: `Đóng nhận báo giá cho ${rfq.code}?`,
+      confirmText: 'Đóng nhận báo giá',
+    }))) return;
+    const reason = await this.dialogs.prompt({
+      title: 'Lý do đóng nhận báo giá',
+      message: `Nhập lý do đóng nhận báo giá của ${rfq.code}.`,
+      label: 'Lý do',
+      placeholder: 'Nhập lý do (tối thiểu 5 ký tự)',
+      minLength: 5,
+      validationMessage: 'Lý do cần tối thiểu 5 ký tự.',
+      confirmText: 'Xác nhận đóng',
+    });
+    if (reason === null) return;
     this.mutateDetail(this.api.closeQuotes(rfq.id, { reason }), 'Đã đóng nhận báo giá.');
   }
 
@@ -133,7 +162,13 @@ export class RfqPageWorkflowController extends RfqPageDataController {
     this.mutateDetail(this.api.startComparison(rfq.id), 'Đã bắt đầu so sánh báo giá.');
   }
 
-  sendInvitation(rfq: RfqRecord, supplierId: string): void {
+  async sendInvitation(rfq: RfqRecord, supplierId: string): Promise<void> {
+    const supplier = rfq.invitedSuppliers.find((invite) => invite.supplierId === supplierId);
+    if (!(await this.dialogs.confirm({
+      title: 'Gửi link báo giá',
+      message: `Gửi link mời ${supplier?.supplierName ?? 'nhà cung cấp này'} tham gia báo giá cho ${rfq.code}?`,
+      confirmText: 'Gửi link',
+    }))) return;
     this.api
       .sendInvitationLink(rfq.id, supplierId)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -143,8 +178,13 @@ export class RfqPageWorkflowController extends RfqPageDataController {
       });
   }
 
-  createPurchaseOrder(rfq: RfqRecord): void {
-    if (!this.canCreatePo(rfq) || !confirm(`Tạo đơn đặt hàng từ ${rfq.code}?`)) return;
+  async createPurchaseOrder(rfq: RfqRecord): Promise<void> {
+    if (!this.canCreatePo(rfq)) return;
+    if (!(await this.dialogs.confirm({
+      title: 'Tạo đơn đặt hàng',
+      message: `Tạo đơn đặt hàng từ ${rfq.code}?`,
+      confirmText: 'Tạo đơn hàng',
+    }))) return;
     const itemIds = rfq.items
       .map((item) => item.procurementItemId)
       .filter((id): id is string => !!id);
@@ -213,11 +253,15 @@ export class RfqPageWorkflowController extends RfqPageDataController {
     );
   }
 
-  submitResultForApproval(rfq: RfqRecord): void {
+  async submitResultForApproval(rfq: RfqRecord): Promise<void> {
     if (!this.winnerDraft() || this.weightTotal() !== 100) return;
     if (this.globalWinnerNeedsReason(rfq) && this.winnerReasonDraft().trim().length < 10) return;
     const winners = this.buildItemWinners(rfq);
-    if (winners === null || !confirm(`Trình duyệt kết quả so sánh của ${rfq.code}?`)) return;
+    if (winners === null || !(await this.dialogs.confirm({
+      title: 'Trình duyệt kết quả so sánh',
+      message: `Trình duyệt kết quả so sánh của ${rfq.code}?`,
+      confirmText: 'Gửi trình duyệt',
+    }))) return;
     this.mutateDetail(
       this.api.selectWinners(rfq.id, {
         supplierId: this.winnerDraft(),
@@ -230,12 +274,17 @@ export class RfqPageWorkflowController extends RfqPageDataController {
     );
   }
 
-  decision(rfq: RfqRecord, action: 'APPROVE' | 'RETURN' | 'REJECT'): void {
+  async decision(rfq: RfqRecord, action: 'APPROVE' | 'RETURN' | 'REJECT'): Promise<void> {
     if (!this.canCurrentUserReview(rfq)) return;
     const reason = this.decisionReason().trim();
     if (reason.length < 10) return;
     const label = action === 'APPROVE' ? 'Duyệt' : action === 'RETURN' ? 'Trả lại' : 'Từ chối';
-    if (!confirm(`${label} ${rfq.code}?`)) return;
+    if (!(await this.dialogs.confirm({
+      title: `${label} RFQ`,
+      message: `${label} ${rfq.code}?`,
+      confirmText: label,
+      tone: action === 'REJECT' ? 'danger' : 'primary',
+    }))) return;
     this.mutateDetail(
       this.api.decide(rfq.id, { decision: action, reason }),
       `Đã ghi nhận quyết định: ${label.toLowerCase()}.`,

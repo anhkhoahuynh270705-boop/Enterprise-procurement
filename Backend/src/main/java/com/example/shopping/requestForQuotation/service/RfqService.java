@@ -12,12 +12,21 @@ import com.example.shopping.requestForQuotation.dto.response.RfqDetailResponse;
 import com.example.shopping.requestForQuotation.dto.response.RfqSummaryResponse;
 import org.springframework.data.domain.Page;
 
+import java.util.List;
 import java.util.UUID;
+import com.example.shopping.requestForQuotation.enums.RfqStatus;
 
 public interface RfqService {
     RfqDetailResponse create(CreateRfqRequest request, String username, boolean isAdmin);
     RfqDetailResponse update(UUID rfqId, UpdateRfqRequest request, String username, boolean isAdmin);
     Page<RfqSummaryResponse> search(RfqSearchRequest request);
+    Page<RfqSummaryResponse> search(
+            RfqSearchRequest request,
+            List<RfqStatus> statuses,
+            String creatorKeyword,
+            String kpiFilter,
+            String currentUsername,
+            boolean excludeCreator);
     RfqDetailResponse getById(UUID rfqId, String username, boolean canViewAll);
     RfqDetailResponse submit(UUID rfqId, String username, boolean isAdmin);
     RfqDetailResponse decide(UUID rfqId, RfqDecisionRequest request, String checkerUsername);

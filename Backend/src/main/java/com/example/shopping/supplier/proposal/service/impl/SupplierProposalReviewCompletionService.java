@@ -3,8 +3,6 @@ package com.example.shopping.supplier.proposal.service.impl;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import lombok.AccessLevel;
-import lombok.experimental.FieldDefaults;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,8 +15,12 @@ import com.example.shopping.supplier.proposal.mapper.SupplierProposalMapper;
 import com.example.shopping.supplier.proposal.repository.SupplierProposalRepository;
 import com.example.shopping.supplier.repository.SupplierRepository;
 import com.example.shopping.supplier.service.SupplierService;
+import com.example.shopping.workflow.camunda.event.WorkflowReviewEvent;
+import com.example.shopping.workflow.camunda.event.WorkflowReviewEventPublisher;
 
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +31,7 @@ public class SupplierProposalReviewCompletionService {
     SupplierRepository suppliers;
     SupplierService supplierService;
     SupplierProposalMapper proposalMapper;
+    WorkflowReviewEventPublisher eventPublisher;
 
     @Transactional
     public void completeReview(UUID proposalId, String reviewer, boolean approved, String comment) {
@@ -66,11 +69,21 @@ public class SupplierProposalReviewCompletionService {
         } else {
             proposal.setStatus(SupplierProposalStatus.REJECTED);
         }
-
         proposal.setPendingTaxCode(null);
         proposal.setReviewedBy(reviewer);
         proposal.setReviewedAt(LocalDateTime.now());
         proposal.setReviewComment(normalizedComment.isBlank() ? null : normalizedComment);
         proposals.saveAndFlush(proposal);
+        eventPublisher.publish(new WorkflowReviewEvent(
+                "SUPPLIER_PROPOSAL",
+                proposal.getId(),
+                proposal.getId().toString(),
+                proposal.getName(),
+                proposal.getSubmittedBy(),
+                reviewer,
+                proposal.getStatus().name(),
+                proposal.getReviewComment(),
+                null,
+                proposal.getReviewedAt()));
     }
 }

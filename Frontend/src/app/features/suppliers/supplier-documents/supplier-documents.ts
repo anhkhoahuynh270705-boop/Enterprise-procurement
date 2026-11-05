@@ -1,6 +1,7 @@
 import {
   ChangeDetectorRef,
   Component,
+  DestroyRef,
   ElementRef,
   OnDestroy,
   OnInit,
@@ -10,11 +11,13 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { forkJoin } from 'rxjs';
+import { debounceTime } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../auth/services/auth.service';
 import { SupplierDocumentService } from '../services/supplier-document.service';
 import { SupplierDocument, SupplierOption, DocumentStatus } from '../models/supplier-document';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
 
 @Component({
   selector: 'app-supplier-documents',
@@ -25,9 +28,11 @@ import { ToastService } from '../../../core/services/toast.service';
 export class SupplierDocuments implements OnInit, OnDestroy {
   readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
+  private readonly dialogs = inject(ConfirmationDialogService);
   private readonly service = inject(SupplierDocumentService);
   private readonly fb = inject(FormBuilder);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly sanitizer = inject(DomSanitizer);
   readonly isAdmin = this.auth.hasRole('ADMIN');
   readonly isReviewer = this.auth.hasRole('ADMIN', 'CHECKER');
@@ -79,8 +84,20 @@ export class SupplierDocuments implements OnInit, OnDestroy {
   showUploadForm = false;
   showAdvancedSearch = false;
   private objectUrl = '';
+  currentPage = 0;
+  readonly pageSize = 10;
+  totalPages = 0;
+  totalElements = 0;
+  private loadSequence = 0;
 
   ngOnInit() {
+    this.filterForm.valueChanges
+      .pipe(debounceTime(250), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.currentPage = 0;
+        this.loadDocuments();
+      });
+    this.loadSuppliers();
     this.load();
   }
 
@@ -89,39 +106,7 @@ export class SupplierDocuments implements OnInit, OnDestroy {
   }
 
   get filtered() {
-    const filters = this.filterForm.getRawValue();
-    const query = this.normalizeSearch(filters.searchQuery);
-    const submittedBy = this.normalizeSearch(filters.submittedBy);
-    const reviewedBy = this.normalizeSearch(filters.reviewedBy);
-    const reviewComment = this.normalizeSearch(filters.reviewComment);
-    return this.documents.filter((document) => {
-      const submittedDate = document.submittedAt?.slice(0, 10) || '';
-      const reviewedDate = document.reviewedAt?.slice(0, 10) || '';
-      const searchableText = this.normalizeSearch(
-        [
-          document.filename,
-          document.supplierName,
-          document.submittedBy,
-          document.reviewedBy,
-          document.reviewComment,
-        ]
-          .filter(Boolean)
-          .join(' '),
-      );
-
-      return (
-        (!filters.filterSupplier || document.supplierId === filters.filterSupplier) &&
-        (!filters.filterStatus || document.status === filters.filterStatus) &&
-        (!query || searchableText.includes(query)) &&
-        (!submittedBy || this.normalizeSearch(document.submittedBy).includes(submittedBy)) &&
-        (!reviewedBy || this.normalizeSearch(document.reviewedBy).includes(reviewedBy)) &&
-        (!reviewComment || this.normalizeSearch(document.reviewComment).includes(reviewComment)) &&
-        (!filters.submittedFrom || submittedDate >= filters.submittedFrom) &&
-        (!filters.submittedTo || submittedDate <= filters.submittedTo) &&
-        (!filters.reviewedFrom || (!!reviewedDate && reviewedDate >= filters.reviewedFrom)) &&
-        (!filters.reviewedTo || (!!reviewedDate && reviewedDate <= filters.reviewedTo))
-      );
-    });
+    return this.documents;
   }
 
   toggleAdvancedSearch(): void {
@@ -141,10 +126,6 @@ export class SupplierDocuments implements OnInit, OnDestroy {
       reviewedFrom: '',
       reviewedTo: '',
     });
-  }
-
-  private normalizeSearch(value: string | null | undefined): string {
-    return (value || '').trim().toLocaleLowerCase('vi');
   }
 
   toggleUploadForm(): void {
@@ -167,23 +148,67 @@ export class SupplierDocuments implements OnInit, OnDestroy {
   }
 
   load() {
+    this.loadDocuments();
+  }
+
+  private loadSuppliers(): void {
+    this.service.suppliers().subscribe({
+      next: (suppliers) => {
+        this.suppliers = suppliers;
+        this.cdr.markForCheck();
+      },
+      error: (err) => this.fail(err, 'Không tải được danh sách nhà cung cấp.'),
+    });
+  }
+
+  private loadDocuments(): void {
+    const sequence = ++this.loadSequence;
+    const filters = this.filterForm.getRawValue();
     this.loading = true;
     this.error = '';
-    forkJoin({
-      documents: this.service.list(),
-      suppliers: this.service.suppliers(),
+    this.service.searchPage({
+      supplierId: filters.filterSupplier || undefined,
+      status: (filters.filterStatus || undefined) as DocumentStatus | undefined,
+      keyword: filters.searchQuery.trim() || undefined,
+      submittedBy: filters.submittedBy.trim() || undefined,
+      reviewedBy: filters.reviewedBy.trim() || undefined,
+      reviewComment: filters.reviewComment.trim() || undefined,
+      submittedFrom: filters.submittedFrom || undefined,
+      submittedTo: filters.submittedTo || undefined,
+      reviewedFrom: filters.reviewedFrom || undefined,
+      reviewedTo: filters.reviewedTo || undefined,
+      page: this.currentPage,
+      size: this.pageSize,
     }).subscribe({
       next: (result) => {
-        this.documents = result.documents;
-        this.suppliers = result.suppliers;
+        if (sequence !== this.loadSequence) return;
+        const lastPage = Math.max((result.totalPages || 0) - 1, 0);
+        if (this.currentPage > lastPage) {
+          this.currentPage = lastPage;
+          this.loadDocuments();
+          return;
+        }
+        this.documents = result.content || [];
+        this.totalPages = result.totalPages || 0;
+        this.totalElements = result.totalElements || 0;
         this.loading = false;
         this.cdr.markForCheck();
       },
       error: (err) => {
+        if (sequence !== this.loadSequence) return;
+        this.documents = [];
+        this.totalPages = 0;
+        this.totalElements = 0;
         this.loading = false;
         this.fail(err, 'Không tải được tài liệu. Vui lòng thử lại.');
       },
     });
+  }
+
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages || this.loading) return;
+    this.currentPage = page;
+    this.loadDocuments();
   }
 
   selectFile(event: Event) {
@@ -200,13 +225,20 @@ export class SupplierDocuments implements OnInit, OnDestroy {
     else this.file = file;
   }
 
-  upload() {
+  async upload(): Promise<void> {
     if (this.uploading) return;
     const supplierId = this.uploadForm.controls.supplierId.value;
     if (!supplierId || !this.file) {
       this.toast.error('Vui lòng chọn nhà cung cấp và file hợp lệ trước khi tải lên.');
       return;
     }
+    if (!(await this.dialogs.confirm({
+      title: this.isAdmin ? 'Tải tài liệu nhà cung cấp' : 'Nộp đề xuất tài liệu',
+      message: this.isAdmin
+        ? `Xác nhận tải tài liệu "${this.file.name}" lên hồ sơ nhà cung cấp?`
+        : `Xác nhận gửi tài liệu "${this.file.name}" để chờ duyệt?`,
+      confirmText: this.isAdmin ? 'Tải lên' : 'Nộp đề xuất',
+    }))) return;
     this.uploading = true;
     this.error = '';
     this.success = '';
@@ -220,7 +252,11 @@ export class SupplierDocuments implements OnInit, OnDestroy {
         this.success = this.isAdmin
           ? 'Đã tải lên tài liệu chính thức.'
           : 'Đã gửi đề xuất tài liệu, đang chờ duyệt.';
-        this.filterForm.patchValue({ filterSupplier: document.supplierId, filterStatus: '' });
+        this.filterForm.patchValue(
+          { filterSupplier: document.supplierId, filterStatus: '' },
+          { emitEvent: false },
+        );
+        this.currentPage = 0;
         this.load();
       },
       error: (err) => {
@@ -302,7 +338,7 @@ export class SupplierDocuments implements OnInit, OnDestroy {
     this.success = '';
   }
 
-  review(approved: boolean) {
+  async review(approved: boolean): Promise<void> {
     if (!this.selected || this.reviewing || !this.canReview(this.selected)) return;
     const comment = this.reviewForm.controls.comment.value.trim();
     if (!approved && !comment) {
@@ -313,6 +349,14 @@ export class SupplierDocuments implements OnInit, OnDestroy {
       this.error = 'Nhận xét tối đa 2000 ký tự.';
       return;
     }
+    if (!(await this.dialogs.confirm({
+      title: approved ? 'Duyệt tài liệu' : 'Từ chối tài liệu',
+      message: approved
+        ? `Duyệt tài liệu “${this.selected.filename}” thành tài liệu chính thức?`
+        : `Xác nhận từ chối tài liệu “${this.selected.filename}”?`,
+      confirmText: approved ? 'Duyệt tài liệu' : 'Từ chối',
+      tone: approved ? 'primary' : 'danger',
+    }))) return;
     this.reviewing = true;
     this.error = '';
     this.service.review(this.selected.id, approved, comment).subscribe({

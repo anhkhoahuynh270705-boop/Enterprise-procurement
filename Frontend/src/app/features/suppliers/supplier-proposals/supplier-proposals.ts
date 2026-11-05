@@ -1,6 +1,7 @@
 import { SensitiveValue } from '../../../shared/sensitive/sensitive-value/sensitive-value';
 import { ToastService } from '../../../core/services/toast.service';
-import { ChangeDetectorRef, Component, inject, OnInit, input, output } from '@angular/core';
+import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
+import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -19,6 +20,8 @@ import {
   trimmedValidators,
 } from '../shared/supplier-form.validators';
 import { SensitiveInput } from '../../../shared/sensitive/sensitive-input/sensitive-input';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { debounceTime, merge } from 'rxjs';
 
 @Component({
   selector: 'app-supplier-proposals',
@@ -30,10 +33,12 @@ export class SupplierProposals implements OnInit {
   readonly embedded = input(false);
   readonly reviewed = output<void>();
   private readonly toast = inject(ToastService);
+  private readonly dialogs = inject(ConfirmationDialogService);
   readonly auth = inject(AuthService);
   private readonly service = inject(SupplierProposalService);
   private readonly fb = inject(FormBuilder);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   readonly isAdmin = this.auth.hasRole('ADMIN');
   readonly isReviewer = this.auth.hasRole('ADMIN', 'CHECKER');
@@ -44,6 +49,7 @@ export class SupplierProposals implements OnInit {
     REJECTED: 'Đã từ chối',
   };
   proposals: SupplierProposal[] = [];
+  pendingProposalCount = 0;
   selected: SupplierProposal | null = null;
   showForm = false;
   loading = false;
@@ -53,10 +59,16 @@ export class SupplierProposals implements OnInit {
   submitError = '';
   reviewError = '';
   success = '';
+  currentPage = 0;
+  readonly pageSize = 10;
+  totalPages = 0;
+  totalElements = 0;
+  private loadSequence = 0;
   readonly reviewForm = this.fb.nonNullable.group({
     filter: this.fb.nonNullable.control<ProposalStatus | 'ALL'>(
       this.isReviewer ? 'PENDING' : 'ALL',
     ),
+    keyword: '',
     reviewComment: '',
   });
   fieldErrors: Record<string, string> = {};
@@ -110,16 +122,27 @@ export class SupplierProposals implements OnInit {
       });
       this.showForm = true;
     }
+    merge(
+      this.reviewForm.controls.filter.valueChanges,
+      this.reviewForm.controls.keyword.valueChanges,
+    )
+      .pipe(debounceTime(250), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.currentPage = 0;
+        this.load();
+      });
     this.load();
+    this.loadPendingCount();
   }
 
   get pendingCount() {
-    return this.proposals.filter((p) => p.status === 'PENDING').length;
+    return this.pendingProposalCount;
   }
   get filter(): ProposalStatus | 'ALL' {
     return this.reviewForm.controls.filter.value;
   }
   set filter(value: ProposalStatus | 'ALL') {
+    this.currentPage = 0;
     this.reviewForm.controls.filter.setValue(value);
   }
   get reviewComment(): string {
@@ -129,21 +152,37 @@ export class SupplierProposals implements OnInit {
     this.reviewForm.controls.reviewComment.setValue(value);
   }
   get filtered() {
-    return this.proposals.filter((p) => this.filter === 'ALL' || p.status === this.filter);
+    return this.proposals;
   }
 
   load() {
+    const sequence = ++this.loadSequence;
     this.loading = true;
     this.error = '';
-    this.service.list().subscribe({
-      next: (proposals) => {
-        this.proposals = proposals;
-        if (this.selected)
-          this.selected = proposals.find((p) => p.id === this.selected?.id) || null;
+    const status = this.filter;
+    const keyword = this.reviewForm.controls.keyword.value.trim();
+    this.service.searchPage({
+      status: status === 'ALL' ? undefined : status,
+      keyword: keyword || undefined,
+      page: this.currentPage,
+      size: this.pageSize,
+    }).subscribe({
+      next: (result) => {
+        if (sequence !== this.loadSequence) return;
+        const lastPage = Math.max((result.totalPages || 0) - 1, 0);
+        if (this.currentPage > lastPage) {
+          this.currentPage = lastPage;
+          this.load();
+          return;
+        }
+        this.proposals = result.content || [];
+        this.totalPages = result.totalPages || 0;
+        this.totalElements = result.totalElements || 0;
         this.loading = false;
         this.cdr.markForCheck();
       },
       error: (err) => {
+        if (sequence !== this.loadSequence) return;
         this.error = err?.error?.message || 'Không tải được đề xuất. Vui lòng thử lại.';
         this.toast.error(this.error);
         this.loading = false;
@@ -152,10 +191,32 @@ export class SupplierProposals implements OnInit {
     });
   }
 
-  submit() {
+  private loadPendingCount(): void {
+    if (this.isReviewer) {
+      this.service.pendingCount().subscribe({
+        next: ({ count }) => {
+          this.pendingProposalCount = count;
+          this.cdr.markForCheck();
+        },
+      });
+    }
+  }
+
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages || this.loading) return;
+    this.currentPage = page;
+    this.load();
+  }
+
+  async submit(): Promise<void> {
     if (!this.canSubmit || this.submitting) return;
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
+    if (!(await this.dialogs.confirm({
+      title: 'Nộp đề xuất nhà cung cấp',
+      message: 'Xác nhận gửi thông tin nhà cung cấp để chờ duyệt?',
+      confirmText: 'Nộp đề xuất',
+    }))) return;
     this.submitting = true;
     this.fieldErrors = {};
     const raw = this.form.getRawValue();
@@ -168,9 +229,11 @@ export class SupplierProposals implements OnInit {
         this.submitting = false;
         this.showForm = false;
         this.form.reset();
-        this.filter = 'ALL';
+        this.currentPage = 0;
+        this.reviewForm.controls.filter.setValue('ALL', { emitEvent: false });
         this.toast.success('Gửi đề xuất thành công và đang chờ duyệt.');
         this.load();
+        this.loadPendingCount();
         this.cdr.markForCheck();
       },
       error: (err) => {
@@ -216,7 +279,7 @@ export class SupplierProposals implements OnInit {
     }, 100);
   }
 
-  review(approved: boolean) {
+  async review(approved: boolean): Promise<void> {
     if (!this.selected || !this.canReviewProposal(this.selected) || this.reviewing) return;
     const comment = this.reviewComment.trim();
     if (!approved && !comment) {
@@ -227,6 +290,14 @@ export class SupplierProposals implements OnInit {
       this.reviewError = 'Nhận xét tối đa 2000 ký tự.';
       return;
     }
+    if (!(await this.dialogs.confirm({
+      title: approved ? 'Chấp thuận đề xuất' : 'Từ chối đề xuất',
+      message: approved
+        ? `Chấp thuận đề xuất của ${this.selected.name} và tạo nhà cung cấp trong hệ thống?`
+        : `Xác nhận từ chối đề xuất của ${this.selected.name}?`,
+      confirmText: approved ? 'Chấp thuận' : 'Từ chối',
+      tone: approved ? 'primary' : 'danger',
+    }))) return;
     this.reviewing = true;
     this.reviewError = '';
     this.success = '';
@@ -238,6 +309,7 @@ export class SupplierProposals implements OnInit {
         if (!this.embedded()) this.toast.success(this.success);
         this.reviewed.emit();
         this.load();
+        this.loadPendingCount();
         this.cdr.markForCheck();
       },
       error: (err) => {

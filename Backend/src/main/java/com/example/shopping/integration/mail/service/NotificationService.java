@@ -1,7 +1,7 @@
 package com.example.shopping.integration.mail.service;
 
-import com.example.shopping.integration.kafka.model.ProcurementEvent;
 import com.example.shopping.integration.mail.enums.NotificationChannel;
+import com.example.shopping.procurement.kafka.model.ProcurementEvent;
 
 public interface NotificationService {
 

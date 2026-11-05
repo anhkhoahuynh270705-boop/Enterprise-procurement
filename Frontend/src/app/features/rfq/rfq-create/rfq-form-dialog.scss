@@ -48,6 +48,8 @@
 .supplier-check-list small { margin-left: auto; color: #a13a3a; font-size: 9px; }
 .exception-field { max-width: 650px; margin-top: 12px; }
 .exception-field span { color: #b32a2a; }
+.exception-field textarea[aria-invalid='true'] { border-color: #b32a2a; }
+.field-error { color: #a32323; font-size: 11px; font-weight: 500; line-height: 1.4; }
 .form-alert { margin: 0 0 12px; padding: 10px 12px; border: 1px solid #e9b4b4; border-radius: 2px; background: #fff2f2; color: #8a2929; font-size: 11px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
 .button { min-height: 40px; padding: 8px 14px; border: 2px solid #17191c; border-radius: 2px; background: #fff; color: #202124; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease; }

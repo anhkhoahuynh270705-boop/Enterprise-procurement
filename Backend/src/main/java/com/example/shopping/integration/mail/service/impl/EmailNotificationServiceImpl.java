@@ -8,11 +8,11 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import com.example.shopping.integration.kafka.model.ProcurementEvent;
-import com.example.shopping.integration.kafka.event.enums.ProcurementEventType;
 import com.example.shopping.integration.mail.enums.NotificationChannel;
 import com.example.shopping.integration.mail.service.MailService;
 import com.example.shopping.integration.mail.service.NotificationService;
+import com.example.shopping.procurement.kafka.event.enums.ProcurementEventType;
+import com.example.shopping.procurement.kafka.model.ProcurementEvent;
 import com.example.shopping.user.entity.UserEntity;
 import com.example.shopping.user.repository.UserRepository;
 
